@@ -10,6 +10,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3307/sgtg?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: oracle
+      SPRING_SECURITY_USER_NAME: admin
+      SPRING_SECURITY_USER_PASSWORD: admin
     depends_on:
       - mysql
 
