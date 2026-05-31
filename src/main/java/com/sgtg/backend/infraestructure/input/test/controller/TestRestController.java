@@ -10,11 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
-@RequestMapping("/api/v1/sgtg/test")
+@RequestMapping("/api/v1/sgtg/test/")
 @AllArgsConstructor
 public class TestRestController {
 
-    @GetMapping("/")
+    @GetMapping("")
     public ResponseEntity<String> helloWorld() {
         return new ResponseEntity<>("Hello, World!", HttpStatus.OK);
     }
