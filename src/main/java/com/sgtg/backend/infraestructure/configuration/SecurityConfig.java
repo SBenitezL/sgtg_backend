@@ -22,8 +22,8 @@ public class SecurityConfig {
         SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
                                 .csrf(csrf -> csrf.disable())
-                                .authorizeHttpRequests(auth -> auth // .requestMatchers("/api/v1/sgtg/auth/**").permitAll()
-                                                .anyRequest().permitAll())
+                                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/sgtg/auth/**").permitAll()
+                                                .anyRequest().authenticated())
                                 .sessionManagement(
                                                 sessionManager -> sessionManager
                                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

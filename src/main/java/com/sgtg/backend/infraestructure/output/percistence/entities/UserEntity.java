@@ -2,6 +2,7 @@ package com.sgtg.backend.infraestructure.output.percistence.entities;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -9,11 +10,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,12 +54,15 @@ public class UserEntity implements UserDetails {
     @Column(nullable = false)
     private String apellidos;
     /** Rol del usuario, puede ser ADMIN o USER */
-    @Enumerated(EnumType.STRING)
-    private RoleEntity role;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "cusuari"), inverseJoinColumns = @JoinColumn(name = "crole"))
+    // @Builder.Default
+    private List<RoleEntity> role; // = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        return role.stream().map(role -> new SimpleGrantedAuthority(role.getTrole().name()))
+                .collect(Collectors.toList());
     }
 
     @Override

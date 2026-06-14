@@ -3,6 +3,9 @@ package com.sgtg.backend.infraestructure.input.auth.dto.input;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 
 @Data
@@ -21,7 +24,7 @@ public class RegisterDTORequest {
     private String nombres;
     /** Apellidos del usuario */
     private String apellidos;
-    /** Rol del usuario, puede ser ADMIN o USER */
-    private String role;
+    /** Roles del usuario @see RoleEntity */
+    private List<String> role;
 
 }

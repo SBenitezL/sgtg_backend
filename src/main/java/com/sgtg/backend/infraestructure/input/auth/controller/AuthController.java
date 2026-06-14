@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sgtg.backend.infraestructure.input.auth.dto.input.LoginDTORequest;
-import com.sgtg.backend.infraestructure.input.auth.dto.input.RegisterDTORequest;
 import com.sgtg.backend.infraestructure.input.auth.dto.output.AuthDTOResponse;
 import com.sgtg.backend.infraestructure.output.auth.AuthService;
 
@@ -23,12 +22,8 @@ public class AuthController {
 
     @PostMapping("login")
     public ResponseEntity<AuthDTOResponse> login(@RequestBody LoginDTORequest loginRequest) {
-        return ResponseEntity.ok(authService.login(loginRequest));
-    }
-
-    @PostMapping("register")
-    public ResponseEntity<AuthDTOResponse> register(@RequestBody RegisterDTORequest registerRequest) {
-        return ResponseEntity.ok(authService.register(registerRequest));
+        return ResponseEntity
+                .ok(new AuthDTOResponse(authService.login(loginRequest.getEmail(), loginRequest.getPassword())));
     }
 
     @GetMapping("")
