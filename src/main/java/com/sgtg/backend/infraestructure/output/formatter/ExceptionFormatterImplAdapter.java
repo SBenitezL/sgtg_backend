@@ -1,49 +1,58 @@
 package com.sgtg.backend.infraestructure.output.formatter;
 
-import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
+import org.springframework.stereotype.Service;
 
+import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
+import com.sgtg.backend.infraestructure.output.exception.own.BadCredentialException;
+import com.sgtg.backend.infraestructure.output.exception.own.BadFormatException;
+import com.sgtg.backend.infraestructure.output.exception.own.BusinessRuleException;
+import com.sgtg.backend.infraestructure.output.exception.own.EntityExistsException;
+import com.sgtg.backend.infraestructure.output.exception.own.EntityNotFoundException;
+import com.sgtg.backend.infraestructure.output.exception.own.NoAccessException;
+import com.sgtg.backend.infraestructure.output.exception.own.NoDataException;
+
+@Service
 public class ExceptionFormatterImplAdapter implements ExceptionFormatterIntPort {
 
     @Override
     public void returnResponseErrorEntityExists(String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'returnResponseErrorEntityExists'");
+        EntityExistsException objException = new EntityExistsException(message);
+        throw objException;
     }
 
     @Override
     public void returnResponseErrorEntityNotFound(String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'returnResponseErrorEntityNotFound'");
+        EntityNotFoundException objException = new EntityNotFoundException(message);
+        throw objException;
     }
 
     @Override
     public void returnResponseBusinessRuleViolated(String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'returnResponseBusinessRuleViolated'");
+        BusinessRuleException objException = new BusinessRuleException(message);
+        throw objException;
     }
 
     @Override
     public void returnResponseBadCredentials(String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'returnResponseBadCredentials'");
+        BadCredentialException objException = new BadCredentialException(message);
+        throw objException;
     }
 
     @Override
     public void returnResponseBadFormat(String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'returnResponseBadFormat'");
+        BadFormatException objException = new BadFormatException(message);
+        throw objException;
     }
 
     @Override
     public void returNoData(String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'returNoData'");
+        NoDataException objException = new NoDataException(message);
+        throw objException;
     }
 
     @Override
     public void returNoAccess(String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'returNoAccess'");
+        NoAccessException objException = new NoAccessException(message);
+        throw objException;
     }
-
 }

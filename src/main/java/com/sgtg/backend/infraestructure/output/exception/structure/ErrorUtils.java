@@ -1,6 +1,6 @@
 package com.sgtg.backend.infraestructure.output.exception.structure;
 
-public class ErrorUtils {
+public final class ErrorUtils {
 
     ErrorUtils() {
 
