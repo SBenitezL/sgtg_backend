@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 import com.sgtg.backend.infraestructure.output.percistence.entities.RoleEntity;
 import com.sgtg.backend.infraestructure.output.percistence.entities.RoleEntity.RoleType;
-import com.sgtg.backend.infraestructure.output.repositories.RoleRepository;
+import com.sgtg.backend.infraestructure.output.percistence.repositories.RoleRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
