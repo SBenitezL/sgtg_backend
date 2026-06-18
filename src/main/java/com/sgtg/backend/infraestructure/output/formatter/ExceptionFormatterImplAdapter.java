@@ -45,13 +45,13 @@ public class ExceptionFormatterImplAdapter implements ExceptionFormatterIntPort 
     }
 
     @Override
-    public void returNoData(String message) {
+    public void returnNoData(String message) {
         NoDataException objException = new NoDataException(message);
         throw objException;
     }
 
     @Override
-    public void returNoAccess(String message) {
+    public void returnNoAccess(String message) {
         NoAccessException objException = new NoAccessException(message);
         throw objException;
     }

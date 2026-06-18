@@ -50,7 +50,7 @@ public interface ExceptionFormatterIntPort {
      * 
      * @param message Mensaje personalizado del error.
      */
-    public void returNoData(String message);
+    public void returnNoData(String message);
 
     /**
      * Devuelve una respuesta de error indicando que el usuario no tiene acceso a la
@@ -58,6 +58,6 @@ public interface ExceptionFormatterIntPort {
      * 
      * @param message Mensaje personalizado del error.
      */
-    public void returNoAccess(String message);
+    public void returnNoAccess(String message);
 
 }
