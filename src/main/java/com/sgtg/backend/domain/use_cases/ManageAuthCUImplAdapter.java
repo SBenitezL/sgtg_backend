@@ -22,11 +22,12 @@ public class ManageAuthCUImplAdapter implements ManageAuthCUIntPort {
     @Override
     public String login(String email, String password) {
         Usuario user = persistenceAuthService.findByEmail(email);
-        if (user == null) {
-            this.exceptionFormatter.returNoData("error.auth.user_not_found");
-        }
-        // TODO Auto-generated method stub
-        return null;
+        if (user == null)
+            this.exceptionFormatter.returnNoData("error.auth.user_not_found");
+        String token = this.authServiceGateway.login(user.getEmail(), password);
+        if (token == null)
+            this.exceptionFormatter.returnResponseBadCredentials("error.auth.invalid_credentials");
+        return token;
     }
 
     @Override
