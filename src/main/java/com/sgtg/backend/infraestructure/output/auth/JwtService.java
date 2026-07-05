@@ -1,11 +1,15 @@
 package com.sgtg.backend.infraestructure.output.auth;
 
 import java.security.Key;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -20,10 +24,15 @@ public class JwtService {
     private String SECRET_KEY;
 
     public String getToken(UserDetails user) {
-        return getToken(new HashMap<>(), user);
+        Map<String, Collection<?>> extraClaims = new HashMap<>();
+        List<String> roles = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        extraClaims.put("roles", roles);
+        return getToken(extraClaims, user);
     }
 
-    private String getToken(Map<String, Object> extraClaims, UserDetails user) {
+    private String getToken(Map<String, Collection<?>> extraClaims, UserDetails user) {
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(user.getUsername())

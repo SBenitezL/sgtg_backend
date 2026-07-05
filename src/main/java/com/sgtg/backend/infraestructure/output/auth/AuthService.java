@@ -8,8 +8,9 @@ import org.springframework.stereotype.Service;
 
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.infraestructure.mapper.MapperUsuarioAuth;
 import com.sgtg.backend.infraestructure.output.percistence.entities.UserEntity;
-import com.sgtg.backend.infraestructure.output.repositories.UserRepository;
+import com.sgtg.backend.infraestructure.output.percistence.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,14 +40,8 @@ public class AuthService implements ManageAuthServiceGatewayIntPort {
     }
 
     public boolean register(Usuario registerRequest) {
-        UserEntity user = UserEntity.builder()
-                .codigo(registerRequest.getCodigo())
-                .email(registerRequest.getEmail())
-                .password(passwordEncoder.encode(registerRequest.getPassword()))
-                // .role(registerRequest.getRole().stream().map().toList())
-                .nombres(registerRequest.getNombres())
-                .apellidos(registerRequest.getApellidos())
-                .build();
+        UserEntity user = MapperUsuarioAuth.toEntity(registerRequest);
+        user.setPassword(this.passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user) != null;
     }
 

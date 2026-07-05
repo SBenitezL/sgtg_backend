@@ -21,4 +21,5 @@ public interface ManageUserGatewayIntPort {
      * @return el usuario encontrado o null si no se encuentra.
      */
     public Usuario findByEmail(String email);
+
 }

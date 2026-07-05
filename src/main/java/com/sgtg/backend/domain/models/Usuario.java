@@ -1,5 +1,9 @@
 package com.sgtg.backend.domain.models;
 
+import java.util.List;
+
+import com.sgtg.backend.domain.utils.CheckString;
+
 public class Usuario {
     /** Identificador único del usuario en el sistema, se genera automáticamente */
     private Long cusuari;
@@ -13,11 +17,11 @@ public class Usuario {
     private String nombres;
     /** Apellidos del usuario */
     private String apellidos;
-    /** Rol del usuario, puede ser ADMIN o USER */
-    private String role;
+    /** Roles del usuario */
+    private List<Role> role;
 
     public Usuario(Long cusuari, String codigo, String email, String password, String nombres, String apellidos,
-            String role) {
+            List<Role> role) {
         this.cusuari = cusuari;
         this.codigo = codigo;
         this.email = email;
@@ -42,11 +46,19 @@ public class Usuario {
         return true;
     }
 
-    public boolean updateRole(String newRole) {
+    public boolean updateRole(List<Role> newRole) {
         if (newRole == null || newRole.isEmpty())
             return false;
         this.role = newRole;
         return true;
+    }
+
+    public void cargarRoles(List<Role> roles) {
+
+        for (Role current : this.role)
+            if (current.getCrole() != null)
+                return;
+        this.role = roles;
     }
 
     public Long getCusuari() {
@@ -73,8 +85,24 @@ public class Usuario {
         return apellidos;
     }
 
-    public String getRole() {
-        return role;
+    public List<Role> getRole() {
+        return this.role;
     }
 
+    public boolean isValidRegister() {
+        if (CheckString.isBlank(this.codigo))
+            return false;
+        if (CheckString.isBlank(this.email))
+            return false;
+        if (CheckString.isBlank(this.password))
+            return false;
+        if (CheckString.isBlank(this.nombres))
+            return false;
+        if (CheckString.isBlank(this.apellidos))
+            return false;
+        if (CheckString.isBlank(this.role.stream().map(role -> role.getTrole()).toList()))
+            return false;
+
+        return true;
+    }
 }

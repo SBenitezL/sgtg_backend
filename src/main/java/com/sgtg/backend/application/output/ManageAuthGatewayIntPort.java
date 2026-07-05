@@ -1,5 +1,8 @@
 package com.sgtg.backend.application.output;
 
+import java.util.List;
+
+import com.sgtg.backend.domain.models.Role;
 import com.sgtg.backend.domain.models.Usuario;
 
 /**
@@ -28,4 +31,22 @@ public interface ManageAuthGatewayIntPort {
      *         excepción.
      */
     public boolean register(Usuario user);
+
+    /**
+     * Verifica si existen usuarios registrados con la información única de correo o
+     * código
+     * 
+     * @param email  email a verificar en el sistema.
+     * @param codigo codigo a verificar en el sistema.
+     * @return true en caso de encontrar conincidencias y false en caso contrario.
+     */
+    public boolean existsByEmailorCodigo(String email, String codigo);
+
+    /**
+     * Recupera la lista de roles solicitados por nombre.
+     * 
+     * @param trole Nombre de los roles a buscar.
+     * @return Lista con los roles encontrados.
+     */
+    public List<Role> findRolesByTrole(List<String> trole);
 }
