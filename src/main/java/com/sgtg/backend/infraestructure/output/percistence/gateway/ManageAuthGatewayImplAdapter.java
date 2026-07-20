@@ -43,7 +43,7 @@ public class ManageAuthGatewayImplAdapter implements ManageAuthGatewayIntPort {
 
     @Override
     public boolean existsByEmailorCodigo(String email, String codigo) {
-        return this.existsByEmailorCodigo(email, codigo);
+        return this.userRepository.existsByEmailOrCodigo(email, codigo);
     }
 
     @Override

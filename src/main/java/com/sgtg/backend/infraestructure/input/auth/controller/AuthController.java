@@ -8,8 +8,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgtg.backend.application.input.auth.ManageAuthCUIntPort;
 import com.sgtg.backend.infraestructure.input.auth.dto.input.LoginDTORequest;
+import com.sgtg.backend.infraestructure.input.auth.dto.input.RegisterDTORequest;
 import com.sgtg.backend.infraestructure.input.auth.dto.output.AuthDTOResponse;
+import com.sgtg.backend.infraestructure.mapper.MapperUsuarioAuth;
 import com.sgtg.backend.infraestructure.output.auth.AuthService;
 
 import lombok.RequiredArgsConstructor;
@@ -19,11 +22,18 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final ManageAuthCUIntPort manageAuthCUImplAdapter;
 
     @PostMapping("login")
     public ResponseEntity<AuthDTOResponse> login(@RequestBody LoginDTORequest loginRequest) {
         return ResponseEntity
                 .ok(new AuthDTOResponse(authService.login(loginRequest.getEmail(), loginRequest.getPassword())));
+    }
+
+    @PostMapping("register")
+    public ResponseEntity<AuthDTOResponse> register(@RequestBody RegisterDTORequest registerRequest) {
+        return ResponseEntity
+                .ok(new AuthDTOResponse(manageAuthCUImplAdapter.register(MapperUsuarioAuth.toDomain(registerRequest))));
     }
 
     @GetMapping("")

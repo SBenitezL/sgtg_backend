@@ -34,7 +34,16 @@ public class ManageAuthCUImplAdapter implements ManageAuthCUIntPort {
     }
 
     @Override
-    public boolean register(Usuario usuario) {
+    public String register(Usuario usuario) {
+        if (!this.saveUser(usuario))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.auth.register.user_already_exists");
+        return this.login(usuario.getEmail(), usuario.getPassword());
+
+    }
+
+    private boolean saveUser(Usuario usuario) {
+        if (this.persistenceAuthService.existsByEmailorCodigo(usuario.getEmail(), usuario.getCodigo()))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.auth.register.user_already_exists");
         if (!usuario.isValidRegister())
             this.exceptionFormatter
                     .returnResponseBusinessRuleViolated("error.auth.register.valid.user.business_rule_violated");

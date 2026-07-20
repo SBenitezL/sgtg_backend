@@ -26,5 +26,5 @@ public interface ManageAuthCUIntPort {
      *         (por ejemplo, si el correo electrónico ya está registrado o si los
      *         datos son inválidos)
      */
-    public boolean register(Usuario usuario);
+    public String register(Usuario usuario);
 }

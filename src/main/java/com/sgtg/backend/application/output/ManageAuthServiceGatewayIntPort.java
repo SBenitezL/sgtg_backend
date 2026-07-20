@@ -19,10 +19,13 @@ public interface ManageAuthServiceGatewayIntPort {
     String login(String email, String password);
 
     /**
-     * Realiza
+     * Realiza el registro de un nuevo usuario en el sistema, devuelve true si el
+     * usuario se registró correctamente, de lo contrario, false o una excepción.
      * 
-     * @param registerRequest
-     * @return
+     * @param registerRequest Objeto que contiene la información del usuario a
+     *                        registrar.
+     * @return true si el registro fue exitoso, de lo contrario, false o una
+     *         excepción.
      */
-    String register(Usuario registerRequest);
+    boolean register(Usuario registerRequest);
 }

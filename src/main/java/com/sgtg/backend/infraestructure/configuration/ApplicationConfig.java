@@ -11,6 +11,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.sgtg.backend.application.input.auth.ManageAuthCUIntPort;
+import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
+import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
+import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
+import com.sgtg.backend.domain.use_cases.ManageAuthCUImplAdapter;
+import com.sgtg.backend.infraestructure.output.auth.AuthService;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -42,6 +48,12 @@ public class ApplicationConfig {
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    @Bean
+    public ManageAuthCUIntPort manageAuthCUIntPort(ManageAuthServiceGatewayIntPort authServiceGateway,
+            ManageAuthGatewayIntPort persistenceAuthService, ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManageAuthCUImplAdapter(authServiceGateway, persistenceAuthService, exceptionFormatter);
     }
 
 }
