@@ -1,0 +1,51 @@
+package com.sgtg.backend.domain.models.trabajo_grado;
+
+import java.util.Optional;
+
+/**
+ * Tipos de documento que se cargan durante el trabajo de grado. Los que
+ * corresponden a un formato del reglamento conocen su letra, y el código
+ * completo depende de la modalidad (ej. PROPUESTA → TI-A o PP-A).
+ */
+public enum TipoDocumento {
+    PROPUESTA("A", false),
+    ANTEPROYECTO(null, false),
+    EVALUACION_ANTEPROYECTO("B", false),
+    REMISION_CONSEJO("C", false),
+    INFORME_MENSUAL("D", true),
+    DOCUMENTO_FINAL("E", false),
+    PAZ_Y_SALVO("F", false),
+    ACTA_SUSTENTACION("G", false),
+    VERSION_DEFINITIVA("H", false),
+    CARTA_ACEPTACION(null, true),
+    RESOLUCION(null, false);
+
+    /** Letra del formato en el reglamento, null si no corresponde a un formato */
+    private final String letraFormato;
+    /** Indica si el documento solo aplica a la modalidad de práctica profesional */
+    private final boolean soloPracticaProfesional;
+
+    TipoDocumento(String letraFormato, boolean soloPracticaProfesional) {
+        this.letraFormato = letraFormato;
+        this.soloPracticaProfesional = soloPracticaProfesional;
+    }
+
+    /**
+     * @param modalidad modalidad del trabajo de grado
+     * @return true si este tipo de documento se usa en la modalidad indicada
+     */
+    public boolean aplicaA(Modalidad modalidad) {
+        return !this.soloPracticaProfesional || modalidad == Modalidad.PRACTICA_PROFESIONAL;
+    }
+
+    /**
+     * @param modalidad modalidad del trabajo de grado
+     * @return código del formato (ej. "TI-A"), vacío si el documento no
+     *         corresponde a un formato o no aplica a la modalidad
+     */
+    public Optional<String> formato(Modalidad modalidad) {
+        if (this.letraFormato == null || !this.aplicaA(modalidad))
+            return Optional.empty();
+        return Optional.of(modalidad.getPrefijoFormato() + "-" + this.letraFormato);
+    }
+}
