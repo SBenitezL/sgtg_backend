@@ -19,4 +19,12 @@ public enum TipoVinculacion {
     public boolean requiereCodirector() {
         return this != PLANTA;
     }
+
+    /**
+     * @return true si la vinculación corresponde a un docente de la universidad
+     *         (de planta o temporal)
+     */
+    public boolean esDocente() {
+        return this != ESTUDIANTE_POSGRADO;
+    }
 }

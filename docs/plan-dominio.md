@@ -9,7 +9,7 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 | Fase | Etapa | Estado |
 |---|---|---|
 | 0 | Base común | Completa |
-| 1 | Propuesta | Pendiente |
+| 1 | Propuesta | Completa |
 | 2 | Anteproyecto y evaluación | Pendiente |
 | 3 | Aprobación del Consejo | Pendiente |
 | 4 | En curso | Pendiente |
@@ -20,6 +20,7 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 
 ## Decisiones de diseño
 
+- **Codirector:** siempre es un docente de la universidad (planta, ocasional o cátedra); nunca un estudiante de posgrado ni una persona externa.
 - **Agregado:** la raíz es `TrabajoGrado`, una clase abstracta con dos subclases: `TrabajoInvestigacion` y `PracticaProfesional`. Cada etapa es una entidad dentro del agregado, y solo el agregado cambia de etapa.
 - **Lenguaje:** los nombres de etapas, calificaciones y motivos siguen el vocabulario del reglamento (APLAZADO, NO_APROBADO, Consejo de Facultad, Comité de Programa, Departamento).
 - **Etapas finales:** `FINALIZADO`, `NO_APROBADO` y `CANCELADO`. La causa se guarda en `MotivoCierre`. No existe `ABANDONADO`: el reglamento trata el vencimiento de plazos como NO APROBADO.
@@ -103,7 +104,9 @@ Detalle de clases, funcionalidades y plan de pruebas: [fase-0-base-comun.md](fas
 | `Asesor` | participantes | Usuario opcional; organización obligatoria si es externo |
 | `CalendarioHabil` | services | `sumarDiasHabiles(desde, dias)` |
 
-## Fase 1: Propuesta (Arts. 9–11, 29, 32–33)
+## Fase 1: Propuesta (Arts. 9–11, 29, 32–33) (completa)
+
+Detalle de clases, reglas, operaciones y plan de pruebas: [fase-1-propuesta.md](fase-1-propuesta.md).
 
 **Reglas**
 - TI admite 1 o 2 estudiantes; PP exactamente 1, con asesor y carta de aceptación (URL).
@@ -111,9 +114,19 @@ Detalle de clases, funcionalidades y plan de pruebas: [fase-0-base-comun.md](fas
 - El Comité de Programa emite el concepto; la fecha límite es de 10 días hábiles.
 - Con correcciones o rechazo, el trabajo sigue en `PROPUESTA` y se radica una nueva versión.
 
-**Clases:** `TrabajoGrado` (abstracta: título, objetivos, modalidad, estudiantes, director, codirector, etapa, historial, motivo de cierre), `TrabajoInvestigacion`, `PracticaProfesional`, `Propuesta` (se reescribe: versiones formato A, decisiones del Comité, `Estado`, fecha límite).
+**Clases**
+- `TrabajoGrado` (abstracta): título, objetivos, estudiantes, director, codirector, asesor, etapa, propuesta, historial y motivo de cierre. Valida al crearse: título y objetivos obligatorios, sin estudiantes repetidos, director obligatorio, codirector de planta del mismo departamento si el director no es de planta, codirector siempre docente de la universidad (no estudiante de posgrado) y distinto del director, y que ni director ni codirector sean estudiantes del trabajo.
+- `TrabajoInvestigacion`: de 1 a 2 estudiantes; asesor opcional.
+- `PracticaProfesional`: un solo estudiante, asesor con organización y `Documento` de tipo `CARTA_ACEPTACION`.
+- `Propuesta`: versiones (formato A), decisiones del Comité, `Estado` de la versión actual y fecha límite del concepto (10 días hábiles). Sus métodos de modificación son de paquete: solo el agregado los invoca.
 
-**Operaciones:** `crear(...)`, `radicarPropuesta(Documento, hoy, calendario)`, `registrarDecisionComite(Decision)`. Una decisión aprobatoria lleva a `ANTEPROYECTO`.
+**Operaciones**
+- Constructores de `TrabajoInvestigacion` y `PracticaProfesional`: el trabajo inicia en `PROPUESTA`.
+- `radicarPropuesta(url, hoy, calendario)`: el agregado crea el `Documento` y numera la versión. Se permite la primera vez, tras correcciones o tras un rechazo.
+- `registrarDecisionComite(decision, responsable, ahora)`: solo acepta decisiones del Comité de Programa con resultado aprobado, con correcciones o rechazado. Si es aprobatoria, avanza a `ANTEPROYECTO` y registra el `CambioEtapa`. El cambio se valida antes de modificar la propuesta, para no dejar el agregado a medias.
+- `Propuesta.conceptoVencido(hoy)`: informativo, para alertas; no cambia la etapa.
+
+**Reconstrucción desde persistencia:** se implementará al terminar el dominio (después de la Fase 8), cuando el estado del agregado esté completo. Ver la sección "Reconstrucción del agregado" en [fase-1-propuesta.md](fase-1-propuesta.md).
 
 ## Fase 2: Anteproyecto y evaluación (Arts. 12–13, 37–38)
 
