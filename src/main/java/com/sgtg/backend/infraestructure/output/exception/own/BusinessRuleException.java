@@ -12,6 +12,13 @@ public class BusinessRuleException extends ManageRunTimeException {
         this.businessRule = businessRule;
     }
 
+    /**
+     * @return clave del mensaje de la regla de negocio incumplida
+     */
+    public String getBusinessRule() {
+        return businessRule;
+    }
+
     @Override
     public String formatException() {
         return String.format(EXCEPTION_FORMAT, errorCode.getCode(), businessRule);

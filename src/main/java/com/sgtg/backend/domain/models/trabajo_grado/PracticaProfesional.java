@@ -36,6 +36,12 @@ public class PracticaProfesional extends TrabajoGrado {
         this.cartaAceptacion = cartaAceptacion;
     }
 
+    /** Reconstruye la práctica con su estado persistido (ver {@link TrabajoGrado#reconstruir}). */
+    PracticaProfesional(DatosTrabajoGrado datos) {
+        super(datos);
+        this.cartaAceptacion = datos.cartaAceptacion();
+    }
+
     @Override
     public Modalidad getModalidad() {
         return Modalidad.PRACTICA_PROFESIONAL;

@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.comun.Decision;
@@ -68,13 +70,13 @@ class EtapaPropuestaTest {
     }
 
     @Test
-    void conCorreccionesSeRadicaUnaNuevaVersionHastaSerAprobada() {
+    void noAprobadaSeRadicaUnaNuevaVersionHastaSerAprobada() {
         trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
-        trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.CON_CORRECCIONES, LUNES.plusDays(3)),
+        trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.NO_APROBADO, LUNES.plusDays(3)),
                 "C001", ahora);
 
         assertEquals(Proceso.PROPUESTA, trabajo.getEtapa());
-        assertEquals(Estado.CON_CORRECCIONES, trabajo.getPropuesta().getEstado());
+        assertEquals(Estado.NO_APROBADO, trabajo.getPropuesta().getEstado());
         assertTrue(trabajo.getHistorial().isEmpty());
 
         trabajo.radicarPropuesta("https://archivos.unicauca.edu.co/tg/propuesta_v2.pdf", LUNES.plusDays(7),
@@ -88,18 +90,25 @@ class EtapaPropuestaTest {
         assertEquals(2, trabajo.getPropuesta().getDecisiones().size());
     }
 
-    @Test
-    void propuestaRechazadaPermiteRadicarUnaNuevaPropuesta() {
+    @ParameterizedTest
+    @EnumSource(value = ResultadoConcepto.class, names = { "APROBADO", "NO_APROBADO" },
+            mode = EnumSource.Mode.EXCLUDE)
+    void elComiteSoloApruebaONoAprueba(ResultadoConcepto resultado) {
         trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
-        trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.RECHAZADO, LUNES.plusDays(3)), "C001",
-                ahora);
-
-        assertEquals(Proceso.PROPUESTA, trabajo.getEtapa());
-        assertEquals(Estado.RECHAZADO, trabajo.getPropuesta().getEstado());
-
-        trabajo.radicarPropuesta("https://archivos.unicauca.edu.co/tg/nueva.pdf", LUNES.plusDays(7), calendario);
+        assertRegla("error.dominio.propuesta.resultado_invalido", () -> trabajo
+                .registrarDecisionComite(decisionComite(resultado, LUNES.plusDays(1)), "C001", ahora));
         assertEquals(Estado.RADICADO, trabajo.getPropuesta().getEstado());
-        assertEquals(2, trabajo.getPropuesta().getVersiones().size());
+        assertTrue(trabajo.getPropuesta().getDecisiones().isEmpty());
+    }
+
+    @Test
+    void laDecisionGuardaLaRutaDelArchivoDeSoporte() {
+        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        Decision decision = new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, "Acta 01",
+                "actas/2026/acta-01.pdf", null, LUNES.plusDays(1));
+        trabajo.registrarDecisionComite(decision, "C001", ahora);
+
+        assertEquals("actas/2026/acta-01.pdf", trabajo.getPropuesta().getDecisiones().get(0).rutaArchivo());
     }
 
     @Test
@@ -118,7 +127,7 @@ class EtapaPropuestaTest {
     @Test
     void soloElComiteDeProgramaEmiteConceptoSobreLaPropuesta() {
         trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
-        Decision delConsejo = new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, "Res. 1", null, LUNES);
+        Decision delConsejo = new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, "Res. 1", null, null, LUNES);
         assertRegla("error.dominio.propuesta.organo_invalido",
                 () -> trabajo.registrarDecisionComite(delConsejo, "C001", ahora));
     }

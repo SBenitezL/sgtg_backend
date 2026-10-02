@@ -5,6 +5,7 @@ import java.util.Set;
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.utils.CheckString;
 
 /**
@@ -19,10 +20,8 @@ public abstract class Participante {
     private Long usuarioId;
     /** Código con el que la persona se presenta frente a la Universidad */
     private String codigo;
-    /** Nombres de la persona */
-    private String nombres;
-    /** Apellidos de la persona */
-    private String apellidos;
+    /** Nombres y apellidos de la persona */
+    private NombrePersona nombre;
     /** Correo electrónico */
     private String email;
 
@@ -36,8 +35,7 @@ public abstract class Participante {
     protected Participante(Usuario usuario, Set<RoleAdmited> rolesPermitidos) {
         this(usuario == null ? null : usuario.getCusuari(),
                 usuario == null ? null : usuario.getCodigo(),
-                usuario == null ? null : usuario.getNombres(),
-                usuario == null ? null : usuario.getApellidos(),
+                nombreDe(usuario),
                 usuario == null ? null : usuario.getEmail(),
                 true);
         if (!tieneAlgunRol(usuario, rolesPermitidos))
@@ -49,18 +47,23 @@ public abstract class Participante {
      *
      * @param usuarioObligatorio indica si el rol exige un usuario del sistema
      */
-    protected Participante(Long usuarioId, String codigo, String nombres, String apellidos, String email,
+    protected Participante(Long usuarioId, String codigo, NombrePersona nombre, String email,
             boolean usuarioObligatorio) {
         if (usuarioObligatorio && usuarioId == null)
             throw new ReglaNegocioException("error.dominio.participante.usuario_obligatorio");
-        if (CheckString.isBlank(codigo) || CheckString.isBlank(nombres) || CheckString.isBlank(apellidos)
-                || CheckString.isBlank(email))
+        if (CheckString.isBlank(codigo) || nombre == null || CheckString.isBlank(email))
             throw new ReglaNegocioException("error.dominio.participante.datos_incompletos");
         this.usuarioId = usuarioId;
         this.codigo = codigo;
-        this.nombres = nombres;
-        this.apellidos = apellidos;
+        this.nombre = nombre;
         this.email = email;
+    }
+
+    private static NombrePersona nombreDe(Usuario usuario) {
+        if (usuario == null)
+            return null;
+        return new NombrePersona(usuario.getPrimerNombre(), usuario.getSegundoNombre(), usuario.getPrimerApellido(),
+                usuario.getSegundoApellido());
     }
 
     private static boolean tieneAlgunRol(Usuario usuario, Set<RoleAdmited> rolesPermitidos) {
@@ -95,7 +98,7 @@ public abstract class Participante {
     }
 
     public String getNombreCompleto() {
-        return this.nombres + " " + this.apellidos;
+        return this.nombre.completo();
     }
 
     public Long getUsuarioId() {
@@ -106,12 +109,8 @@ public abstract class Participante {
         return codigo;
     }
 
-    public String getNombres() {
-        return nombres;
-    }
-
-    public String getApellidos() {
-        return apellidos;
+    public NombrePersona getNombre() {
+        return nombre;
     }
 
     public String getEmail() {

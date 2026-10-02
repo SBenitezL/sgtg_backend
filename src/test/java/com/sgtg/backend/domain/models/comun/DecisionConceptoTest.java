@@ -20,21 +20,21 @@ class DecisionConceptoTest {
     @Test
     void decisionNoAprobatoriaExigeObservaciones() {
         assertThrows(ReglaNegocioException.class,
-                () -> new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.RECHAZADO, "Acta 12", " ", hoy));
-        assertDoesNotThrow(() -> new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null, null, hoy));
+                () -> new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.RECHAZADO, "Acta 12", null, " ", hoy));
+        assertDoesNotThrow(() -> new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null, null, null, hoy));
     }
 
     @Test
     void decisionExigeOrganoResultadoYFecha() {
         assertThrows(ReglaNegocioException.class,
-                () -> new Decision(null, ResultadoConcepto.APROBADO, null, null, hoy));
+                () -> new Decision(null, ResultadoConcepto.APROBADO, null, null, null, hoy));
         assertThrows(ReglaNegocioException.class,
-                () -> new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null, null, null));
+                () -> new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null, null, null, null));
     }
 
     @Test
     void decisionIdentificaOrganoYResultado() {
-        Decision decision = new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, "Res. 100", null, hoy);
+        Decision decision = new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, "Res. 100", null, null, hoy);
         assertTrue(decision.esAprobatoria());
         assertTrue(decision.emitidaPor(Organo.CONSEJO_FACULTAD));
         assertFalse(decision.emitidaPor(Organo.COMITE_PROGRAMA));
@@ -42,8 +42,8 @@ class DecisionConceptoTest {
 
     @Test
     void conceptoAceptaCualquierParticipanteComoEmisor() {
-        Evaluador evaluador = new Evaluador(1L, "D001", "Ana", "Pérez", "ana@unicauca.edu.co");
-        Asesor asesor = new Asesor(2L, "A001", "Luis", "Mora", "luis@empresa.com", "Empresa S.A.S.", true);
+        Evaluador evaluador = new Evaluador(1L, "D001", new NombrePersona("Ana", null, "Pérez", null), "ana@unicauca.edu.co");
+        Asesor asesor = new Asesor(2L, "A001", new NombrePersona("Luis", null, "Mora", null), "luis@empresa.com", "Empresa S.A.S.", true);
 
         Concepto correcciones = new Concepto(evaluador, ResultadoConcepto.CON_CORRECCIONES, "Ajustar objetivos", hoy);
         assertTrue(correcciones.requiereCorrecciones());
@@ -53,7 +53,7 @@ class DecisionConceptoTest {
 
     @Test
     void conceptoNoAprobatorioExigeObservaciones() {
-        Evaluador evaluador = new Evaluador(1L, "D001", "Ana", "Pérez", "ana@unicauca.edu.co");
+        Evaluador evaluador = new Evaluador(1L, "D001", new NombrePersona("Ana", null, "Pérez", null), "ana@unicauca.edu.co");
         assertThrows(ReglaNegocioException.class,
                 () -> new Concepto(evaluador, ResultadoConcepto.CON_CORRECCIONES, "", hoy));
         assertThrows(ReglaNegocioException.class,

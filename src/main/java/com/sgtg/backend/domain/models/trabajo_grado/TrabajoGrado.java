@@ -73,6 +73,41 @@ public abstract class TrabajoGrado {
         this.historial = new ArrayList<>();
     }
 
+    /**
+     * Reconstruye el trabajo con su estado persistido, sin aplicar las reglas de
+     * creación. Solo para las subclases; desde fuera se usa
+     * {@link #reconstruir(DatosTrabajoGrado)}.
+     */
+    protected TrabajoGrado(DatosTrabajoGrado datos) {
+        this.id = datos.id();
+        this.titulo = datos.titulo();
+        this.objetivos = new ArrayList<>(datos.objetivos());
+        this.estudiantes = new ArrayList<>(datos.estudiantes());
+        this.director = datos.director();
+        this.codirector = datos.codirector();
+        this.asesor = datos.asesor();
+        this.etapa = datos.etapa();
+        this.propuesta = new Propuesta(datos.propuesta());
+        this.historial = new ArrayList<>(datos.historial());
+        this.motivoCierre = datos.motivoCierre();
+    }
+
+    /**
+     * Reconstruye un trabajo de grado guardado, según su modalidad. Lo usa la
+     * infraestructura al leer de la base de datos; no vuelve a aplicar las
+     * reglas de creación (ej. si el director pasó a planta después de la
+     * asignación, no se exige de nuevo el codirector).
+     *
+     * @param datos estado persistido del trabajo
+     * @return el trabajo de grado en su etapa actual
+     */
+    public static TrabajoGrado reconstruir(DatosTrabajoGrado datos) {
+        return switch (datos.modalidad()) {
+            case TRABAJO_DE_INVESTIGACION -> new TrabajoInvestigacion(datos);
+            case PRACTICA_PROFESIONAL -> new PracticaProfesional(datos);
+        };
+    }
+
     private static void validarDescripcion(String titulo, List<String> objetivos) {
         if (CheckString.isBlank(titulo))
             throw new ReglaNegocioException("error.dominio.trabajo_grado.titulo_obligatorio");
@@ -167,6 +202,28 @@ public abstract class TrabajoGrado {
             throw new ReglaNegocioException("error.dominio.proceso.transicion_invalida");
         this.historial.add(cambio);
         this.etapa = cambio.destino();
+    }
+
+    /**
+     * @param usuarioId usuario a verificar
+     * @return true si el usuario es el director del trabajo
+     */
+    public boolean esDirector(Long usuarioId) {
+        return usuarioId != null && usuarioId.equals(this.director.getUsuarioId());
+    }
+
+    /**
+     * @param usuarioId usuario a verificar
+     * @return true si el usuario es estudiante, director, codirector o asesor del
+     *         trabajo
+     */
+    public boolean participa(Long usuarioId) {
+        if (usuarioId == null)
+            return false;
+        return esDirector(usuarioId)
+                || (this.codirector != null && usuarioId.equals(this.codirector.getUsuarioId()))
+                || (this.asesor != null && usuarioId.equals(this.asesor.getUsuarioId()))
+                || this.estudiantes.stream().anyMatch(estudiante -> usuarioId.equals(estudiante.getUsuarioId()));
     }
 
     /**

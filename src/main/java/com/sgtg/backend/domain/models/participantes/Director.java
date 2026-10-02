@@ -5,6 +5,7 @@ import java.util.Set;
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 
 /**
  * Docente (o estudiante de posgrado) que dirige o codirige un trabajo de
@@ -34,9 +35,9 @@ public class Director extends Participante {
     }
 
     /** Reconstruye el director con datos ya persistidos. */
-    public Director(Long usuarioId, String codigo, String nombres, String apellidos, String email,
+    public Director(Long usuarioId, String codigo, NombrePersona nombre, String email,
             TipoVinculacion tipoVinculacion, Departamento departamento) {
-        super(usuarioId, codigo, nombres, apellidos, email, true);
+        super(usuarioId, codigo, nombre, email, true);
         if (tipoVinculacion == null || departamento == null)
             throw new ReglaNegocioException("error.dominio.director.vinculacion_obligatoria");
         this.tipoVinculacion = tipoVinculacion;

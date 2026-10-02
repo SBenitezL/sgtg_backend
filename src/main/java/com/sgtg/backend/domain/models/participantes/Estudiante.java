@@ -5,6 +5,7 @@ import java.util.Set;
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 
 /**
  * Persona natural que se encuentra inscrita en la Universidad y está en la
@@ -27,9 +28,9 @@ public class Estudiante extends Participante {
     }
 
     /** Reconstruye el estudiante con datos ya persistidos. */
-    public Estudiante(Long usuarioId, String codigo, String nombres, String apellidos, String email,
+    public Estudiante(Long usuarioId, String codigo, NombrePersona nombre, String email,
             Programa programa) {
-        super(usuarioId, codigo, nombres, apellidos, email, true);
+        super(usuarioId, codigo, nombre, email, true);
         if (programa == null)
             throw new ReglaNegocioException("error.dominio.estudiante.programa_obligatorio");
         this.programa = programa;

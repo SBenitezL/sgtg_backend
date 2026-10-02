@@ -14,8 +14,8 @@ import com.sgtg.backend.domain.services.CalendarioHabil;
 /**
  * Etapa de propuesta del trabajo de grado (Arts. 10-11, 32-33): la idea se
  * radica en el formato A ante el Comité de Programa, que dispone de 10 días
- * hábiles para emitir su concepto. Con correcciones o rechazo se radica una
- * nueva versión hasta que la propuesta sea aprobada.
+ * hábiles para emitir su concepto: APROBADO o NO_APROBADO. Si no es aprobada se
+ * radica una nueva versión hasta que lo sea.
  *
  * Sus operaciones que modifican el estado solo son accesibles desde el
  * paquete, para que únicamente {@link TrabajoGrado} las invoque.
@@ -25,17 +25,30 @@ public class Propuesta {
     public static final int DIAS_HABILES_CONCEPTO_COMITE = 10;
 
     /** Versiones radicadas del documento de propuesta (formato A) */
-    private final List<Documento> versiones = new ArrayList<>();
+    private final List<Documento> versiones;
     /** Decisiones del Comité de Programa sobre cada versión */
-    private final List<Decision> decisiones = new ArrayList<>();
+    private final List<Decision> decisiones;
     /** Estado de la versión actual, null mientras no se haya radicado */
     private Estado estado;
     /** Fecha límite para que el Comité emita concepto sobre la versión actual */
     private LocalDate fechaLimiteConcepto;
 
+    /** Crea una propuesta sin radicar. */
+    Propuesta() {
+        this(DatosPropuesta.vacia());
+    }
+
+    /** Reconstruye la propuesta con su estado persistido. */
+    Propuesta(DatosPropuesta datos) {
+        this.versiones = new ArrayList<>(datos.versiones());
+        this.decisiones = new ArrayList<>(datos.decisiones());
+        this.estado = datos.estado();
+        this.fechaLimiteConcepto = datos.fechaLimiteConcepto();
+    }
+
     /**
-     * Radica una nueva versión de la propuesta. Se permite la primera vez,
-     * tras correcciones o tras un rechazo del Comité.
+     * Radica una nueva versión de la propuesta. Se permite la primera vez o
+     * después de que el Comité no la apruebe.
      *
      * @param url        ubicación del documento en el servidor de archivos
      * @param hoy        fecha de radicación
@@ -57,7 +70,7 @@ public class Propuesta {
     /**
      * Registra el concepto del Comité de Programa sobre la versión actual.
      *
-     * @param decision decisión del Comité: aprobada, con correcciones o rechazada
+     * @param decision decisión del Comité: APROBADO o NO_APROBADO
      */
     void registrarDecision(Decision decision) {
         if (decision == null)
@@ -70,8 +83,7 @@ public class Propuesta {
             throw new ReglaNegocioException("error.dominio.propuesta.fecha_decision_invalida");
         Estado resultado = switch (decision.resultado()) {
             case APROBADO -> Estado.APROBADO;
-            case CON_CORRECCIONES -> Estado.CON_CORRECCIONES;
-            case RECHAZADO -> Estado.RECHAZADO;
+            case NO_APROBADO -> Estado.NO_APROBADO;
             default -> throw new ReglaNegocioException("error.dominio.propuesta.resultado_invalido");
         };
         this.decisiones.add(decision);
@@ -79,12 +91,11 @@ public class Propuesta {
     }
 
     /**
-     * Una propuesta rechazada es una entrega cerrada; la nueva versión inicia una
-     * entrega nueva (regla del negocio: se presenta una nueva propuesta).
+     * Una propuesta no aprobada es una entrega cerrada; la nueva versión inicia
+     * una entrega nueva (regla del negocio: se presenta una nueva propuesta).
      */
     private boolean puedeRadicar() {
-        return this.estado == null || this.estado == Estado.RECHAZADO
-                || this.estado.puedeCambiarA(Estado.RADICADO);
+        return this.estado == null || this.estado == Estado.NO_APROBADO;
     }
 
     /**

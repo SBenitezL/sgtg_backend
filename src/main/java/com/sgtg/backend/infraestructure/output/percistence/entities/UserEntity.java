@@ -8,8 +8,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,7 +34,8 @@ import lombok.NoArgsConstructor;
  * una tabla en la base de datos.
  */
 @Entity
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(name = "uk_users_documento", columnNames = {
+        "tipo_documento", "numero_documento" }))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -41,18 +47,29 @@ public class UserEntity implements UserDetails {
     private Long cusuari;
     /** Código con el que el usuario se presenta frente a la Universidad. */
     private String codigo;
+    /** Tipo de documento de identidad */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoDocumentoIdentidad tipoDocumento;
+    /** Número del documento de identidad, solo dígitos */
+    @Column(nullable = false)
+    private String numeroDocumento;
     /** Correo electrónico del usuario, es único y no puede ser nulo */
     @Column(unique = true, nullable = false)
     private String email;
     /** Contraseña del usuario, no puede ser nula */
     @Column(nullable = false)
     private String password;
-    /** Nombres del usuario */
+    /** Primer nombre del usuario */
     @Column(nullable = false)
-    private String nombres;
-    /** Apellidos del usuario */
+    private String primerNombre;
+    /** Segundo nombre del usuario, opcional */
+    private String segundoNombre;
+    /** Primer apellido del usuario */
     @Column(nullable = false)
-    private String apellidos;
+    private String primerApellido;
+    /** Segundo apellido del usuario, opcional */
+    private String segundoApellido;
     /** Rol del usuario, puede ser ADMIN o USER */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "cusuari"), inverseJoinColumns = @JoinColumn(name = "crole"))

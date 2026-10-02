@@ -1,5 +1,6 @@
 package com.sgtg.backend.infraestructure.output.percistence.gateway;
 
+import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -44,6 +45,11 @@ public class ManageAuthGatewayImplAdapter implements ManageAuthGatewayIntPort {
     @Override
     public boolean existsByEmailorCodigo(String email, String codigo) {
         return this.userRepository.existsByEmailOrCodigo(email, codigo);
+    }
+
+    @Override
+    public boolean existsByDocumento(TipoDocumentoIdentidad tipoDocumento, String numeroDocumento) {
+        return this.userRepository.existsByTipoDocumentoAndNumeroDocumento(tipoDocumento, numeroDocumento);
     }
 
     @Override

@@ -25,7 +25,9 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 - **Lenguaje:** los nombres de etapas, calificaciones y motivos siguen el vocabulario del reglamento (APLAZADO, NO_APROBADO, Consejo de Facultad, Comité de Programa, Departamento).
 - **Etapas finales:** `FINALIZADO`, `NO_APROBADO` y `CANCELADO`. La causa se guarda en `MotivoCierre`. No existe `ABANDONADO`: el reglamento trata el vencimiento de plazos como NO APROBADO.
 - **Un NO APROBADO cierra el trabajo.** El estudiante inicia un trabajo de grado **nuevo**; no se vuelve a `PROPUESTA` dentro del mismo.
-- **Propuesta con correcciones o rechazada:** sigue en `PROPUESTA` y se radica una nueva versión.
+- **Concepto sobre la propuesta:** el Comité de Programa solo emite `APROBADO` o `NO_APROBADO`. Si no es aprobada, sigue en `PROPUESTA` y se radica una nueva versión.
+- **Decisiones con archivo de soporte:** toda `Decision` puede llevar la ruta de un archivo (ej. el acta) en el servidor de archivos (`rutaArchivo`, opcional).
+- **Usuarios:** tienen tipo de documento (`TipoDocumentoIdentidad`: CC, CE, PASAPORTE) y número de documento (solo dígitos, único junto con el tipo), y el nombre separado en primer y segundo nombre, primer y segundo apellido (los segundos son opcionales). Los participantes copian el nombre como `NombrePersona`.
 - **Sin devoluciones manuales.** Solo se retrocede cuando el reglamento lo indica: correcciones del anteproyecto, Consejo que no aprueba y reanudación tras una suspensión.
 - **Participantes por composición, no herencia de `Usuario`.** Una persona puede cumplir roles distintos en trabajos distintos (director en uno, evaluador en otro). Cada `Participante` referencia al usuario por `usuarioId` y copia los datos que necesita el dominio, nunca la contraseña.
   - Al crearse desde un `Usuario` se valida que tenga un rol del sistema permitido: `Estudiante` ← ESTUDIANTE; `Director` ← DOCENTE, DIRECTOR o CODIRECTOR; `Evaluador` ← DOCENTE, EVALUADOR o JURADO; `Asesor` ← ASESOR o DOCENTE.
@@ -91,9 +93,10 @@ Detalle de clases, funcionalidades y plan de pruebas: [fase-0-base-comun.md](fas
 | `Estado` | trabajo_grado | Estado de una entrega dentro de una etapa |
 | `CambioEtapa` | trabajo_grado | Historial; solo acepta transiciones válidas |
 | `Organo` | comun | `COMITE_PROGRAMA`, `DEPARTAMENTO`, `CONSEJO_FACULTAD` |
-| `Decision` | comun | Decisión de un órgano (resultado, acta, observaciones, fecha) |
+| `Decision` | comun | Decisión de un órgano (resultado, acta, ruta del archivo de soporte, observaciones, fecha) |
+| `NombrePersona` | comun | Primer y segundo nombre, primer y segundo apellido (los segundos opcionales) |
 | `Concepto` | comun | Opinión de una persona (evaluador, jurado o asesor) |
-| `ResultadoConcepto` | comun | `APROBADO`, `CON_CORRECCIONES`, `RECHAZADO` |
+| `ResultadoConcepto` | comun | `APROBADO`, `CON_CORRECCIONES`, `RECHAZADO`, `EVALUADO`, `NO_APROBADO`. La propuesta solo admite `APROBADO` y `NO_APROBADO` |
 | `Periodo` | comun | Rango de fechas: `desde`, `extenderMeses`, `diasRestantes`, `reanudarDesde`, `haTranscurrido`, `vencido` |
 | `TipoVinculacion` | participantes | `PLANTA`, `OCASIONAL`, `CATEDRA`, `ESTUDIANTE_POSGRADO`; `requiereCodirector()` (Art. 6) |
 | `Departamento`, `Programa` | participantes | Catálogos (`record` id + nombre); se registran como datos, no como enum |
@@ -112,7 +115,7 @@ Detalle de clases, reglas, operaciones y plan de pruebas: [fase-1-propuesta.md](
 - TI admite 1 o 2 estudiantes; PP exactamente 1, con asesor y carta de aceptación (URL).
 - Si el director no es de planta, se exige un codirector de planta del mismo departamento (`Director.esDePlantaDe`).
 - El Comité de Programa emite el concepto; la fecha límite es de 10 días hábiles.
-- Con correcciones o rechazo, el trabajo sigue en `PROPUESTA` y se radica una nueva versión.
+- El Comité emite `APROBADO` o `NO_APROBADO`. Si no es aprobada, el trabajo sigue en `PROPUESTA` y se radica una nueva versión.
 
 **Clases**
 - `TrabajoGrado` (abstracta): título, objetivos, estudiantes, director, codirector, asesor, etapa, propuesta, historial y motivo de cierre. Valida al crearse: título y objetivos obligatorios, sin estudiantes repetidos, director obligatorio, codirector de planta del mismo departamento si el director no es de planta, codirector siempre docente de la universidad (no estudiante de posgrado) y distinto del director, y que ni director ni codirector sean estudiantes del trabajo.
@@ -122,11 +125,11 @@ Detalle de clases, reglas, operaciones y plan de pruebas: [fase-1-propuesta.md](
 
 **Operaciones**
 - Constructores de `TrabajoInvestigacion` y `PracticaProfesional`: el trabajo inicia en `PROPUESTA`.
-- `radicarPropuesta(url, hoy, calendario)`: el agregado crea el `Documento` y numera la versión. Se permite la primera vez, tras correcciones o tras un rechazo.
-- `registrarDecisionComite(decision, responsable, ahora)`: solo acepta decisiones del Comité de Programa con resultado aprobado, con correcciones o rechazado. Si es aprobatoria, avanza a `ANTEPROYECTO` y registra el `CambioEtapa`. El cambio se valida antes de modificar la propuesta, para no dejar el agregado a medias.
+- `radicarPropuesta(url, hoy, calendario)`: el agregado crea el `Documento` y numera la versión. Se permite la primera vez o después de un `NO_APROBADO`.
+- `registrarDecisionComite(decision, responsable, ahora)`: solo acepta decisiones del Comité de Programa con resultado `APROBADO` o `NO_APROBADO`; la decisión puede llevar la ruta del archivo de soporte. Si es aprobatoria, avanza a `ANTEPROYECTO` y registra el `CambioEtapa`. El cambio se valida antes de modificar la propuesta, para no dejar el agregado a medias.
 - `Propuesta.conceptoVencido(hoy)`: informativo, para alertas; no cambia la etapa.
 
-**Reconstrucción desde persistencia:** se implementará al terminar el dominio (después de la Fase 8), cuando el estado del agregado esté completo. Ver la sección "Reconstrucción del agregado" en [fase-1-propuesta.md](fase-1-propuesta.md).
+**Reconstrucción desde persistencia:** implementada al iniciar la persistencia con `DatosTrabajoGrado` / `DatosPropuesta` y `TrabajoGrado.reconstruir(...)`, que no repite las reglas de creación. Cada fase que agregue estado al agregado debe ampliar esos records, la entidad `TrabajoGradoEntity` y `MapperTrabajoGrado`.
 
 ## Fase 2: Anteproyecto y evaluación (Arts. 12–13, 37–38)
 

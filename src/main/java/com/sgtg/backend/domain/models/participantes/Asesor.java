@@ -5,6 +5,7 @@ import java.util.Set;
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.utils.CheckString;
 
 /**
@@ -34,9 +35,9 @@ public class Asesor extends Participante {
      * asesor externo puede no tener cuenta en el sistema; en ese caso el código
      * puede ser su documento de identidad.
      */
-    public Asesor(Long usuarioId, String codigo, String nombres, String apellidos, String email, String organizacion,
+    public Asesor(Long usuarioId, String codigo, NombrePersona nombre, String email, String organizacion,
             boolean externo) {
-        super(usuarioId, codigo, nombres, apellidos, email, false);
+        super(usuarioId, codigo, nombre, email, false);
         this.organizacion = validarOrganizacion(organizacion, externo);
         this.externo = externo;
     }

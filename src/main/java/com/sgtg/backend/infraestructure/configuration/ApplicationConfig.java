@@ -1,5 +1,8 @@
 package com.sgtg.backend.infraestructure.configuration;
 
+import java.time.Clock;
+import java.time.ZoneId;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +19,22 @@ import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
 import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
 import com.sgtg.backend.domain.use_cases.ManageAuthCUImplAdapter;
+import com.sgtg.backend.domain.use_cases.ManageUsuarioCUImplAdapter;
+import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
+import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
+import com.sgtg.backend.application.input.calendario.ManageCalendarioCUIntPort;
+import com.sgtg.backend.application.input.catalogo.ManageCatalogoCUIntPort;
+import com.sgtg.backend.application.input.perfil.ManagePerfilCUIntPort;
+import com.sgtg.backend.application.output.ManageCalendarioGatewayIntPort;
+import com.sgtg.backend.application.output.ManageCatalogoGatewayIntPort;
+import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
+import com.sgtg.backend.domain.use_cases.ManageCalendarioCUImplAdapter;
+import com.sgtg.backend.domain.use_cases.ManageCatalogoCUImplAdapter;
+import com.sgtg.backend.domain.use_cases.ManagePerfilCUImplAdapter;
+import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntPort;
+import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
+import com.sgtg.backend.domain.services.CalendarioHabil;
+import com.sgtg.backend.domain.use_cases.ManageTrabajoGradoCUImplAdapter;
 import com.sgtg.backend.infraestructure.output.auth.AuthService;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.UserRepository;
 
@@ -54,6 +73,49 @@ public class ApplicationConfig {
     public ManageAuthCUIntPort manageAuthCUIntPort(ManageAuthServiceGatewayIntPort authServiceGateway,
             ManageAuthGatewayIntPort persistenceAuthService, ExceptionFormatterIntPort exceptionFormatter) {
         return new ManageAuthCUImplAdapter(authServiceGateway, persistenceAuthService, exceptionFormatter);
+    }
+
+    @Bean
+    public ManageUsuarioCUIntPort manageUsuarioCUIntPort(ManageUserGatewayIntPort userGateway,
+            ManageAuthGatewayIntPort authGateway, ManageAuthServiceGatewayIntPort authServiceGateway,
+            ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManageUsuarioCUImplAdapter(userGateway, authGateway, authServiceGateway, exceptionFormatter);
+    }
+
+    /**
+     * Reloj de la aplicación en la zona horaria de Colombia. Los casos de uso lo
+     * usan para obtener la fecha actual que pasan al dominio.
+     */
+    @Bean
+    public Clock clock() {
+        return Clock.system(ZoneId.of("America/Bogota"));
+    }
+
+    @Bean
+    public ManageCatalogoCUIntPort manageCatalogoCUIntPort(ManageCatalogoGatewayIntPort catalogoGateway,
+            ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManageCatalogoCUImplAdapter(catalogoGateway, exceptionFormatter);
+    }
+
+    @Bean
+    public ManagePerfilCUIntPort managePerfilCUIntPort(ManagePerfilGatewayIntPort perfilGateway,
+            ManageCatalogoGatewayIntPort catalogoGateway, ManageUserGatewayIntPort userGateway,
+            ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManagePerfilCUImplAdapter(perfilGateway, catalogoGateway, userGateway, exceptionFormatter);
+    }
+
+    @Bean
+    public ManageCalendarioCUIntPort manageCalendarioCUIntPort(ManageCalendarioGatewayIntPort calendarioGateway,
+            ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManageCalendarioCUImplAdapter(calendarioGateway, exceptionFormatter);
+    }
+
+    @Bean
+    public ManageTrabajoGradoCUIntPort manageTrabajoGradoCUIntPort(ManageTrabajoGradoGatewayIntPort trabajoGateway,
+            ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
+            CalendarioHabil calendario, Clock clock, ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, calendario, clock,
+                exceptionFormatter);
     }
 
 }

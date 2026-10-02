@@ -1,5 +1,6 @@
 package com.sgtg.backend.infraestructure.output.percistence.repositories;
 
+import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,5 +15,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByEmail(String email);
 
     boolean existsByEmailOrCodigo(String email, String codigo);
+
+    boolean existsByTipoDocumentoAndNumeroDocumento(TipoDocumentoIdentidad tipoDocumento, String numeroDocumento);
 
 }

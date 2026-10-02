@@ -1,7 +1,6 @@
 package com.sgtg.backend.infraestructure.mapper;
 
 import com.sgtg.backend.domain.models.Usuario;
-import com.sgtg.backend.infraestructure.input.auth.dto.input.RegisterDTORequest;
 import com.sgtg.backend.infraestructure.output.percistence.entities.UserEntity;
 
 /**
@@ -24,36 +23,22 @@ public abstract class MapperUsuarioAuth {
         return new Usuario(
                 userEntity.getCusuari(),
                 userEntity.getCodigo(),
+                userEntity.getTipoDocumento(),
+                userEntity.getNumeroDocumento(),
                 userEntity.getEmail(),
                 userEntity.getPassword(),
-                userEntity.getNombres(),
-                userEntity.getApellidos(),
+                userEntity.getPrimerNombre(),
+                userEntity.getSegundoNombre(),
+                userEntity.getPrimerApellido(),
+                userEntity.getSegundoApellido(),
                 userEntity.getRole().stream().map(role -> role.getTrole().name()).toList().stream()
                         .map(MapperRoleAuth::toDomain).toList());
     }
 
     /**
-     * Mapea un RegisterDTORequest a un Usuario del dominio. Si el
-     * RegisterDTORequest es null, devuelve null.
-     * 
-     * @param registerRequest El RegisterDTORequest a mapear
-     * @return Un Usuario del dominio con los datos del RegisterDTORequest, o null
-     *         si el RegisterDTORequest es null
+     * Mapea un Usuario del dominio a su entidad. Si el usuario es null, devuelve
+     * null.
      */
-    public static Usuario toDomain(RegisterDTORequest registerRequest) {
-        if (registerRequest == null) {
-            return null;
-        }
-        return new Usuario(
-                null,
-                registerRequest.getCodigo(),
-                registerRequest.getEmail(),
-                registerRequest.getPassword(),
-                registerRequest.getNombres(),
-                registerRequest.getApellidos(),
-                registerRequest.getRole().stream().map(MapperRoleAuth::toDomain).toList());
-    }
-
     public static UserEntity toEntity(Usuario usuario) {
         if (usuario == null) {
             return null;
@@ -61,10 +46,14 @@ public abstract class MapperUsuarioAuth {
         return UserEntity.builder()
                 .cusuari(usuario.getCusuari())
                 .codigo(usuario.getCodigo())
+                .tipoDocumento(usuario.getTipoDocumento())
+                .numeroDocumento(usuario.getNumeroDocumento())
                 .email(usuario.getEmail())
                 .password(usuario.getPassword())
-                .nombres(usuario.getNombres())
-                .apellidos(usuario.getApellidos())
+                .primerNombre(usuario.getPrimerNombre())
+                .segundoNombre(usuario.getSegundoNombre())
+                .primerApellido(usuario.getPrimerApellido())
+                .segundoApellido(usuario.getSegundoApellido())
                 .role(usuario.getRole().stream().map(MapperRoleAuth::toEntity).toList())
                 .build();
     }

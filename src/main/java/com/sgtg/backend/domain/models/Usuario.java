@@ -9,25 +9,38 @@ public class Usuario {
     private Long cusuari;
     /** Código con el que el usuario se presenta frente a la Universidad. */
     private String codigo;
+    /** Tipo de documento de identidad */
+    private TipoDocumentoIdentidad tipoDocumento;
+    /** Número del documento de identidad, solo dígitos */
+    private String numeroDocumento;
     /** Correo electrónico del usuario, es único y no puede ser nulo */
     private String email;
     /** Contraseña del usuario, no puede ser nula */
     private String password;
-    /** Nombres del usuario */
-    private String nombres;
-    /** Apellidos del usuario */
-    private String apellidos;
+    /** Primer nombre, obligatorio */
+    private String primerNombre;
+    /** Segundo nombre, opcional */
+    private String segundoNombre;
+    /** Primer apellido, obligatorio */
+    private String primerApellido;
+    /** Segundo apellido, opcional */
+    private String segundoApellido;
     /** Roles del usuario */
     private List<Role> role;
 
-    public Usuario(Long cusuari, String codigo, String email, String password, String nombres, String apellidos,
-            List<Role> role) {
+    public Usuario(Long cusuari, String codigo, TipoDocumentoIdentidad tipoDocumento, String numeroDocumento,
+            String email, String password, String primerNombre, String segundoNombre, String primerApellido,
+            String segundoApellido, List<Role> role) {
         this.cusuari = cusuari;
         this.codigo = codigo;
+        this.tipoDocumento = tipoDocumento;
+        this.numeroDocumento = numeroDocumento;
         this.email = email;
         this.password = password;
-        this.nombres = nombres;
-        this.apellidos = apellidos;
+        this.primerNombre = primerNombre;
+        this.segundoNombre = CheckString.isBlank(segundoNombre) ? null : segundoNombre;
+        this.primerApellido = primerApellido;
+        this.segundoApellido = CheckString.isBlank(segundoApellido) ? null : segundoApellido;
         this.role = role;
     }
 
@@ -69,6 +82,14 @@ public class Usuario {
         return codigo;
     }
 
+    public TipoDocumentoIdentidad getTipoDocumento() {
+        return tipoDocumento;
+    }
+
+    public String getNumeroDocumento() {
+        return numeroDocumento;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -77,30 +98,47 @@ public class Usuario {
         return password;
     }
 
-    public String getNombres() {
-        return nombres;
+    public String getPrimerNombre() {
+        return primerNombre;
     }
 
-    public String getApellidos() {
-        return apellidos;
+    public String getSegundoNombre() {
+        return segundoNombre;
+    }
+
+    public String getPrimerApellido() {
+        return primerApellido;
+    }
+
+    public String getSegundoApellido() {
+        return segundoApellido;
     }
 
     public List<Role> getRole() {
         return this.role;
     }
 
+    /**
+     * @return true si el número de documento tiene solo dígitos
+     */
+    public boolean isNumeroDocumentoValido() {
+        return !CheckString.isBlank(this.numeroDocumento) && this.numeroDocumento.matches("\\d+");
+    }
+
     public boolean isValidRegister() {
         if (CheckString.isBlank(this.codigo))
+            return false;
+        if (this.tipoDocumento == null || !isNumeroDocumentoValido())
             return false;
         if (CheckString.isBlank(this.email))
             return false;
         if (CheckString.isBlank(this.password))
             return false;
-        if (CheckString.isBlank(this.nombres))
+        if (CheckString.isBlank(this.primerNombre))
             return false;
-        if (CheckString.isBlank(this.apellidos))
+        if (CheckString.isBlank(this.primerApellido))
             return false;
-        if (CheckString.isBlank(this.role.stream().map(role -> role.getTrole()).toList()))
+        if (this.role == null || CheckString.isBlank(this.role.stream().map(role -> role.getTrole()).toList()))
             return false;
 
         return true;

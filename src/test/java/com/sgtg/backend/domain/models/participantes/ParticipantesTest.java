@@ -13,9 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.Role;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
+import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
 import com.sgtg.backend.domain.models.Usuario;
 
 class ParticipantesTest {
@@ -26,8 +28,8 @@ class ParticipantesTest {
 
     private static Usuario usuario(Long id, String codigo, RoleAdmited... roles) {
         List<Role> listaRoles = Arrays.stream(roles).map(rol -> new Role(null, rol)).toList();
-        return new Usuario(id, codigo, codigo.toLowerCase() + "@unicauca.edu.co", "secreto", "Nombre", "Apellido",
-                listaRoles);
+        return new Usuario(id, codigo, TipoDocumentoIdentidad.CC, "10" + id, codigo.toLowerCase() + "@unicauca.edu.co",
+                "secreto", "Nombre", "Segundo", "Apellido", null, listaRoles);
     }
 
     private Director director(Long id, TipoVinculacion vinculacion, Departamento departamento) {
@@ -43,6 +45,8 @@ class ParticipantesTest {
         assertEquals(10L, estudiante.getUsuarioId());
         assertEquals("E001", estudiante.getCodigo());
         assertEquals("e001@unicauca.edu.co", estudiante.getEmail());
+        assertEquals(new NombrePersona("Nombre", "Segundo", "Apellido", null), estudiante.getNombre());
+        assertEquals("Nombre Segundo Apellido", estudiante.getNombreCompleto());
         assertEquals(ingSistemas, estudiante.getPrograma());
         assertTrue(estudiante.tieneUsuario());
     }
@@ -106,29 +110,29 @@ class ParticipantesTest {
     void usuarioEsObligatorioExceptoParaElAsesor() {
         assertThrows(ReglaNegocioException.class, () -> new Evaluador((Usuario) null));
         assertThrows(ReglaNegocioException.class,
-                () -> new Evaluador(null, "D001", "Ana", "Pérez", "ana@unicauca.edu.co"));
+                () -> new Evaluador(null, "D001", new NombrePersona("Ana", null, "Pérez", null), "ana@unicauca.edu.co"));
         assertThrows(ReglaNegocioException.class,
-                () -> new Estudiante(null, "E001", "Luis", "Gómez", "luis@unicauca.edu.co", ingSistemas));
+                () -> new Estudiante(null, "E001", new NombrePersona("Luis", null, "Gómez", null), "luis@unicauca.edu.co", ingSistemas));
 
-        Asesor externo = new Asesor(null, "1061000000", "Luis", "Mora", "luis@empresa.com", "Empresa S.A.S.", true);
+        Asesor externo = new Asesor(null, "1061000000", new NombrePersona("Luis", null, "Mora", null), "luis@empresa.com", "Empresa S.A.S.", true);
         assertFalse(externo.tieneUsuario());
     }
 
     @Test
     void mismaPersonaSinUsuarioSeComparaPorCodigo() {
-        Asesor externo = new Asesor(null, "1061000000", "Luis", "Mora", "luis@empresa.com", "Empresa S.A.S.", true);
-        Asesor mismo = new Asesor(null, "1061000000", "Luis", "Mora", "luis@empresa.com", "Empresa S.A.S.", true);
+        Asesor externo = new Asesor(null, "1061000000", new NombrePersona("Luis", null, "Mora", null), "luis@empresa.com", "Empresa S.A.S.", true);
+        Asesor mismo = new Asesor(null, "1061000000", new NombrePersona("Luis", null, "Mora", null), "luis@empresa.com", "Empresa S.A.S.", true);
         assertTrue(externo.esMismaPersona(mismo));
     }
 
     @Test
     void datosObligatoriosDeParticipantesYPerfiles() {
         assertThrows(ReglaNegocioException.class,
-                () -> new Evaluador(1L, " ", "Ana", "Pérez", "ana@unicauca.edu.co"));
+                () -> new Evaluador(1L, " ", new NombrePersona("Ana", null, "Pérez", null), "ana@unicauca.edu.co"));
         assertThrows(ReglaNegocioException.class,
-                () -> new Estudiante(1L, "E001", "Luis", "Gómez", "luis@unicauca.edu.co", null));
+                () -> new Estudiante(1L, "E001", new NombrePersona("Luis", null, "Gómez", null), "luis@unicauca.edu.co", null));
         assertThrows(ReglaNegocioException.class,
-                () -> new Director(1L, "D001", "Ana", "Pérez", "ana@unicauca.edu.co", TipoVinculacion.PLANTA, null));
+                () -> new Director(1L, "D001", new NombrePersona("Ana", null, "Pérez", null), "ana@unicauca.edu.co", TipoVinculacion.PLANTA, null));
         assertThrows(ReglaNegocioException.class, () -> new PerfilDocente(1L, null, sistemas));
         assertThrows(ReglaNegocioException.class, () -> new PerfilEstudiante(null, ingSistemas));
         assertThrows(ReglaNegocioException.class, () -> new Departamento(null, "Sistemas"));
@@ -149,7 +153,7 @@ class ParticipantesTest {
     @Test
     void asesorExternoExigeOrganizacion() {
         assertThrows(ReglaNegocioException.class,
-                () -> new Asesor(1L, "A001", "Luis", "Mora", "luis@empresa.com", " ", true));
+                () -> new Asesor(1L, "A001", new NombrePersona("Luis", null, "Mora", null), "luis@empresa.com", " ", true));
         assertDoesNotThrow(() -> new Asesor(usuario(2L, "A002", RoleAdmited.ASESOR), null, false));
     }
 }

@@ -152,6 +152,21 @@ class CreacionTrabajoGradoTest {
     }
 
     @Test
+    void identificaAlDirectorYALosParticipantes() {
+        TrabajoInvestigacion trabajo = new TrabajoInvestigacion(null, "Título", OBJETIVOS,
+                List.of(estudiante(10L), estudiante(11L)), director(1L, TipoVinculacion.CATEDRA, SISTEMAS),
+                directorPlanta(2L), null);
+
+        assertTrue(trabajo.esDirector(1L));
+        assertFalse(trabajo.esDirector(2L));
+        assertTrue(trabajo.participa(1L));
+        assertTrue(trabajo.participa(2L));
+        assertTrue(trabajo.participa(11L));
+        assertFalse(trabajo.participa(99L));
+        assertFalse(trabajo.participa(null));
+    }
+
+    @Test
     void lasListasExpuestasNoSePuedenModificar() {
         TrabajoInvestigacion trabajo = DatosPrueba.investigacion();
         assertThrows(UnsupportedOperationException.class, () -> trabajo.getEstudiantes().clear());

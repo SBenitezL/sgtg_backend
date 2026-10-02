@@ -1,0 +1,1172 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "SGTG - Pruebas de integración (Fases 0 y 1)",
+  "collectionId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+  "dateExported": "2026-10-02T02:23:57.000Z",
+  "version": "1.2",
+  "folders": [
+    {
+      "_id": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "1. Preparación (administrador)",
+      "containerId": "",
+      "created": "2026-10-02T02:23:57.000Z",
+      "sortNum": 10000
+    },
+    {
+      "_id": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "2. Flujo de la propuesta",
+      "containerId": "",
+      "created": "2026-10-02T02:23:57.000Z",
+      "sortNum": 20000
+    },
+    {
+      "_id": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "3. Permisos y reglas de negocio",
+      "containerId": "",
+      "created": "2026-10-02T02:23:57.000Z",
+      "sortNum": 30000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "5018d2a6-d601-4a37-8b2b-bc2b4c75631d",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Login administrador",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 10000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{adminToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+        "form": []
+      },
+      "docs": "Usa el administrador inicial definido en el archivo .env (SGTG_ADMIN_EMAIL / SGTG_ADMIN_PASSWORD)."
+    },
+    {
+      "_id": "56c78e49-e9e4-4b50-97e4-14500591bbac",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Crear departamento",
+      "url": "{{baseUrl}}/api/v1/sgtg/catalogos/departamentos",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{departamentoId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nombre\": \"Sistemas {{#guid}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "8a05087a-7723-47f9-993c-a3c3cf2f4628",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Crear programa",
+      "url": "{{baseUrl}}/api/v1/sgtg/catalogos/programas",
+      "method": "POST",
+      "sortNum": 30000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{programaId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nombre\": \"Ingeniería de Sistemas {{#guid}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "425213c4-0efc-4fb8-a769-392c40710efa",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Crear docente (director)",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 40000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "DOCENTE"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{docenteId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{docenteEmail}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{docenteCodigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{docenteDocumento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"D-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"d.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Docente\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"DOCENTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "cf6f277f-1d3a-44af-b9e6-0c1966f3c401",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Crear estudiante",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 50000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "ESTUDIANTE"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{estudianteId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{estudianteEmail}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{estudianteCodigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{estudianteDocumento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"E-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"e.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Estudiante\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "69cc6f95-e538-49e5-a37c-ee21356c9ade",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Crear miembro del comité",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 60000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "COMITE"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{comiteId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{comiteEmail}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{comiteCodigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{comiteDocumento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"C-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"c.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Comite\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"COMITE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "61159c27-2034-4b37-9e9d-07b2643fa4a6",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Perfil docente (planta)",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/docentes/{{docenteId}}",
+      "method": "PUT",
+      "sortNum": 70000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoVinculacion",
+          "action": "equal",
+          "value": "PLANTA"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"tipoVinculacion\": \"PLANTA\",\n  \"departamentoId\": \"{{departamentoId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "c94d6dba-c1e5-45ce-a8f1-e639faa8a4f9",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "242b8dd5-cc12-4a0e-8db2-06bc4634f4a0",
+      "name": "Perfil estudiante",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/estudiantes/{{estudianteId}}",
+      "method": "PUT",
+      "sortNum": 80000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"programaId\": \"{{programaId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "edfb6dcd-ca19-42b5-8012-aacf0969dce3",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Login docente",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 90000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{docenteToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{docenteEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "9d182067-3dc8-4dd1-8dae-59d953a018d5",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Crear trabajo de investigación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
+      "method": "POST",
+      "sortNum": 100000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.director.usuarioId",
+          "action": "equal",
+          "value": "{{docenteId}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.modalidad",
+          "action": "equal",
+          "value": "TRABAJO_DE_INVESTIGACION"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{trabajoId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado\",\n  \"objetivos\": [\n    \"Diseñar un sistema para gestionar el proceso de trabajo de grado\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "El docente autenticado queda como director (Art. 10)."
+    },
+    {
+      "_id": "44bf7ff2-52a7-4b1e-93d6-04cd9017bf8d",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Radicar propuesta (versión 1)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "POST",
+      "sortNum": 110000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.estado",
+          "action": "equal",
+          "value": "RADICADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].version",
+          "action": "equal",
+          "value": "1"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].formato",
+          "action": "equal",
+          "value": "TI-A"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/propuesta_v1.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "5a22708d-5493-42ab-ab1b-ac3c37f88bd9",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Login comité",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 120000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{comiteToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{comiteEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "bd8e572d-b394-436a-bfc6-f195a8303c61",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Comité: no aprobar propuesta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta/decisiones",
+      "method": "POST",
+      "sortNum": 130000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.estado",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.decisiones[0].rutaArchivo",
+          "action": "equal",
+          "value": "actas/2026/acta-01.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"acta\": \"Acta 01\",\n  \"rutaArchivo\": \"actas/2026/acta-01.pdf\",\n  \"observaciones\": \"Precisar los objetivos\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      },
+      "docs": "Si no se aprueba, el trabajo sigue en PROPUESTA y espera una nueva versión. La decisión guarda la ruta del archivo de soporte."
+    },
+    {
+      "_id": "b0f90aba-06ed-47df-9e15-91e07e7a89a6",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Radicar propuesta (versión 2)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "POST",
+      "sortNum": 140000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.estado",
+          "action": "equal",
+          "value": "RADICADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[1].version",
+          "action": "equal",
+          "value": "2"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/propuesta_v2.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "5329ab55-c978-4ce6-9715-af6c29933e16",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Comité: aprobar propuesta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta/decisiones",
+      "method": "POST",
+      "sortNum": 150000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "ANTEPROYECTO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[0].origen",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[0].destino",
+          "action": "equal",
+          "value": "ANTEPROYECTO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[0].responsable",
+          "action": "equal",
+          "value": "{{comiteCodigo}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 02\",\n  \"rutaArchivo\": \"actas/2026/acta-02.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      },
+      "docs": "Al aprobarse, el trabajo avanza a ANTEPROYECTO y el cambio queda en el historial."
+    },
+    {
+      "_id": "242ab1b0-04fc-45ad-9800-7be4c4fef265",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Login estudiante",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 160000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{estudianteToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{estudianteEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "b7caf3f8-e063-4848-8398-da7f5a9a231d",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Estudiante consulta su trabajo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}",
+      "method": "GET",
+      "sortNum": 170000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.estudiantes[0].usuarioId",
+          "action": "equal",
+          "value": "{{estudianteId}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "ANTEPROYECTO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.estudiantes[0].nombreCompleto",
+          "action": "equal",
+          "value": "Usuario Estudiante Prueba"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "12bd99c6-43be-4a23-97f0-acbd9ca285ba",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "da5065c5-bad4-4cea-bde7-46bc35a695a4",
+      "name": "Estudiante lista sus trabajos",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/mis-trabajos",
+      "method": "GET",
+      "sortNum": 180000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].id",
+          "action": "equal",
+          "value": "{{trabajoId}}"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "f0d7cd8b-cd6f-47db-bbbf-240351a60b0b",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Sin token responde 401",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me",
+      "method": "GET",
+      "sortNum": 190000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ]
+    },
+    {
+      "_id": "fed960af-b80b-4269-b869-f0a7131b29f3",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Estudiante no puede crear trabajos (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
+      "method": "POST",
+      "sortNum": 200000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"T\",\n  \"objetivos\": [\n    \"O\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "5efe6384-3bbe-4b1b-8700-534498ff2f07",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Estudiante no puede crear usuarios (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 210000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"X-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"x.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Administrador\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ADMINISTRADOR\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "8d01497b-0406-417f-a521-9455c57a8ee8",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Solo el director radica la propuesta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "POST",
+      "sortNum": 220000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/otra.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "c5ccfd7d-086b-4f6c-8e8f-16c0a9237f72",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "No se radica fuera de la etapa de propuesta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "POST",
+      "sortNum": 230000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0004"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La operación no está permitida en la etapa actual del trabajo de grado."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/otra.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "El trabajo ya está en ANTEPROYECTO: la regla del dominio responde 400 con el mensaje en español."
+    },
+    {
+      "_id": "9d195d72-feee-4c77-9f94-91dbe9717643",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Director de cátedra sin codirector (Art. 6)",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/docentes/{{docenteId}}",
+      "method": "PUT",
+      "sortNum": 240000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"tipoVinculacion\": \"CATEDRA\",\n  \"departamentoId\": \"{{departamentoId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "Cambia la vinculación del docente a cátedra para probar la regla del codirector."
+    },
+    {
+      "_id": "d5337d70-015a-4670-b49b-0934451ce895",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Crear trabajo sin codirector de planta (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
+      "method": "POST",
+      "sortNum": 250000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "Si el director no es de planta, se requiere un codirector de planta del mismo departamento."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Otro trabajo\",\n  \"objetivos\": [\n    \"Objetivo\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "a258fba4-fe96-4914-9700-b140046b9a14",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Rol inexistente al crear usuario (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 260000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "Uno o más roles indicados no existen."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"R-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"r.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"No_Existe\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"NO_EXISTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "e0f74d9d-6b7d-4e24-a9e9-9fb9804d95c9",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Número de documento con letras (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 270000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.numeroDocumento",
+          "action": "equal",
+          "value": "El número de documento solo puede contener dígitos"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"L-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"10A23\",\n  \"email\": \"l.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Estudiante\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "8def910b-9f27-4dd6-9d2c-0fc3c532aabf",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "Documento repetido (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 280000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0002"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"R-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{docenteDocumento}}\",\n  \"email\": \"r.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Estudiante\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "Mismo tipo y número de documento que el docente creado en la preparación."
+    },
+    {
+      "_id": "31527b1a-ff74-49bd-b359-60cf153bc3fa",
+      "colId": "fdb29191-15df-4ce1-bfb4-73de154a7002",
+      "containerId": "08d915c4-f30a-4b1a-b152-f0bdaa204d68",
+      "name": "No existe registro público (404)",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/register",
+      "method": "POST",
+      "sortNum": 290000,
+      "created": "2026-10-02T02:23:57.000Z",
+      "modified": "2026-10-02T02:23:57.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "404"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"X-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"x.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Administrador\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ADMINISTRADOR\"\n  ]\n}",
+        "form": []
+      }
+    }
+  ],
+  "ref": "SGTG"
+}

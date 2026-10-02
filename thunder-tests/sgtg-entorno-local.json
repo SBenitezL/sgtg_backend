@@ -1,0 +1,22 @@
+{
+  "clientName": "Thunder Client",
+  "environmentName": "SGTG local",
+  "environmentId": "dcf44932-d706-481a-a59f-528a59a67fe7",
+  "dateExported": "2026-10-02T02:23:57.000Z",
+  "version": "1.2",
+  "ref": "SGTG",
+  "variables": [
+    {
+      "name": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "name": "adminEmail",
+      "value": "admin@unicauca.edu.co"
+    },
+    {
+      "name": "adminPassword",
+      "value": "Admin123*"
+    }
+  ]
+}

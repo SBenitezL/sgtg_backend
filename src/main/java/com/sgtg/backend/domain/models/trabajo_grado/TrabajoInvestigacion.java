@@ -29,6 +29,11 @@ public class TrabajoInvestigacion extends TrabajoGrado {
             throw new ReglaNegocioException("error.dominio.investigacion.cantidad_estudiantes");
     }
 
+    /** Reconstruye el trabajo con su estado persistido (ver {@link TrabajoGrado#reconstruir}). */
+    TrabajoInvestigacion(DatosTrabajoGrado datos) {
+        super(datos);
+    }
+
     @Override
     public Modalidad getModalidad() {
         return Modalidad.TRABAJO_DE_INVESTIGACION;

@@ -14,6 +14,7 @@ class EstadoTest {
             "EN_REVISION, CON_CORRECCIONES",
             "EN_REVISION, APROBADO",
             "EN_REVISION, RECHAZADO",
+            "EN_REVISION, NO_APROBADO",
             "CON_CORRECCIONES, RADICADO"
     })
     void permiteCambiosValidos(Estado origen, Estado destino) {
@@ -25,7 +26,9 @@ class EstadoTest {
             "RADICADO, APROBADO",
             "CON_CORRECCIONES, APROBADO",
             "APROBADO, EN_REVISION",
-            "RECHAZADO, RADICADO"
+            "RECHAZADO, RADICADO",
+            "NO_APROBADO, RADICADO",
+            "RADICADO, NO_APROBADO"
     })
     void rechazaCambiosInvalidos(Estado origen, Estado destino) {
         assertFalse(origen.puedeCambiarA(destino));

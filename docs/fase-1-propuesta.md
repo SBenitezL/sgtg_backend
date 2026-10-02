@@ -85,20 +85,20 @@ Que el codirector no pueda ser externo lo garantiza el modelo: `Director` siempr
 Radica una versión de la propuesta ante el Comité de Programa.
 - Solo en la etapa `PROPUESTA`.
 - **El agregado crea el `Documento`** (tipo `PROPUESTA`) y numera la versión: quien llama solo envía la URL del archivo ya cargado al servidor.
-- Se permite la primera vez, después de correcciones y después de un rechazo. **No** se permite mientras haya una versión pendiente de concepto ni si la propuesta ya fue aprobada.
+- Se permite la primera vez y después de un `NO_APROBADO`. **No** se permite mientras haya una versión pendiente de concepto ni si la propuesta ya fue aprobada.
 - Calcula la fecha límite del Comité con `CalendarioHabil` (10 días hábiles).
 
 ### `registrarDecisionComite(decision, responsable, ahora)`
 Registra el concepto del Comité de Programa sobre la versión actual.
 - Solo en la etapa `PROPUESTA`, y debe haber una versión pendiente de concepto.
 - La decisión debe ser del **Comité de Programa** (`Organo.COMITE_PROGRAMA`) y con fecha igual o posterior a la radicación.
-- Resultados aceptados: `APROBADO`, `CON_CORRECCIONES` y `RECHAZADO`. Si `ResultadoConcepto` incorpora otros valores, la propuesta los rechaza (`propuesta.resultado_invalido`).
+- Resultados aceptados: **solo `APROBADO` y `NO_APROBADO`**. Cualquier otro valor de `ResultadoConcepto` se rechaza (`propuesta.resultado_invalido`).
+- La decisión puede llevar la ruta del archivo de soporte (`rutaArchivo`, por ejemplo el acta) en el servidor de archivos.
 
 | Resultado | Estado de la propuesta | Etapa del trabajo |
 |---|---|---|
 | `APROBADO` | `APROBADO` | Avanza a `ANTEPROYECTO` y se registra el `CambioEtapa` con el responsable y la fecha |
-| `CON_CORRECCIONES` | `CON_CORRECCIONES` | Sigue en `PROPUESTA`; se espera una nueva versión |
-| `RECHAZADO` | `RECHAZADO` | Sigue en `PROPUESTA`; se presenta una nueva propuesta (decisión del proyecto) |
+| `NO_APROBADO` | `NO_APROBADO` | Sigue en `PROPUESTA`; se radica una nueva versión |
 
 ### `Propuesta.conceptoVencido(hoy)`
 Indica si el Comité superó su plazo de 10 días hábiles mientras la versión sigue pendiente. **Es informativo**, para alertas: el reglamento no establece una consecuencia, así que no cambia la etapa.
@@ -108,8 +108,8 @@ Indica si el Comité superó su plazo de 10 días hábiles mientras la versión 
 ```
             radicar                          decisión del Comité
 (sin radicar) ──────► RADICADO ─────────────────────────────────┬──► APROBADO ──► trabajo pasa a ANTEPROYECTO
-                         ▲                                      ├──► CON_CORRECCIONES ─┐
-                         │            radicar nueva versión     └──► RECHAZADO ────────┤
+                         ▲                                      └──► NO_APROBADO ──────┐
+                         │            radicar nueva versión                            │
                          └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -120,15 +120,18 @@ Indica si el Comité superó su plazo de 10 días hábiles mientras la versión 
 - **Validar antes de modificar.** En `registrarDecisionComite`, si la decisión es aprobatoria, el `CambioEtapa` se construye (y por lo tanto se valida) **antes** de modificar la propuesta. Si falla (por ejemplo, sin responsable), ni la propuesta ni la etapa cambian. El agregado nunca queda a medias.
 - **El historial solo registra transiciones válidas.** `CambioEtapa` rechaza saltos que `Proceso` no permite, y `aplicarCambio` verifica además que el origen coincida con la etapa actual.
 - **Las etapas solo se modifican desde el agregado.** Los métodos que cambian `Propuesta` son de paquete, y las listas que expone el agregado (`getEstudiantes()`, `getObjetivos()`, `getHistorial()`, `getVersiones()`…) no se pueden modificar desde fuera.
-- **Rechazo como entrega nueva.** En `Estado`, `RECHAZADO` es final para *esa entrega*. La siguiente radicación inicia una entrega nueva, como versión siguiente del mismo documento. Así se cumple la regla de presentar una nueva propuesta sin forzar la máquina de estados.
+- **No aprobada como entrega nueva.** En `Estado`, `NO_APROBADO` es final para *esa entrega*. La siguiente radicación inicia una entrega nueva, como versión siguiente del mismo documento. Así se cumple la regla de presentar una nueva propuesta sin forzar la máquina de estados.
 - **`EN_REVISION`** no tiene todavía una operación propia: al registrar una decisión se acepta que la versión esté `RADICADO` o `EN_REVISION`. Si más adelante el Comité necesita marcar que inició la revisión, se agrega la operación.
 
-### Reconstrucción del agregado (pendiente, fuera de esta fase)
-Para guardar y recuperar un `TrabajoGrado` de la base de datos, los mappers de infraestructura necesitarán reconstruirlo con su etapa, historial y etapas ya cargadas, **sin repetir las reglas de creación**. Por ejemplo, no se debe exigir de nuevo un codirector si el docente ya cambió a planta.
+### Reconstrucción del agregado
+Para guardar y recuperar un `TrabajoGrado` de la base de datos, los mappers lo reconstruyen con su etapa, historial y etapas ya cargadas **sin repetir las reglas de creación**. Por ejemplo, no se exige de nuevo un codirector si el docente ya cambió a planta.
 
-**No se implementa en esta fase**, porque el estado del agregado crece en cada fase (anteproyecto, ejecución, prórroga, sustentación…). Hacerlo ahora obligaría a reescribirlo en cada una. Se hará al terminar el dominio, o al empezar la persistencia del trabajo de grado. La propuesta es una de estas dos opciones:
-- **Un constructor de paquete** que reciba el estado completo.
-- **Un record con el estado** (por ejemplo, `DatosTrabajoGrado`) y un método `reconstruir(...)`, para no tener constructores con muchos parámetros.
+Se implementó al empezar la persistencia:
+- Los records `DatosTrabajoGrado` y `DatosPropuesta` contienen el estado persistido.
+- `TrabajoGrado.reconstruir(datos)` crea la subclase según la modalidad, con constructores de paquete que no validan las reglas de creación.
+- `ReconstruccionTrabajoGradoTest` (4 pruebas) verifica la reconstrucción y que el trabajo reconstruido siga operando.
+
+Cada fase que agregue estado al agregado debe ampliar estos records, la entidad `TrabajoGradoEntity` y `MapperTrabajoGrado`.
 
 ---
 
@@ -167,8 +170,9 @@ Para guardar y recuperar un `TrabajoGrado` de la base de datos, los mappers de i
 |---|---|
 | `radicarCreaLaPrimeraVersionYCalculaElPlazoDelComite` | Versión 1, tipo `PROPUESTA`, estado `RADICADO`, fecha límite del 16-mar-2026 (10 días hábiles desde el lunes 2-mar) |
 | `propuestaAprobadaAvanzaAAnteproyectoYQuedaEnElHistorial` | Etapa `ANTEPROYECTO` y `CambioEtapa` con origen, destino, responsable y fecha |
-| `conCorreccionesSeRadicaUnaNuevaVersionHastaSerAprobada` | Ciclo completo con 2 versiones y 2 decisiones; el historial solo registra el avance final |
-| `propuestaRechazadaPermiteRadicarUnaNuevaPropuesta` | Tras un rechazo se radica la versión 2 |
+| `noAprobadaSeRadicaUnaNuevaVersionHastaSerAprobada` | Ciclo completo con 2 versiones y 2 decisiones; el historial solo registra el avance final |
+| `elComiteSoloApruebaONoAprueba` | Cada resultado distinto de `APROBADO`/`NO_APROBADO` se rechaza y la propuesta queda sin cambios |
+| `laDecisionGuardaLaRutaDelArchivoDeSoporte` | La ruta del archivo queda en la decisión |
 | `noSeRadicaMientrasHayUnaVersionPendienteDeConcepto` | Doble radicación sin decisión |
 | `noHayDecisionSinPropuestaRadicada` | Decisión antes de radicar |
 | `soloElComiteDeProgramaEmiteConceptoSobreLaPropuesta` | Decisión del Consejo de Facultad |
@@ -193,6 +197,5 @@ Para guardar y recuperar un `TrabajoGrado` de la base de datos, los mappers de i
 Con esta fase el dominio tiene **119 pruebas**: 95 de la Fase 0 y 24 de la Fase 1 (12 de creación y 12 de propuesta).
 
 ### Qué no se prueba en esta fase
-- **Reconstrucción desde persistencia:** no existe todavía (ver arriba).
 - **Quién puede ejecutar cada operación** (por ejemplo, que solo el director radique): por ahora lo controlará el caso de uso con los roles del sistema. Si se decide llevarlo al dominio, se agregará como regla del agregado.
 - **Elegibilidad del estudiante y límite de 5 trabajos por director:** quedan para la versión 2.

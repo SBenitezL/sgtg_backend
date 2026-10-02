@@ -14,7 +14,9 @@ public enum Estado {
     /** La entrega fue aprobada. */
     APROBADO,
     /** La entrega fue rechazada. */
-    RECHAZADO;
+    RECHAZADO,
+    /** La entrega no fue aprobada; se puede radicar una nueva versión. */
+    NO_APROBADO;
 
     /**
      * Indica si desde este estado se puede pasar al estado destino.
@@ -27,9 +29,10 @@ public enum Estado {
             return false;
         return switch (this) {
             case RADICADO -> destino == EN_REVISION;
-            case EN_REVISION -> destino == CON_CORRECCIONES || destino == APROBADO || destino == RECHAZADO;
+            case EN_REVISION -> destino == CON_CORRECCIONES || destino == APROBADO || destino == RECHAZADO
+                    || destino == NO_APROBADO;
             case CON_CORRECCIONES -> destino == RADICADO;
-            case APROBADO, RECHAZADO -> false;
+            case APROBADO, RECHAZADO, NO_APROBADO -> false;
         };
     }
 
@@ -37,6 +40,6 @@ public enum Estado {
      * @return true si el estado no admite más cambios
      */
     public boolean esFinal() {
-        return this == APROBADO || this == RECHAZADO;
+        return this == APROBADO || this == RECHAZADO || this == NO_APROBADO;
     }
 }

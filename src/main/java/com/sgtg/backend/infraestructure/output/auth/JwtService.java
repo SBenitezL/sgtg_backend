@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -40,6 +41,30 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    /**
+     * Obtiene el usuario (correo) al que pertenece el token. Lanza una
+     * {@link io.jsonwebtoken.JwtException} si el token es inválido o expiró.
+     */
+    public String getUsernameFromToken(String token) {
+        return getClaims(token).getSubject();
+    }
+
+    /**
+     * @return true si el token pertenece al usuario y no ha expirado
+     */
+    public boolean isTokenValid(String token, UserDetails user) {
+        Claims claims = getClaims(token);
+        return user.getUsername().equals(claims.getSubject()) && claims.getExpiration().after(new Date());
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     private Key getKey() {

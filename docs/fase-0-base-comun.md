@@ -55,7 +55,7 @@ El dominio solo define el contrato. La implementación con los festivos de Colom
 
 | Etapa | Significado | Artículo |
 |---|---|---|
-| `PROPUESTA` | Idea presentada al Comité de Programa; se queda aquí con correcciones o rechazo | 10–11 |
+| `PROPUESTA` | Idea presentada al Comité de Programa; se queda aquí si no es aprobada | 10–11 |
 | `ANTEPROYECTO` | Radicación ante el Departamento | 12–13 |
 | `EVALUACION` | Dos evaluadores revisan; solo aprueban o piden correcciones | 13 |
 | `APROBACION_CONSEJO` | Espera la resolución del Consejo de Facultad | 14 |
@@ -134,11 +134,11 @@ Una versión de un archivo cargado al servidor de archivos. **El dominio solo gu
 - `nuevaVersion(url, fecha)`: crea la siguiente versión con el mismo tipo; se usa tras correcciones.
 
 ### `Estado` (enum)
-Estado de **una entrega dentro de una etapa**. Es independiente de la etapa del trabajo: por ejemplo, el trabajo puede estar en `PROPUESTA` con la propuesta `CON_CORRECCIONES`.
+Estado de **una entrega dentro de una etapa**. Es independiente de la etapa del trabajo: por ejemplo, el trabajo puede estar en `PROPUESTA` con la propuesta `NO_APROBADO`.
 
-`RADICADO → EN_REVISION → CON_CORRECCIONES | APROBADO | RECHAZADO`, y `CON_CORRECCIONES → RADICADO` al radicar una nueva versión.
+`RADICADO → EN_REVISION → CON_CORRECCIONES | APROBADO | RECHAZADO | NO_APROBADO`, y `CON_CORRECCIONES → RADICADO` al radicar una nueva versión.
 
-**Funcionalidades:** `puedeCambiarA(destino)` y `esFinal()` (`APROBADO` y `RECHAZADO`).
+**Funcionalidades:** `puedeCambiarA(destino)` y `esFinal()` (`APROBADO`, `RECHAZADO` y `NO_APROBADO`).
 
 ### `CambioEtapa` (record)
 Una entrada del historial del trabajo: `(origen, destino, fecha y hora, responsable, observación)`.
@@ -154,7 +154,7 @@ Una entrada del historial del trabajo: `(origen, destino, fecha y hora, responsa
 ### Composición en lugar de herencia
 Los participantes **no heredan de `Usuario`**. Una misma persona puede ser directora de un trabajo, evaluadora de otro y jurado de un tercero. Por eso cada participante representa **el papel de una persona en un trabajo concreto**:
 - Referencia al usuario por `usuarioId`.
-- Copia los datos que el dominio necesita (código, nombres, apellidos, correo).
+- Copia los datos que el dominio necesita (código, nombre como `NombrePersona` y correo).
 - **Nunca copia la contraseña.**
 
 ```
@@ -173,7 +173,7 @@ Usuario (autenticación) ──usuarioId──► Participante ─┬─ Estudia
 - `esMismaPersona(otro)`: compara por `usuarioId`, o por código si alguno no tiene cuenta. Sirve para reglas como "el evaluador no puede ser el director".
 - `tieneUsuario()`, `getNombreCompleto()` y los getters.
 
-**Reglas:** código, nombres, apellidos y correo son obligatorios, y el usuario es obligatorio salvo para el asesor.
+**Reglas:** código, nombre (primer nombre y primer apellido) y correo son obligatorios, y el usuario es obligatorio salvo para el asesor.
 
 | Clase | Roles del sistema permitidos | Usuario | Datos propios |
 |---|---|---|---|
@@ -223,7 +223,7 @@ Rango de fechas `(inicio, fin)`, con fin posterior al inicio. Es la base del con
 ### `Organo` (enum) y `Decision` (record)
 `Organo`: `COMITE_PROGRAMA`, `DEPARTAMENTO` y `CONSEJO_FACULTAD`.
 
-`Decision (organo, resultado, acta, observaciones, fecha)` registra lo que decide un órgano colegiado. Por ejemplo: el concepto del Comité sobre la propuesta, o la resolución del Consejo sobre el anteproyecto, la prórroga, la suspensión o la cancelación.
+`Decision (organo, resultado, acta, rutaArchivo, observaciones, fecha)` registra lo que decide un órgano colegiado. Por ejemplo: el concepto del Comité sobre la propuesta, o la resolución del Consejo sobre el anteproyecto, la prórroga, la suspensión o la cancelación.
 - **Reglas:** órgano, resultado y fecha son obligatorios. Si no es aprobatoria, las observaciones son obligatorias. El acta es opcional.
 - **Funcionalidades:** `esAprobatoria()` y `emitidaPor(organo)`.
 
@@ -232,7 +232,7 @@ Rango de fechas `(inicio, fin)`, con fin posterior al inicio. Es la base del con
 - **Reglas:** emisor, resultado y fecha son obligatorios. Si no es aprobatorio, las observaciones son obligatorias.
 - **Funcionalidades:** `esAprobado()` y `requiereCorrecciones()`.
 
-`ResultadoConcepto`: `APROBADO`, `CON_CORRECCIONES` y `RECHAZADO`. Lo comparten `Decision` y `Concepto`. La sustentación tendrá su propia `Calificacion` en la Fase 7.
+`ResultadoConcepto`: `APROBADO`, `CON_CORRECCIONES`, `RECHAZADO`, `EVALUADO` y `NO_APROBADO`. La propuesta solo admite `APROBADO` y `NO_APROBADO`. Lo comparten `Decision` y `Concepto`. La sustentación tendrá su propia `Calificacion` en la Fase 7.
 
 ---
 

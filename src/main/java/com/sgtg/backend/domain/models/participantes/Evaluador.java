@@ -4,6 +4,7 @@ import java.util.Set;
 
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 
 /**
  * Profesor o estudiante de posgrado asignado para evaluar el anteproyecto o
@@ -20,7 +21,7 @@ public class Evaluador extends Participante {
     }
 
     /** Reconstruye el evaluador con datos ya persistidos. */
-    public Evaluador(Long usuarioId, String codigo, String nombres, String apellidos, String email) {
-        super(usuarioId, codigo, nombres, apellidos, email, true);
+    public Evaluador(Long usuarioId, String codigo, NombrePersona nombre, String email) {
+        super(usuarioId, codigo, nombre, email, true);
     }
 }

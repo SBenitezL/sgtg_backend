@@ -3,6 +3,7 @@ package com.sgtg.backend.domain.models.trabajo_grado;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.models.comun.Decision;
 import com.sgtg.backend.domain.models.comun.Organo;
 import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
@@ -28,12 +29,12 @@ final class DatosPrueba {
     }
 
     static Estudiante estudiante(long usuarioId) {
-        return new Estudiante(usuarioId, "E" + usuarioId, "Estudiante", "Prueba",
+        return new Estudiante(usuarioId, "E" + usuarioId, new NombrePersona("Estudiante", null, "Prueba", null),
                 "e" + usuarioId + "@unicauca.edu.co", ING_SISTEMAS);
     }
 
     static Director director(long usuarioId, TipoVinculacion vinculacion, Departamento departamento) {
-        return new Director(usuarioId, "D" + usuarioId, "Docente", "Prueba", "d" + usuarioId + "@unicauca.edu.co",
+        return new Director(usuarioId, "D" + usuarioId, new NombrePersona("Docente", null, "Prueba", null), "d" + usuarioId + "@unicauca.edu.co",
                 vinculacion, departamento);
     }
 
@@ -42,7 +43,7 @@ final class DatosPrueba {
     }
 
     static Asesor asesorOrganizacion() {
-        return new Asesor(null, "1061000000", "Asesor", "Empresa", "asesor@empresa.com", "Empresa S.A.S.", true);
+        return new Asesor(null, "1061000000", new NombrePersona("Asesor", null, "Empresa", null), "asesor@empresa.com", "Empresa S.A.S.", true);
     }
 
     static Documento cartaAceptacion() {
@@ -57,6 +58,6 @@ final class DatosPrueba {
 
     static Decision decisionComite(ResultadoConcepto resultado, LocalDate fecha) {
         String observaciones = resultado == ResultadoConcepto.APROBADO ? null : "Precisar los objetivos";
-        return new Decision(Organo.COMITE_PROGRAMA, resultado, "Acta 01", observaciones, fecha);
+        return new Decision(Organo.COMITE_PROGRAMA, resultado, "Acta 01", null, observaciones, fecha);
     }
 }

@@ -1,0 +1,110 @@
+package com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.sgtg.backend.domain.models.trabajo_grado.Estado;
+import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
+import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
+import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
+
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * Trabajo de grado persistido. El agregado completo se guarda en esta tabla y
+ * en colecciones de valores (estudiantes, dirección, propuesta, historial), de
+ * modo que se guarda y se lee como una unidad.
+ */
+@Entity
+@Table(name = "trabajos_grado")
+@Data
+@NoArgsConstructor
+public class TrabajoGradoEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Modalidad modalidad;
+
+    @Column(nullable = false, length = 500)
+    private String titulo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Proceso etapa;
+
+    @Enumerated(EnumType.STRING)
+    private MotivoCierre motivoCierre;
+
+    @ElementCollection
+    @CollectionTable(name = "trabajo_objetivos", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    @Column(name = "objetivo", length = 1000, nullable = false)
+    private List<String> objetivos = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "trabajo_estudiantes", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<EstudianteTrabajoEmbeddable> estudiantes = new ArrayList<>();
+
+    /** Director y, si existe, codirector (distinguidos por su rol) */
+    @ElementCollection
+    @CollectionTable(name = "trabajo_direccion", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<DirectorTrabajoEmbeddable> direccion = new ArrayList<>();
+
+    @Embedded
+    private AsesorEmbeddable asesor;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "tipo", column = @Column(name = "carta_tipo")),
+            @AttributeOverride(name = "url", column = @Column(name = "carta_url", length = 1000)),
+            @AttributeOverride(name = "version", column = @Column(name = "carta_version")),
+            @AttributeOverride(name = "fechaCarga", column = @Column(name = "carta_fecha_carga")) })
+    private DocumentoEmbeddable cartaAceptacion;
+
+    // ----- Propuesta -----
+
+    @Enumerated(EnumType.STRING)
+    private Estado propuestaEstado;
+
+    private LocalDate propuestaFechaLimiteConcepto;
+
+    @ElementCollection
+    @CollectionTable(name = "propuesta_versiones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<DocumentoEmbeddable> propuestaVersiones = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "propuesta_decisiones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<DecisionEmbeddable> propuestaDecisiones = new ArrayList<>();
+
+    // ----- Historial -----
+
+    @ElementCollection
+    @CollectionTable(name = "trabajo_historial_etapas", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<CambioEtapaEmbeddable> historial = new ArrayList<>();
+}

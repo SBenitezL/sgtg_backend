@@ -1,5 +1,6 @@
 package com.sgtg.backend.application.output;
 
+import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
 import java.util.List;
 
 import com.sgtg.backend.domain.models.Role;
@@ -41,6 +42,11 @@ public interface ManageAuthGatewayIntPort {
      * @return true en caso de encontrar conincidencias y false en caso contrario.
      */
     public boolean existsByEmailorCodigo(String email, String codigo);
+
+    /**
+     * @return true si ya existe un usuario con ese tipo y número de documento
+     */
+    public boolean existsByDocumento(TipoDocumentoIdentidad tipoDocumento, String numeroDocumento);
 
     /**
      * Recupera la lista de roles solicitados por nombre.

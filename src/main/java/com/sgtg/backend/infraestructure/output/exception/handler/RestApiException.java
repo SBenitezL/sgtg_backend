@@ -4,8 +4,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.infraestructure.output.exception.own.BadCredentialException;
 import com.sgtg.backend.infraestructure.output.exception.own.BadFormatException;
 import com.sgtg.backend.infraestructure.output.exception.own.BusinessRuleException;
@@ -26,9 +30,25 @@ import com.sgtg.backend.infraestructure.output.exception.structure.ErrorUtils;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 @ControllerAdvice
+@RequiredArgsConstructor
 public class RestApiException {
+
+    /** Resuelve las claves de mensaje definidas en messages.properties */
+    private final MessageSource messageSource;
+
+    /**
+     * Traduce una clave de messages.properties al texto del mensaje. Si la clave
+     * no existe se devuelve tal cual.
+     */
+    private String mensaje(String clave, Locale locale) {
+        if (clave == null)
+            return null;
+        return messageSource.getMessage(clave, null, clave, locale);
+    }
+
     /**
      * Manejador global para excepciones no controladas, captura cualquier excepción
      * que no haya sido manejada
@@ -117,11 +137,11 @@ public class RestApiException {
      */
     @ExceptionHandler(EntityExistsException.class)
     public ResponseEntity<Error> handleGenericException(final HttpServletRequest req,
-            final EntityExistsException ex) {
+            final EntityExistsException ex, final Locale locale) {
         final Error error = ErrorUtils
                 .createError(ErrorCode.ENTITY_EXISTS.getCode(),
                         String.format("%s, %s", ErrorCode.ENTITY_EXISTS.getMessageKey(),
-                                ex.getMessage()),
+                                mensaje(ex.getMessage(), locale)),
                         HttpStatus.NOT_ACCEPTABLE.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.NOT_ACCEPTABLE);
@@ -140,11 +160,11 @@ public class RestApiException {
      */
     @ExceptionHandler(NoDataException.class)
     public ResponseEntity<Error> handleNoDataException(final HttpServletRequest req,
-            final NoDataException ex) {
+            final NoDataException ex, final Locale locale) {
         final Error error = ErrorUtils
                 .createError(ErrorCode.NO_DATA.getCode(),
                         String.format("%s, %s", ErrorCode.NO_DATA.getMessageKey(),
-                                ex.getMessage()),
+                                mensaje(ex.getMessage(), locale)),
                         HttpStatus.NOT_ACCEPTABLE.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.NOT_ACCEPTABLE);
@@ -171,7 +191,7 @@ public class RestApiException {
                 .createError(ErrorCode.ENTITY_NOT_FOUND.getCode(),
                         String.format("%s, %s",
                                 ErrorCode.ENTITY_NOT_FOUND.getMessageKey(),
-                                ex.getMessage()),
+                                mensaje(ex.getMessage(), locale)),
                         HttpStatus.NOT_FOUND.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
@@ -198,7 +218,7 @@ public class RestApiException {
                 .createError(ErrorCode.BAD_CREDENTIALS.getCode(),
                         String.format("%s, %s",
                                 ErrorCode.BAD_CREDENTIALS.getMessageKey(),
-                                ex.getMessage()),
+                                mensaje(ex.getMessage(), locale)),
                         HttpStatus.NOT_FOUND.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
@@ -223,7 +243,7 @@ public class RestApiException {
                 .createError(ErrorCode.BAD_CREDENTIALS.getCode(),
                         String.format("%s, %s",
                                 ErrorCode.BAD_CREDENTIALS.getMessageKey(),
-                                ex.getMessage()),
+                                mensaje(ex.getMessage(), locale)),
                         HttpStatus.NOT_FOUND.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
@@ -251,7 +271,7 @@ public class RestApiException {
                 .createError(ErrorCode.NO_ACCESS.getCode(),
                         String.format("%s, %s",
                                 ErrorCode.NO_ACCESS.getMessageKey(),
-                                ex.getMessage()),
+                                mensaje(ex.getMessage(), locale)),
                         HttpStatus.NOT_ACCEPTABLE.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.NOT_ACCEPTABLE);
@@ -264,7 +284,7 @@ public class RestApiException {
                 .createError(ErrorCode.BAD_FORMAT.getCode(),
                         String.format("%s, %s",
                                 ErrorCode.BAD_FORMAT.getMessageKey(),
-                                ex.getMessage()),
+                                mensaje(ex.getMessage(), locale)),
                         HttpStatus.NOT_ACCEPTABLE.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.NOT_ACCEPTABLE);
@@ -274,7 +294,44 @@ public class RestApiException {
     public ResponseEntity<Error> handleBusinessRuleException(final HttpServletRequest req,
             final BusinessRuleException ex, final Locale locale) {
         final Error error = ErrorUtils
-                .createError(ErrorCode.BUSINESS_RULE_VIOLATION.getCode(), ex.formatException(),
+                .createError(ErrorCode.BUSINESS_RULE_VIOLATION.getCode(),
+                        mensaje(ex.getBusinessRule(), locale),
+                        HttpStatus.BAD_REQUEST.value())
+                .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    /** Ruta inexistente: 404 en lugar del error genérico 500. */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Error> handleNoResourceFoundException(final HttpServletRequest req,
+            final NoResourceFoundException ex) {
+        final Error error = ErrorUtils
+                .createError(ErrorCode.RESOURCE_NOT_FOUND.getCode(), ErrorCode.RESOURCE_NOT_FOUND.getMessageKey(),
+                        HttpStatus.NOT_FOUND.value())
+                .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    /** Cuerpo de la petición mal formado (JSON inválido o valores no convertibles): 400. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Error> handleHttpMessageNotReadableException(final HttpServletRequest req,
+            final HttpMessageNotReadableException ex) {
+        final Error error = ErrorUtils
+                .createError(ErrorCode.BAD_FORMAT.getCode(), ErrorCode.BAD_FORMAT.getMessageKey(),
+                        HttpStatus.BAD_REQUEST.value())
+                .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Reglas de negocio incumplidas en el dominio: se responden como violación
+     * de regla de negocio con el texto de la clave.
+     */
+    @ExceptionHandler(ReglaNegocioException.class)
+    public ResponseEntity<Error> handleReglaNegocioException(final HttpServletRequest req,
+            final ReglaNegocioException ex, final Locale locale) {
+        final Error error = ErrorUtils
+                .createError(ErrorCode.BUSINESS_RULE_VIOLATION.getCode(), mensaje(ex.getMessage(), locale),
                         HttpStatus.BAD_REQUEST.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);

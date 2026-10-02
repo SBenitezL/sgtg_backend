@@ -1,6 +1,7 @@
 package com.sgtg.backend.infraestructure.configuration;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.sgtg.backend.infraestructure.output.percistence.entities.RoleEntity;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Order(1)
 @RequiredArgsConstructor
 @Slf4j
 public class RoleDataInitializer implements CommandLineRunner {
