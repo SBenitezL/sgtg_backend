@@ -6,17 +6,26 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.TrabajoGradoEntity;
 
 public interface TrabajoGradoRepository extends JpaRepository<TrabajoGradoEntity, Long> {
 
-    /** Trabajos en los que el usuario es estudiante, director, codirector o asesor, del más reciente al más antiguo. */
+    /**
+     * Trabajos en los que el usuario es estudiante, director, codirector, asesor o
+     * evaluador, del más reciente al más antiguo.
+     */
     @Query("""
             select distinct t from TrabajoGradoEntity t
             left join t.estudiantes e
             left join t.direccion d
+            left join t.anteproyectoEvaluadores ev
             where e.usuarioId = :usuarioId or d.usuarioId = :usuarioId or t.asesor.usuarioId = :usuarioId
+               or ev.usuarioId = :usuarioId
             order by t.id desc
             """)
     List<TrabajoGradoEntity> findByParticipante(@Param("usuarioId") Long usuarioId);
+
+    /** Trabajos en la etapa indicada, del más reciente al más antiguo. */
+    List<TrabajoGradoEntity> findByEtapaOrderByIdDesc(Proceso etapa);
 }

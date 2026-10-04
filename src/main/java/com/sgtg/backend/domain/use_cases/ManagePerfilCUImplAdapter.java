@@ -21,9 +21,13 @@ import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
  */
 public class ManagePerfilCUImplAdapter implements ManagePerfilCUIntPort {
 
-    /** Roles que pueden tener perfil docente (dirigir, codirigir o evaluar) */
+    /**
+     * Roles que pueden tener perfil docente (dirigir, codirigir o evaluar). El
+     * jefe de departamento lo necesita para indicar a qué departamento pertenece.
+     */
     private static final Set<String> ROLES_DOCENTE = Set.of(RoleAdmited.DOCENTE.name(), RoleAdmited.DIRECTOR.name(),
-            RoleAdmited.CODIRECTOR.name(), RoleAdmited.EVALUADOR.name(), RoleAdmited.JURADO.name());
+            RoleAdmited.CODIRECTOR.name(), RoleAdmited.EVALUADOR.name(), RoleAdmited.JURADO.name(),
+            RoleAdmited.JEFE_DEP.name());
     /** Roles que pueden tener perfil de estudiante */
     private static final Set<String> ROLES_ESTUDIANTE = Set.of(RoleAdmited.ESTUDIANTE.name());
 

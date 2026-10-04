@@ -11,6 +11,7 @@ import com.sgtg.backend.domain.models.participantes.Asesor;
 import com.sgtg.backend.domain.models.participantes.Departamento;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
+import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 
@@ -22,6 +23,8 @@ final class DatosPrueba {
     static final Programa ING_SISTEMAS = new Programa(1L, "Ingeniería de Sistemas");
     static final List<String> OBJETIVOS = List.of("Diseñar un sistema de gestión de trabajos de grado");
     static final String URL_PROPUESTA = "https://archivos.unicauca.edu.co/tg/propuesta.pdf";
+    static final String URL_ANTEPROYECTO = "https://archivos.unicauca.edu.co/tg/anteproyecto.pdf";
+    static final String URL_FORMATO_B = "https://archivos.unicauca.edu.co/tg/formato-b.pdf";
     /** Lunes 2 de marzo de 2026 */
     static final LocalDate LUNES = LocalDate.of(2026, 3, 2);
 
@@ -40,6 +43,11 @@ final class DatosPrueba {
 
     static Director directorPlanta(long usuarioId) {
         return director(usuarioId, TipoVinculacion.PLANTA, SISTEMAS);
+    }
+
+    static Evaluador evaluador(long usuarioId) {
+        return new Evaluador(usuarioId, "V" + usuarioId, new NombrePersona("Evaluador", null, "Prueba", null),
+                "v" + usuarioId + "@unicauca.edu.co");
     }
 
     static Asesor asesorOrganizacion() {

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
+import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.mapper.MapperTrabajoGrado;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.TrabajoGradoRepository;
@@ -41,6 +42,13 @@ public class ManageTrabajoGradoGatewayImplAdapter implements ManageTrabajoGradoG
     @Transactional(readOnly = true)
     public List<TrabajoGrado> listarPorParticipante(Long usuarioId) {
         return trabajoGradoRepository.findByParticipante(usuarioId).stream().map(MapperTrabajoGrado::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TrabajoGrado> listarPorEtapa(Proceso etapa) {
+        return trabajoGradoRepository.findByEtapaOrderByIdDesc(etapa).stream().map(MapperTrabajoGrado::toDomain)
                 .toList();
     }
 }

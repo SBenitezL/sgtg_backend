@@ -2,6 +2,7 @@ package com.sgtg.backend.application.output;
 
 import java.util.List;
 
+import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 
 /** Puerto de salida para la persistencia del agregado trabajo de grado. */
@@ -17,6 +18,9 @@ public interface ManageTrabajoGradoGatewayIntPort {
     /** @return el trabajo, o null si no existe */
     public TrabajoGrado buscarPorId(Long trabajoId);
 
-    /** @return los trabajos en los que el usuario es estudiante, director, codirector o asesor */
+    /** @return los trabajos en los que el usuario es estudiante, director, codirector, asesor o evaluador */
     public List<TrabajoGrado> listarPorParticipante(Long usuarioId);
+
+    /** @return los trabajos que se encuentran en la etapa indicada */
+    public List<TrabajoGrado> listarPorEtapa(Proceso etapa);
 }

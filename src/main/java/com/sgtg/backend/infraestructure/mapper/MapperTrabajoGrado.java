@@ -2,27 +2,35 @@ package com.sgtg.backend.infraestructure.mapper;
 
 import java.util.List;
 
+import com.sgtg.backend.domain.models.comun.Concepto;
 import com.sgtg.backend.domain.models.comun.Decision;
 import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.models.participantes.Asesor;
 import com.sgtg.backend.domain.models.participantes.Departamento;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
+import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.Programa;
+import com.sgtg.backend.domain.models.trabajo_grado.Anteproyecto;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioEtapa;
+import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
+import com.sgtg.backend.domain.models.trabajo_grado.DatosAnteproyecto;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosPropuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
+import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.Propuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.AsesorEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.CambioEtapaEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.ConceptoEvaluacionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DecisionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DirectorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DirectorTrabajoEmbeddable.RolDireccion;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DocumentoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EstudianteTrabajoEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EvaluadorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.TrabajoGradoEntity;
 
 /**
@@ -56,6 +64,14 @@ public abstract class MapperTrabajoGrado {
         propuesta.getVersiones().forEach(v -> entity.getPropuestaVersiones().add(toEmbeddable(v)));
         propuesta.getDecisiones().forEach(d -> entity.getPropuestaDecisiones().add(toEmbeddable(d)));
 
+        Anteproyecto anteproyecto = trabajo.getAnteproyecto();
+        entity.setAnteproyectoEstado(anteproyecto.getEstado());
+        entity.setAnteproyectoFechaLimiteEvaluacion(anteproyecto.getFechaLimiteEvaluacion());
+        entity.setAnteproyectoFechaLimiteCorrecciones(anteproyecto.getFechaLimiteCorrecciones());
+        anteproyecto.getVersiones().forEach(v -> entity.getAnteproyectoVersiones().add(toEmbeddable(v)));
+        anteproyecto.getEvaluadores().forEach(e -> entity.getAnteproyectoEvaluadores().add(toEmbeddable(e)));
+        anteproyecto.getConceptos().forEach(c -> entity.getAnteproyectoConceptos().add(toEmbeddable(c)));
+
         trabajo.getHistorial().forEach(c -> entity.getHistorial().add(toEmbeddable(c)));
         return entity;
     }
@@ -79,6 +95,18 @@ public abstract class MapperTrabajoGrado {
         NombrePersona n = a.getNombre();
         return new AsesorEmbeddable(a.getUsuarioId(), a.getCodigo(), n.primerNombre(), n.segundoNombre(),
                 n.primerApellido(), n.segundoApellido(), a.getEmail(), a.getOrganizacion(), a.isExterno());
+    }
+
+    private static EvaluadorTrabajoEmbeddable toEmbeddable(Evaluador e) {
+        NombrePersona n = e.getNombre();
+        return new EvaluadorTrabajoEmbeddable(e.getUsuarioId(), e.getCodigo(), n.primerNombre(), n.segundoNombre(),
+                n.primerApellido(), n.segundoApellido(), e.getEmail());
+    }
+
+    private static ConceptoEvaluacionEmbeddable toEmbeddable(ConceptoEvaluacion c) {
+        Concepto concepto = c.concepto();
+        return new ConceptoEvaluacionEmbeddable(c.version(), concepto.emisor().getUsuarioId(), concepto.resultado(),
+                concepto.observaciones(), concepto.fecha(), c.formato() == null ? null : c.formato().url());
     }
 
     private static DocumentoEmbeddable toEmbeddable(Documento d) {
@@ -111,9 +139,38 @@ public abstract class MapperTrabajoGrado {
                 entity.getId(), entity.getModalidad(), entity.getTitulo(), List.copyOf(entity.getObjetivos()),
                 entity.getEstudiantes().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 director, codirector, toDomain(entity.getAsesor()), toDomain(entity.getCartaAceptacion()),
-                entity.getEtapa(), propuesta,
+                entity.getEtapa(), propuesta, toDatosAnteproyecto(entity),
                 entity.getHistorial().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 entity.getMotivoCierre()));
+    }
+
+    private static DatosAnteproyecto toDatosAnteproyecto(TrabajoGradoEntity entity) {
+        List<Evaluador> evaluadores = entity.getAnteproyectoEvaluadores().stream().map(MapperTrabajoGrado::toDomain)
+                .toList();
+        return new DatosAnteproyecto(
+                entity.getAnteproyectoVersiones().stream().map(MapperTrabajoGrado::toDomain).toList(),
+                evaluadores,
+                entity.getAnteproyectoConceptos().stream().map(c -> toDomain(c, evaluadores)).toList(),
+                entity.getAnteproyectoEstado(), entity.getAnteproyectoFechaLimiteEvaluacion(),
+                entity.getAnteproyectoFechaLimiteCorrecciones());
+    }
+
+    private static Evaluador toDomain(EvaluadorTrabajoEmbeddable e) {
+        return new Evaluador(e.getUsuarioId(), e.getCodigo(),
+                new NombrePersona(e.getPrimerNombre(), e.getSegundoNombre(), e.getPrimerApellido(),
+                        e.getSegundoApellido()),
+                e.getEmail());
+    }
+
+    /** El emisor del concepto es uno de los evaluadores asignados, identificado por su usuario. */
+    private static ConceptoEvaluacion toDomain(ConceptoEvaluacionEmbeddable c, List<Evaluador> evaluadores) {
+        Evaluador emisor = evaluadores.stream().filter(e -> e.getUsuarioId().equals(c.getEvaluadorUsuarioId()))
+                .findFirst().orElseThrow(() -> new IllegalStateException(
+                        "Concepto de un evaluador no asignado: usuario " + c.getEvaluadorUsuarioId()));
+        Documento formato = c.getFormatoUrl() == null ? null
+                : new Documento(TipoDocumento.EVALUACION_ANTEPROYECTO, c.getFormatoUrl(), c.getVersion(), c.getFecha());
+        return new ConceptoEvaluacion(c.getVersion(),
+                new Concepto(emisor, c.getResultado(), c.getObservaciones(), c.getFecha()), formato);
     }
 
     private static Director buscarDireccion(List<DirectorTrabajoEmbeddable> direccion, RolDireccion rol) {

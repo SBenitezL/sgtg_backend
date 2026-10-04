@@ -35,7 +35,7 @@ class ReconstruccionTrabajoGradoTest {
     void reconstruyeSegunLaModalidadConSuEstado() {
         DatosTrabajoGrado datos = new DatosTrabajoGrado(7L, Modalidad.PRACTICA_PROFESIONAL, "Título", OBJETIVOS,
                 List.of(estudiante(10L)), directorPlanta(1L), null, asesorOrganizacion(), cartaAceptacion(),
-                Proceso.PROPUESTA, propuestaRadicada(), List.of(), null);
+                Proceso.PROPUESTA, propuestaRadicada(), null, List.of(), null);
 
         TrabajoGrado trabajo = TrabajoGrado.reconstruir(datos);
 
@@ -51,7 +51,7 @@ class ReconstruccionTrabajoGradoTest {
         // Director de cátedra sin codirector: inválido al crear, pero se acepta al reconstruir
         DatosTrabajoGrado datos = new DatosTrabajoGrado(7L, Modalidad.TRABAJO_DE_INVESTIGACION, "Título", OBJETIVOS,
                 List.of(estudiante(10L)), director(1L, TipoVinculacion.CATEDRA, SISTEMAS), null, null, null,
-                Proceso.PROPUESTA, null, null, null);
+                Proceso.PROPUESTA, null, null, null, null);
 
         TrabajoGrado trabajo = TrabajoGrado.reconstruir(datos);
         assertEquals(TipoVinculacion.CATEDRA, trabajo.getDirector().getTipoVinculacion());
@@ -61,7 +61,7 @@ class ReconstruccionTrabajoGradoTest {
     void elTrabajoReconstruidoSigueOperando() {
         DatosTrabajoGrado datos = new DatosTrabajoGrado(7L, Modalidad.TRABAJO_DE_INVESTIGACION, "Título", OBJETIVOS,
                 List.of(estudiante(10L)), directorPlanta(1L), null, null, null, Proceso.PROPUESTA,
-                propuestaRadicada(), List.of(), null);
+                propuestaRadicada(), null, List.of(), null);
 
         TrabajoGrado trabajo = TrabajoGrado.reconstruir(datos);
         trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(3)), "C001",
@@ -75,8 +75,8 @@ class ReconstruccionTrabajoGradoTest {
     void exigeLosDatosMinimos() {
         assertThrows(ReglaNegocioException.class, () -> new DatosTrabajoGrado(null, Modalidad.PRACTICA_PROFESIONAL,
                 "Título", OBJETIVOS, List.of(), directorPlanta(1L), null, null, null, Proceso.PROPUESTA, null, null,
-                null));
+                null, null));
         assertThrows(ReglaNegocioException.class, () -> new DatosTrabajoGrado(7L, null, "Título", OBJETIVOS,
-                List.of(), directorPlanta(1L), null, null, null, Proceso.PROPUESTA, null, null, null));
+                List.of(), directorPlanta(1L), null, null, null, Proceso.PROPUESTA, null, null, null, null));
     }
 }

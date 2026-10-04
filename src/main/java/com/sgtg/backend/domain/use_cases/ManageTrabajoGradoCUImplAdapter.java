@@ -1,11 +1,11 @@
 package com.sgtg.backend.domain.use_cases;
 
-import com.sgtg.backend.domain.models.comun.NombrePersona;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.sgtg.backend.application.input.trabajo_grado.DatosAsesor;
@@ -17,17 +17,21 @@ import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.models.comun.Concepto;
 import com.sgtg.backend.domain.models.comun.Decision;
+import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.models.comun.Organo;
 import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
 import com.sgtg.backend.domain.models.participantes.Asesor;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
+import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
+import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoInvestigacion;
@@ -35,8 +39,8 @@ import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.utils.CheckString;
 
 /**
- * Casos de uso del trabajo de grado (Fase 1). Carga los participantes con sus
- * perfiles, delega las reglas al agregado y guarda el resultado.
+ * Casos de uso del trabajo de grado (Fases 1 y 2). Carga los participantes con
+ * sus perfiles, delega las reglas al agregado y guarda el resultado.
  */
 public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntPort {
 
@@ -101,6 +105,13 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
+    public List<TrabajoGrado> listarPorEtapa(Proceso etapa) {
+        if (etapa == null)
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.etapa_obligatoria");
+        return this.trabajoGateway.listarPorEtapa(etapa);
+    }
+
+    @Override
     public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, String url) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         if (!trabajo.esDirector(usuarioId))
@@ -117,6 +128,45 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Decision decision = new Decision(Organo.COMITE_PROGRAMA, resultado, acta, rutaArchivo, observaciones,
                 fecha == null ? hoy() : fecha);
         trabajo.registrarDecisionComite(decision, responsable.getCodigo(), LocalDateTime.now(this.clock));
+        return this.trabajoGateway.guardar(trabajo);
+    }
+
+    @Override
+    public TrabajoGrado radicarAnteproyecto(Long trabajoId, Long usuarioId, String url) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        if (!trabajo.esDirector(usuarioId))
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_director");
+        trabajo.radicarAnteproyecto(url, trabajo.getDirector().getCodigo(), LocalDateTime.now(this.clock),
+                this.calendario);
+        return this.trabajoGateway.guardar(trabajo);
+    }
+
+    @Override
+    public TrabajoGrado asignarEvaluadores(Long trabajoId, Long usuarioId, Long evaluador1Id, Long evaluador2Id) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        Usuario jefe = cargarUsuario(usuarioId);
+        // El Departamento al que está adscrito el director es el que asigna (Art. 13)
+        PerfilDocente perfilJefe = this.perfilGateway.buscarPerfilDocente(usuarioId);
+        if (perfilJefe == null)
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.jefe_sin_perfil");
+        if (!perfilJefe.getDepartamento().esMismo(trabajo.getDirector().getDepartamento()))
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.otro_departamento");
+        Evaluador evaluador1 = evaluador1Id == null ? null : new Evaluador(cargarUsuario(evaluador1Id));
+        Evaluador evaluador2 = evaluador2Id == null ? null : new Evaluador(cargarUsuario(evaluador2Id));
+        trabajo.asignarEvaluadores(evaluador1, evaluador2, jefe.getCodigo(), LocalDateTime.now(this.clock),
+                this.calendario);
+        return this.trabajoGateway.guardar(trabajo);
+    }
+
+    @Override
+    public TrabajoGrado registrarConceptoEvaluador(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
+            String observaciones, String urlFormato) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        Optional<Evaluador> evaluador = trabajo.getAnteproyecto().evaluador(usuarioId);
+        if (evaluador.isEmpty())
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_evaluador");
+        Concepto concepto = new Concepto(evaluador.get(), resultado, observaciones, hoy());
+        trabajo.registrarConceptoEvaluador(concepto, urlFormato, LocalDateTime.now(this.clock), this.calendario);
         return this.trabajoGateway.guardar(trabajo);
     }
 

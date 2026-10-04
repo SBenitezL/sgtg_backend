@@ -10,8 +10,11 @@ import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
 import com.sgtg.backend.domain.models.participantes.Asesor;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
+import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
+import com.sgtg.backend.domain.models.trabajo_grado.Anteproyecto;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioEtapa;
+import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
@@ -26,7 +29,7 @@ import com.sgtg.backend.infraestructure.input.catalogo.dto.output.CatalogoDTORes
 public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titulo, List<String> objetivos,
         Proceso etapa, MotivoCierre motivoCierre, List<EstudianteDTO> estudiantes, DirectorDTO director,
         DirectorDTO codirector, AsesorDTO asesor, DocumentoDTO cartaAceptacion, PropuestaDTO propuesta,
-        List<CambioEtapaDTO> historial) {
+        AnteproyectoDTO anteproyecto, List<CambioEtapaDTO> historial) {
 
     public record EstudianteDTO(Long usuarioId, String codigo, String nombreCompleto, String email,
             CatalogoDTOResponse programa) {
@@ -53,6 +56,18 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             List<DecisionDTO> decisiones) {
     }
 
+    public record EvaluadorDTO(Long usuarioId, String codigo, String nombreCompleto, String email) {
+    }
+
+    /** @param formato formato B adjunto, null si no se cargó */
+    public record ConceptoEvaluacionDTO(int version, Long evaluadorUsuarioId, String evaluador,
+            ResultadoConcepto resultado, String observaciones, LocalDate fecha, DocumentoDTO formato) {
+    }
+
+    public record AnteproyectoDTO(Estado estado, LocalDate fechaLimiteEvaluacion, LocalDate fechaLimiteCorrecciones,
+            List<DocumentoDTO> versiones, List<EvaluadorDTO> evaluadores, List<ConceptoEvaluacionDTO> conceptos) {
+    }
+
     public record CambioEtapaDTO(Proceso origen, Proceso destino, LocalDateTime fecha, String responsable,
             String observacion) {
     }
@@ -70,6 +85,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 new PropuestaDTO(propuesta.getEstado(), propuesta.getFechaLimiteConcepto(),
                         propuesta.getVersiones().stream().map(v -> documento(v, modalidad)).toList(),
                         propuesta.getDecisiones().stream().map(TrabajoGradoDTOResponse::decision).toList()),
+                anteproyecto(trabajo.getAnteproyecto(), modalidad),
                 trabajo.getHistorial().stream().map(TrabajoGradoDTOResponse::cambio).toList());
     }
 
@@ -102,6 +118,23 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     private static DecisionDTO decision(Decision d) {
         return new DecisionDTO(d.organo(), d.resultado(), d.acta(), d.rutaArchivo(), d.observaciones(),
                 d.fecha());
+    }
+
+    private static AnteproyectoDTO anteproyecto(Anteproyecto a, Modalidad modalidad) {
+        return new AnteproyectoDTO(a.getEstado(), a.getFechaLimiteEvaluacion(), a.getFechaLimiteCorrecciones(),
+                a.getVersiones().stream().map(v -> documento(v, modalidad)).toList(),
+                a.getEvaluadores().stream().map(TrabajoGradoDTOResponse::evaluador).toList(),
+                a.getConceptos().stream().map(c -> concepto(c, modalidad)).toList());
+    }
+
+    private static EvaluadorDTO evaluador(Evaluador e) {
+        return new EvaluadorDTO(e.getUsuarioId(), e.getCodigo(), e.getNombreCompleto(), e.getEmail());
+    }
+
+    private static ConceptoEvaluacionDTO concepto(ConceptoEvaluacion c, Modalidad modalidad) {
+        return new ConceptoEvaluacionDTO(c.version(), c.concepto().emisor().getUsuarioId(),
+                c.concepto().emisor().getNombreCompleto(), c.concepto().resultado(), c.concepto().observaciones(),
+                c.concepto().fecha(), documento(c.formato(), modalidad));
     }
 
     private static CambioEtapaDTO cambio(CambioEtapa c) {

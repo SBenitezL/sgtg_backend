@@ -1,9 +1,9 @@
 # Pruebas de integración con Thunder Client
 
-Colección que recorre la API de las Fases 0 y 1 contra el backend en ejecución. Cada petición verifica el código de respuesta y los datos devueltos, y guarda en variables los tokens e identificadores que usan las siguientes.
+Colección que recorre la API de las Fases 0 a 2 contra el backend en ejecución. Cada petición verifica el código de respuesta y los datos devueltos, y guarda en variables los tokens e identificadores que usan las siguientes.
 
 ## Archivos
-- `sgtg-coleccion.json`: colección con 29 peticiones en 3 carpetas.
+- `sgtg-coleccion.json`: colección con 50 peticiones en 4 carpetas.
 - `sgtg-entorno-local.json`: entorno con `baseUrl` y las credenciales del administrador de desarrollo (las mismas del archivo `.env`).
 
 ## Importar (una sola vez)
@@ -21,8 +21,9 @@ Se puede ejecutar varias veces sobre la misma base de datos: los códigos, corre
 ## Qué cubre
 | Carpeta | Contenido |
 |---|---|
-| 1. Preparación (administrador) | Login del administrador; crea departamento, programa, docente, estudiante y miembro del comité; registra los perfiles |
+| 1. Preparación (administrador) | Login del administrador; crea departamento, programa, docente, estudiante, miembro del comité, jefe de departamento y dos evaluadores; registra los perfiles (el jefe con el mismo departamento del docente) |
 | 2. Flujo de la propuesta | El docente crea el trabajo (queda como director) y radica la propuesta; el comité no la aprueba (con ruta del acta); se radica la versión 2 y el comité la aprueba (pasa a `ANTEPROYECTO`); el estudiante consulta su trabajo |
-| 3. Permisos y reglas de negocio | 401 sin token; 403 por rol; solo el director radica; regla de etapa; codirector de planta (Art. 6); rol inexistente; número de documento con letras; documento repetido; no existe registro público |
+| 3. Flujo del anteproyecto | El director radica el anteproyecto; el jefe lo ve en la consulta por etapa y asigna los evaluadores (pasa a `EVALUACION`); un evaluador aprueba con formato B y el otro pide correcciones (vuelve a `ANTEPROYECTO`); el director radica la versión 2 (vuelve a `EVALUACION`); ambos aprueban (pasa a `APROBACION_CONSEJO`); el evaluador ve el trabajo en sus trabajos |
+| 4. Permisos y reglas de negocio | 401 sin token; 403 por rol; solo el director radica; regla de etapa; solo `JEFE_DEP` asigna evaluadores; solo los evaluadores asignados emiten concepto; consulta por etapa restringida y con etapa válida; codirector de planta (Art. 6); rol inexistente; número de documento con letras; documento repetido; no existe registro público |
 
 Las carpetas dependen de las anteriores (usan sus variables), así que deben ejecutarse en orden. Para ejecutar una sola petición, primero hay que ejecutar las que guardan las variables que usa.

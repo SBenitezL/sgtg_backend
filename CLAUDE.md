@@ -36,7 +36,7 @@ Paquete base `com.sgtg.backend`. Nótese la ortografía de los paquetes existent
 - `infraestructure/output/percistence`: `entities` (JPA), `repositories` (Spring Data) y `gateway` (`*GatewayImplAdapter`, `@Service`, implementan los puertos de salida).
 - `infraestructure/mapper`: mapeadores estáticos entidad ↔ dominio (`MapperXxx.toDomain` / `toEntity`).
 - `infraestructure/output/auth`: `AuthService` (implementa `ManageAuthServiceGatewayIntPort`) y `JwtService`.
-- `infraestructure/jwt/JwtAuthenticationFilter` + `configuration/SecurityConfig`: API stateless; solo `/api/v1/sgtg/auth/login` es público, el resto requiere JWT (sin token: 401). Los permisos por rol se declaran en los controladores con `@PreAuthorize("hasAuthority('ROL')")` (los roles no llevan prefijo `ROLE_`); los que dependen de un trabajo concreto (ser su director o participante) los valida el caso de uso.
+- `infraestructure/jwt/JwtAuthenticationFilter` + `configuration/SecurityConfig`: API stateless; solo `/api/v1/sgtg/auth/login` es público, el resto requiere JWT (sin token: 401). Los permisos por rol se declaran en los controladores con `@PreAuthorize("hasAuthority('ROL')")` (los roles no llevan prefijo `ROLE_`); los que dependen de un trabajo concreto (ser su director, evaluador o participante, o jefe del departamento del director) los valida el caso de uso.
 - **No hay registro público**: solo el `ADMINISTRADOR` crea usuarios (`POST /api/v1/sgtg/usuarios`) y les asigna roles.
 - El usuario autenticado se obtiene en los controladores con `@AuthenticationPrincipal UserEntity`. La fecha actual se obtiene del bean `Clock` (zona America/Bogota) en los casos de uso y se pasa al dominio.
 
@@ -55,7 +55,7 @@ Las reglas de negocio vienen de la **Resolución 231 de 2020 del Consejo de Facu
 - Las reglas del dominio lanzan `ReglaNegocioException` con claves `error.dominio.*` de `messages.properties`.
 - Los objetos de valor son `record` que validan en el constructor.
 - Probar el dominio con JUnit puro: `./mvnw test -Dtest='com.sgtg.backend.domain.**'`.
-- Persistencia del agregado: tabla `trabajos_grado` más colecciones de valores (`@ElementCollection`) para estudiantes, dirección, propuesta e historial; se guarda completo con `MapperTrabajoGrado` y se lee con `TrabajoGrado.reconstruir(DatosTrabajoGrado)`. Al agregar estado al agregado en una fase nueva, actualizar `DatosTrabajoGrado`, la entidad y el mapper.
+- Persistencia del agregado: tabla `trabajos_grado` más colecciones de valores (`@ElementCollection`) para estudiantes, dirección, propuesta, anteproyecto (versiones, evaluadores y conceptos) e historial; se guarda completo con `MapperTrabajoGrado` y se lee con `TrabajoGrado.reconstruir(DatosTrabajoGrado)`. Al agregar estado al agregado en una fase nueva, actualizar `DatosTrabajoGrado`, la entidad y el mapper.
 
 ## Manejo de errores
 

@@ -16,11 +16,13 @@ import com.sgtg.backend.domain.models.participantes.Estudiante;
  * Crecerá con cada fase a medida que el agregado incorpore nuevas etapas.
  *
  * @param cartaAceptacion solo para práctica profesional, null en investigación
+ * @param anteproyecto    null si aún no se ha radicado (equivale a vacío)
  * @param motivoCierre    null si el trabajo sigue activo
  */
 public record DatosTrabajoGrado(Long id, Modalidad modalidad, String titulo, List<String> objetivos,
         List<Estudiante> estudiantes, Director director, Director codirector, Asesor asesor,
-        Documento cartaAceptacion, Proceso etapa, DatosPropuesta propuesta, List<CambioEtapa> historial,
+        Documento cartaAceptacion, Proceso etapa, DatosPropuesta propuesta, DatosAnteproyecto anteproyecto,
+        List<CambioEtapa> historial,
         MotivoCierre motivoCierre) {
 
     public DatosTrabajoGrado {
@@ -30,5 +32,6 @@ public record DatosTrabajoGrado(Long id, Modalidad modalidad, String titulo, Lis
         estudiantes = estudiantes == null ? List.of() : List.copyOf(estudiantes);
         historial = historial == null ? List.of() : List.copyOf(historial);
         propuesta = propuesta == null ? DatosPropuesta.vacia() : propuesta;
+        anteproyecto = anteproyecto == null ? DatosAnteproyecto.vacio() : anteproyecto;
     }
 }

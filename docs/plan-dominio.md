@@ -10,7 +10,7 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 |---|---|---|
 | 0 | Base común | Completa |
 | 1 | Propuesta | Completa |
-| 2 | Anteproyecto y evaluación | Pendiente |
+| 2 | Anteproyecto y evaluación | Completa |
 | 3 | Aprobación del Consejo | Pendiente |
 | 4 | En curso | Pendiente |
 | 5 | Prórroga | Pendiente |
@@ -131,17 +131,20 @@ Detalle de clases, reglas, operaciones y plan de pruebas: [fase-1-propuesta.md](
 
 **Reconstrucción desde persistencia:** implementada al iniciar la persistencia con `DatosTrabajoGrado` / `DatosPropuesta` y `TrabajoGrado.reconstruir(...)`, que no repite las reglas de creación. Cada fase que agregue estado al agregado debe ampliar esos records, la entidad `TrabajoGradoEntity` y `MapperTrabajoGrado`.
 
-## Fase 2: Anteproyecto y evaluación (Arts. 12–13, 37–38)
+## Fase 2: Anteproyecto y evaluación (Arts. 12–13, 37–38) (completa)
+
+Detalle de clases, reglas, API y plan de pruebas: [fase-2-anteproyecto.md](fase-2-anteproyecto.md).
 
 **Reglas**
-- El Departamento asigna 2 evaluadores distintos, que no pueden ser el director ni el codirector. Tienen 10 días hábiles.
-- El anteproyecto no se rechaza.
-- Con correcciones vuelve a `ANTEPROYECTO`: el director tiene 10 días hábiles para reenviarlo y se abre una nueva ronda.
-- Si ambos evaluadores aprueban, pasa a `APROBACION_CONSEJO`.
+- El director radica el anteproyecto. El jefe del departamento del director (rol `JEFE_DEP`, según su perfil docente) asigna 2 evaluadores distintos, que no pueden ser director, codirector, asesor ni estudiantes del trabajo. Tienen 10 días hábiles.
+- El anteproyecto no se rechaza: cada evaluador emite `APROBADO` o `CON_CORRECCIONES`, opcionalmente con el formato B (URL).
+- Si alguno pide correcciones, vuelve a `ANTEPROYECTO`: el director tiene 10 días hábiles para reenviarlo, y la nueva versión pasa directo a `EVALUACION` con los mismos evaluadores.
+- Si ambos evaluadores aprueban, pasa automáticamente a `APROBACION_CONSEJO`.
+- Los plazos son informativos (`evaluacionVencida`, `correccionesVencidas`).
 
-**Clases:** `Anteproyecto` (versiones y rondas), `EvaluacionAnteproyecto` (2 evaluadores, conceptos, fechas; no admite `RECHAZADO`).
+**Clases:** `Anteproyecto` (versiones, evaluadores, conceptos, estado y plazos), `ConceptoEvaluacion` (versión evaluada, `Concepto` y formato B opcional) y `DatosAnteproyecto` (reconstrucción).
 
-**Operaciones:** `radicarAnteproyecto`, `asignarEvaluadores(e1, e2, hoy, calendario)`, `registrarConceptoEvaluador(Concepto, hoy, calendario)`.
+**Operaciones:** `radicarAnteproyecto(url, responsable, ahora, calendario)`, `asignarEvaluadores(e1, e2, responsable, ahora, calendario)`, `registrarConceptoEvaluador(concepto, urlFormato, ahora, calendario)`.
 
 ## Fase 3: Aprobación del Consejo (Art. 14)
 

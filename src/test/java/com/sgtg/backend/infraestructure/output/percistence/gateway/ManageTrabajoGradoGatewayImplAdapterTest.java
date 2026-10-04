@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
+import com.sgtg.backend.domain.models.comun.Concepto;
 import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.models.comun.Decision;
 import com.sgtg.backend.domain.models.comun.Organo;
@@ -22,8 +23,10 @@ import com.sgtg.backend.domain.models.participantes.Asesor;
 import com.sgtg.backend.domain.models.participantes.Departamento;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
+import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
+import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
@@ -92,6 +95,83 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         assertEquals("Estudiante Prueba", leido.getEstudiantes().get(0).getNombreCompleto());
         assertEquals(1, leido.getHistorial().size());
         assertEquals(Proceso.ANTEPROYECTO, leido.getHistorial().get(0).destino());
+    }
+
+    private static Evaluador evaluador(long id) {
+        return new Evaluador(id, "V" + id, new NombrePersona("Evaluador", null, "Prueba", null),
+                "v" + id + "@unicauca.edu.co");
+    }
+
+    /** Trabajo guardado con la propuesta aprobada, en la etapa de anteproyecto. */
+    private TrabajoGrado guardarEnAnteproyecto(String titulo, long directorId, long estudianteId) {
+        TrabajoGrado trabajo = gateway.guardar(new TrabajoInvestigacion(null, titulo, List.of("O"),
+                List.of(estudiante(estudianteId)), director(directorId, TipoVinculacion.PLANTA), null, null));
+        trabajo.radicarPropuesta("https://archivos.unicauca.edu.co/p.pdf", LUNES, new CalendarioHabilFalso());
+        trabajo.registrarDecisionComite(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, "Acta 1",
+                null, null, LUNES), "C001", LUNES.atTime(9, 0));
+        return gateway.guardar(trabajo);
+    }
+
+    @Test
+    void guardaYRecuperaElAnteproyectoConEvaluadoresYConceptos() {
+        CalendarioHabilFalso calendario = new CalendarioHabilFalso();
+        TrabajoGrado trabajo = guardarEnAnteproyecto("Con anteproyecto", 1L, 10L);
+        trabajo.radicarAnteproyecto("https://archivos.unicauca.edu.co/a1.pdf", "D1", LUNES.atTime(10, 0), calendario);
+        trabajo.asignarEvaluadores(evaluador(20L), evaluador(21L), "J60", LUNES.atTime(11, 0), calendario);
+        trabajo = gateway.guardar(trabajo);
+        // Un evaluador aprueba con formato B y el otro pide correcciones: vuelve a anteproyecto
+        trabajo.registrarConceptoEvaluador(new Concepto(evaluador(20L), ResultadoConcepto.APROBADO, null,
+                LUNES.plusDays(1)), "https://archivos.unicauca.edu.co/b.pdf", LUNES.plusDays(1).atTime(9, 0),
+                calendario);
+        trabajo = gateway.guardar(trabajo);
+        trabajo.registrarConceptoEvaluador(new Concepto(evaluador(21L), ResultadoConcepto.CON_CORRECCIONES,
+                "Ajustar cronograma", LUNES.plusDays(2)), null, LUNES.plusDays(2).atTime(9, 0), calendario);
+        gateway.guardar(trabajo);
+
+        TrabajoGrado leido = gateway.buscarPorId(trabajo.getId());
+
+        assertEquals(Proceso.ANTEPROYECTO, leido.getEtapa());
+        assertEquals(Estado.CON_CORRECCIONES, leido.getAnteproyecto().getEstado());
+        assertEquals(LocalDate.of(2026, 3, 18), leido.getAnteproyecto().getFechaLimiteCorrecciones());
+        assertEquals(LocalDate.of(2026, 3, 16), leido.getAnteproyecto().getFechaLimiteEvaluacion());
+        assertEquals(TipoDocumento.ANTEPROYECTO, leido.getAnteproyecto().versionActual().get().tipo());
+        assertEquals(List.of(20L, 21L),
+                leido.getAnteproyecto().getEvaluadores().stream().map(Evaluador::getUsuarioId).toList());
+        ConceptoEvaluacion aprobado = leido.getAnteproyecto().getConceptos().get(0);
+        assertEquals("V20", aprobado.concepto().emisor().getCodigo());
+        assertEquals(new Documento(TipoDocumento.EVALUACION_ANTEPROYECTO, "https://archivos.unicauca.edu.co/b.pdf",
+                1, LUNES.plusDays(1)), aprobado.formato());
+        ConceptoEvaluacion conCorrecciones = leido.getAnteproyecto().getConceptos().get(1);
+        assertEquals(ResultadoConcepto.CON_CORRECCIONES, conCorrecciones.concepto().resultado());
+        assertEquals("Ajustar cronograma", conCorrecciones.concepto().observaciones());
+        assertNull(conCorrecciones.formato());
+        assertEquals(List.of(Proceso.ANTEPROYECTO, Proceso.EVALUACION, Proceso.ANTEPROYECTO),
+                leido.getHistorial().stream().map(c -> c.destino()).toList());
+
+        // El trabajo leído sigue operando: la versión corregida vuelve a evaluación
+        leido.radicarAnteproyecto("https://archivos.unicauca.edu.co/a2.pdf", "D1", LUNES.plusDays(3).atTime(9, 0),
+                calendario);
+        assertEquals(Proceso.EVALUACION, gateway.guardar(leido).getEtapa());
+    }
+
+    @Test
+    void listaPorEtapaEIncluyeALosEvaluadoresComoParticipantes() {
+        CalendarioHabilFalso calendario = new CalendarioHabilFalso();
+        TrabajoGrado enPropuesta = gateway.guardar(new TrabajoInvestigacion(null, "En propuesta", List.of("O"),
+                List.of(estudiante(10L)), director(1L, TipoVinculacion.PLANTA), null, null));
+        TrabajoGrado enAnteproyecto = guardarEnAnteproyecto("En anteproyecto", 2L, 11L);
+        TrabajoGrado enEvaluacion = guardarEnAnteproyecto("En evaluación", 3L, 12L);
+        enEvaluacion.radicarAnteproyecto("https://archivos.unicauca.edu.co/a.pdf", "D3", LUNES.atTime(10, 0),
+                calendario);
+        enEvaluacion.asignarEvaluadores(evaluador(20L), evaluador(21L), "J60", LUNES.atTime(11, 0), calendario);
+        gateway.guardar(enEvaluacion);
+
+        assertEquals(List.of(enAnteproyecto.getId()),
+                gateway.listarPorEtapa(Proceso.ANTEPROYECTO).stream().map(TrabajoGrado::getId).toList());
+        assertEquals(List.of(enPropuesta.getId()),
+                gateway.listarPorEtapa(Proceso.PROPUESTA).stream().map(TrabajoGrado::getId).toList());
+        assertEquals(List.of(enEvaluacion.getId()),
+                gateway.listarPorParticipante(21L).stream().map(TrabajoGrado::getId).toList());
     }
 
     @Test

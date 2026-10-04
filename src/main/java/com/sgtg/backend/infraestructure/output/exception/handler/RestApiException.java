@@ -13,8 +13,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.infraestructure.output.exception.own.BadCredentialException;
@@ -312,10 +314,14 @@ public class RestApiException {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    /** Cuerpo de la petición mal formado (JSON inválido o valores no convertibles): 400. */
-    @ExceptionHandler(HttpMessageNotReadableException.class)
+    /**
+     * Cuerpo o parámetros de la petición mal formados (JSON inválido, valores no
+     * convertibles o parámetros obligatorios ausentes): 400.
+     */
+    @ExceptionHandler({ HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class })
     public ResponseEntity<Error> handleHttpMessageNotReadableException(final HttpServletRequest req,
-            final HttpMessageNotReadableException ex) {
+            final Exception ex) {
         final Error error = ErrorUtils
                 .createError(ErrorCode.BAD_FORMAT.getCode(), ErrorCode.BAD_FORMAT.getMessageKey(),
                         HttpStatus.BAD_REQUEST.value())

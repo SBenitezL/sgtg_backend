@@ -3,6 +3,7 @@ package com.sgtg.backend.domain.use_cases;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -46,7 +47,7 @@ import com.sgtg.backend.infraestructure.output.exception.own.EntityNotFoundExcep
 import com.sgtg.backend.infraestructure.output.exception.own.NoAccessException;
 import com.sgtg.backend.infraestructure.output.formatter.ExceptionFormatterImplAdapter;
 
-/** Casos de uso de la Fase 1 con los gateways simulados. */
+/** Casos de uso de las Fases 1 y 2 con los gateways simulados. */
 class ManageTrabajoGradoCUImplAdapterTest {
 
     private static final Departamento SISTEMAS = new Departamento(1L, "Sistemas");
@@ -83,6 +84,12 @@ class ManageTrabajoGradoCUImplAdapterTest {
         when(perfilGateway.buscarPerfilEstudiante(10L)).thenReturn(new PerfilEstudiante(10L, ING_SISTEMAS));
         when(userGateway.findById(50L)).thenReturn(usuario(50L, RoleAdmited.COMITE));
         when(userGateway.findById(99L)).thenReturn(usuario(99L, RoleAdmited.DOCENTE));
+        // Jefe del departamento de Sistemas (60) y evaluadores (20, 21)
+        when(userGateway.findById(60L)).thenReturn(usuario(60L, RoleAdmited.JEFE_DEP, RoleAdmited.DOCENTE));
+        when(perfilGateway.buscarPerfilDocente(60L))
+                .thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, SISTEMAS));
+        when(userGateway.findById(20L)).thenReturn(usuario(20L, RoleAdmited.DOCENTE));
+        when(userGateway.findById(21L)).thenReturn(usuario(21L, RoleAdmited.EVALUADOR));
         // El gateway devuelve el mismo trabajo que recibe
         when(trabajoGateway.guardar(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
     }
@@ -175,6 +182,98 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals("U50", trabajo.getHistorial().get(0).responsable());
         assertEquals(LocalDate.of(2026, 3, 2), trabajo.getPropuesta().getDecisiones().get(0).fecha());
         assertEquals("actas/acta-1.pdf", trabajo.getPropuesta().getDecisiones().get(0).rutaArchivo());
+    }
+
+    /** Trabajo guardado con la propuesta aprobada, en la etapa de anteproyecto. */
+    private TrabajoGrado trabajoEnAnteproyecto() {
+        trabajoGuardado();
+        casoDeUso.radicarPropuesta(7L, 1L, "https://archivos.unicauca.edu.co/p.pdf");
+        return casoDeUso.registrarDecisionComite(7L, 50L, ResultadoConcepto.APROBADO, "Acta 1", null, null, null);
+    }
+
+    @Test
+    void soloElDirectorRadicaElAnteproyecto() {
+        trabajoEnAnteproyecto();
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.radicarAnteproyecto(7L, 10L, "https://archivos.unicauca.edu.co/a.pdf"));
+
+        TrabajoGrado trabajo = casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        assertEquals(Estado.RADICADO, trabajo.getAnteproyecto().getEstado());
+        assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
+    }
+
+    @Test
+    void elJefeDelDepartamentoDelDirectorAsignaLosEvaluadores() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+
+        TrabajoGrado trabajo = casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
+
+        assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
+        assertEquals(List.of(20L, 21L),
+                trabajo.getAnteproyecto().getEvaluadores().stream().map(e -> e.getUsuarioId()).toList());
+        assertEquals("U60", trabajo.getHistorial().get(1).responsable());
+        // 10 días hábiles desde el lunes 2-mar-2026 según el reloj fijo
+        assertEquals(LocalDate.of(2026, 3, 16), trabajo.getAnteproyecto().getFechaLimiteEvaluacion());
+    }
+
+    @Test
+    void unJefeDeOtroDepartamentoNoAsignaEvaluadores() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        when(perfilGateway.buscarPerfilDocente(60L))
+                .thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, new Departamento(2L, "Telemática")));
+
+        NoAccessException error = assertThrows(NoAccessException.class,
+                () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L));
+        assertEquals("error.trabajo_grado.otro_departamento", error.getMessage());
+    }
+
+    @Test
+    void elJefeDebeTenerPerfilDocente() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        when(perfilGateway.buscarPerfilDocente(60L)).thenReturn(null);
+
+        BusinessRuleException error = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L));
+        assertEquals("error.trabajo_grado.jefe_sin_perfil", error.getBusinessRule());
+    }
+
+    @Test
+    void elEvaluadorDebeTenerUnRolQueLePermitaEvaluar() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+
+        // El usuario 50 solo tiene rol COMITE
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, 50L));
+        assertEquals("error.dominio.participante.rol_no_permitido", error.getMessage());
+    }
+
+    @Test
+    void soloLosEvaluadoresAsignadosEmitenConcepto() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
+
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.registrarConceptoEvaluador(7L, 99L, ResultadoConcepto.APROBADO, null, null));
+
+        casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null,
+                "https://archivos.unicauca.edu.co/b1.pdf");
+        TrabajoGrado trabajo = casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null, null);
+
+        assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
+        assertEquals(LocalDate.of(2026, 3, 2), trabajo.getAnteproyecto().getConceptos().get(0).concepto().fecha());
+        assertTrue(trabajo.participa(21L));
+    }
+
+    @Test
+    void listarPorEtapaExigeLaEtapa() {
+        assertThrows(BusinessRuleException.class, () -> casoDeUso.listarPorEtapa(null));
+        casoDeUso.listarPorEtapa(Proceso.ANTEPROYECTO);
+        verify(trabajoGateway).listarPorEtapa(Proceso.ANTEPROYECTO);
     }
 
     @Test

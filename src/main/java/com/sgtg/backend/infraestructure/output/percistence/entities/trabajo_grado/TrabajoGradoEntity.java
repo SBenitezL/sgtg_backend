@@ -29,8 +29,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * Trabajo de grado persistido. El agregado completo se guarda en esta tabla y
- * en colecciones de valores (estudiantes, dirección, propuesta, historial), de
- * modo que se guarda y se lee como una unidad.
+ * en colecciones de valores (estudiantes, dirección, propuesta, anteproyecto,
+ * historial), de modo que se guarda y se lee como una unidad.
  */
 @Entity
 @Table(name = "trabajos_grado")
@@ -100,6 +100,30 @@ public class TrabajoGradoEntity {
     @CollectionTable(name = "propuesta_decisiones", joinColumns = @JoinColumn(name = "trabajo_id"))
     @OrderColumn(name = "orden")
     private List<DecisionEmbeddable> propuestaDecisiones = new ArrayList<>();
+
+    // ----- Anteproyecto y evaluación -----
+
+    @Enumerated(EnumType.STRING)
+    private Estado anteproyectoEstado;
+
+    private LocalDate anteproyectoFechaLimiteEvaluacion;
+
+    private LocalDate anteproyectoFechaLimiteCorrecciones;
+
+    @ElementCollection
+    @CollectionTable(name = "anteproyecto_versiones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<DocumentoEmbeddable> anteproyectoVersiones = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "anteproyecto_evaluadores", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<EvaluadorTrabajoEmbeddable> anteproyectoEvaluadores = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "anteproyecto_conceptos", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<ConceptoEvaluacionEmbeddable> anteproyectoConceptos = new ArrayList<>();
 
     // ----- Historial -----
 
