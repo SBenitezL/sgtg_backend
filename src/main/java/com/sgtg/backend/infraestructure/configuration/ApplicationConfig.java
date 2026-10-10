@@ -33,6 +33,7 @@ import com.sgtg.backend.domain.use_cases.ManageCatalogoCUImplAdapter;
 import com.sgtg.backend.domain.use_cases.ManagePerfilCUImplAdapter;
 import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntPort;
 import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
+import com.sgtg.backend.application.output.ManageArchivoGatewayIntPort;
 import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.use_cases.ManageTrabajoGradoCUImplAdapter;
 import com.sgtg.backend.infraestructure.output.auth.AuthService;
@@ -78,17 +79,20 @@ public class ApplicationConfig {
     @Bean
     public ManageUsuarioCUIntPort manageUsuarioCUIntPort(ManageUserGatewayIntPort userGateway,
             ManageAuthGatewayIntPort authGateway, ManageAuthServiceGatewayIntPort authServiceGateway,
+            ManagePerfilGatewayIntPort perfilGateway, ManageCatalogoGatewayIntPort catalogoGateway,
             ExceptionFormatterIntPort exceptionFormatter) {
-        return new ManageUsuarioCUImplAdapter(userGateway, authGateway, authServiceGateway, exceptionFormatter);
+        return new ManageUsuarioCUImplAdapter(userGateway, authGateway, authServiceGateway, perfilGateway,
+                catalogoGateway, exceptionFormatter);
     }
 
     /**
      * Reloj de la aplicación en la zona horaria de Colombia. Los casos de uso lo
-     * usan para obtener la fecha actual que pasan al dominio.
+     * usan para obtener la fecha actual que pasan al dominio. Solo se puede
+     * adelantar en desarrollo ({@code sgtg.reloj.ajustable=true}).
      */
     @Bean
-    public Clock clock() {
-        return Clock.system(ZoneId.of("America/Bogota"));
+    public RelojAjustable clock() {
+        return new RelojAjustable(Clock.system(ZoneId.of("America/Bogota")));
     }
 
     @Bean
@@ -113,9 +117,10 @@ public class ApplicationConfig {
     @Bean
     public ManageTrabajoGradoCUIntPort manageTrabajoGradoCUIntPort(ManageTrabajoGradoGatewayIntPort trabajoGateway,
             ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
-            CalendarioHabil calendario, Clock clock, ExceptionFormatterIntPort exceptionFormatter) {
-        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, calendario, clock,
-                exceptionFormatter);
+            ManageArchivoGatewayIntPort archivoGateway, CalendarioHabil calendario, Clock clock,
+            ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
+                calendario, clock, exceptionFormatter);
     }
 
 }

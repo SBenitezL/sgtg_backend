@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
+import com.sgtg.backend.domain.models.trabajo_grado.EstadoSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
@@ -30,7 +31,7 @@ import lombok.NoArgsConstructor;
 /**
  * Trabajo de grado persistido. El agregado completo se guarda en esta tabla y
  * en colecciones de valores (estudiantes, dirección, propuesta, anteproyecto,
- * historial), de modo que se guarda y se lee como una unidad.
+ * decisiones del Consejo, historial), de modo que se guarda y se lee como una unidad.
  */
 @Entity
 @Table(name = "trabajos_grado")
@@ -124,6 +125,100 @@ public class TrabajoGradoEntity {
     @CollectionTable(name = "anteproyecto_conceptos", joinColumns = @JoinColumn(name = "trabajo_id"))
     @OrderColumn(name = "orden")
     private List<ConceptoEvaluacionEmbeddable> anteproyectoConceptos = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "anteproyecto_decisiones_consejo", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<DecisionEmbeddable> anteproyectoDecisionesConsejo = new ArrayList<>();
+
+    // ----- Ejecución (null hasta la aprobación del Consejo) -----
+
+    private LocalDate ejecucionFechaNotificacion;
+
+    private LocalDate ejecucionFechaFin;
+
+    private LocalDate ejecucionFechaMinimaSustentacion;
+
+    @ElementCollection
+    @CollectionTable(name = "ejecucion_cambios_objetivos", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<CambioObjetivosEmbeddable> ejecucionCambiosObjetivos = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "ejecucion_informes_mensuales", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<InformeMensualEmbeddable> ejecucionInformesMensuales = new ArrayList<>();
+
+    @Embedded
+    private ProrrogaEmbeddable prorroga;
+
+    @ElementCollection
+    @CollectionTable(name = "ejecucion_suspensiones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<SuspensionEmbeddable> ejecucionSuspensiones = new ArrayList<>();
+
+    // ----- Sustentación (columnas nulas hasta que se solicite) -----
+
+    @Column(length = 500)
+    private String sustentacionRutaDocumentoFinal;
+
+    @Column(length = 500)
+    private String sustentacionRutaPazYSalvo;
+
+    @Column(length = 500)
+    private String sustentacionRutaConceptoAsesor;
+
+    private LocalDate sustentacionFechaSolicitud;
+
+    @Enumerated(EnumType.STRING)
+    private EstadoSustentacion sustentacionEstado;
+
+    @Column(length = 500)
+    private String sustentacionRutaAjustes;
+
+    private LocalDate sustentacionFechaAjustes;
+
+    private LocalDate sustentacionFechaLimiteAjustes;
+
+    private LocalDate sustentacionFechaLimiteSegundaSesion;
+
+    @Column(length = 500)
+    private String sustentacionRutaVersionDefinitiva;
+
+    private LocalDate sustentacionFechaVersionDefinitiva;
+
+    /** Usuario del jurado que cargó la versión definitiva (jurado de la última sesión) */
+    private Long sustentacionJuradoVersionDefinitivaId;
+
+    @Enumerated(EnumType.STRING)
+    private MotivoCierre sustentacionMotivoNoAprobacion;
+
+    @ElementCollection
+    @CollectionTable(name = "sustentacion_sesiones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<SesionSustentacionEmbeddable> sustentacionSesiones = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "sustentacion_calificaciones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<CalificacionJuradoEmbeddable> sustentacionCalificaciones = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "sustentacion_inasistencias", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<RegistroJuradoEmbeddable> sustentacionInasistencias = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "sustentacion_verificaciones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<RegistroJuradoEmbeddable> sustentacionVerificaciones = new ArrayList<>();
+
+    // ----- Cancelación -----
+
+    @ElementCollection
+    @CollectionTable(name = "trabajo_cancelaciones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<CancelacionEmbeddable> cancelaciones = new ArrayList<>();
 
     // ----- Historial -----
 

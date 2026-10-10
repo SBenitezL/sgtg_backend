@@ -4,24 +4,41 @@ import com.sgtg.backend.domain.models.Usuario;
 
 /*
     * Puerto de salida para la gestión de autenticación, define las operaciones
-    * relacionadas con el inicio de sesión y registro de usuarios
+    * relacionadas con las credenciales, los tokens y el registro de usuarios
 */
 public interface ManageAuthServiceGatewayIntPort {
+
     /**
-     * Inicia sesión con el correo electrónico y la contraseña proporcionados,
-     * devuelve un token de autenticación si las credenciales son válidas.
-     * 
+     * Verifica que exista un usuario con el correo indicado y que la contraseña
+     * corresponda, sin importar si el usuario está activo. Toma un tiempo similar
+     * exista o no el correo, para no revelar qué correos están registrados.
+     *
      * @param email    Correo electrónico del usuario.
-     * @param password Contraseña del usuario.
-     * @return Token de autenticación si las credenciales son válidas, de lo
-     *         contrario, null o una excepción.
+     * @param password Contraseña en texto plano.
+     * @return true si las credenciales son correctas.
      */
-    String login(String email, String password);
+    boolean verificarCredenciales(String email, String password);
+
+    /**
+     * Genera el token de autenticación (JWT) del usuario con sus roles.
+     *
+     * @param email Correo electrónico del usuario, debe existir.
+     * @return Token de autenticación.
+     */
+    String generarToken(String email);
+
+    /**
+     * Cifra y guarda una nueva contraseña para el usuario.
+     *
+     * @param usuarioId identificador del usuario
+     * @param password  contraseña nueva en texto plano
+     */
+    void actualizarPassword(Long usuarioId, String password);
 
     /**
      * Realiza el registro de un nuevo usuario en el sistema, devuelve true si el
      * usuario se registró correctamente, de lo contrario, false o una excepción.
-     * 
+     *
      * @param registerRequest Objeto que contiene la información del usuario a
      *                        registrar.
      * @return true si el registro fue exitoso, de lo contrario, false o una

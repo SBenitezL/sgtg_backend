@@ -7,7 +7,9 @@ import com.sgtg.backend.domain.utils.CheckString;
 
 /**
  * Decisión de un órgano colegiado (Comité de Programa, Departamento o Consejo
- * de Facultad). Si no es aprobatoria debe incluir observaciones.
+ * de Facultad). Si no es aprobatoria debe incluir observaciones, salvo que el
+ * órgano las soporte en un documento adjunto (ver
+ * {@link Organo#exigeObservacionesSiNoAprueba()}).
  *
  * @param organo        órgano que emite la decisión
  * @param resultado     resultado de la decisión
@@ -23,7 +25,8 @@ public record Decision(Organo organo, ResultadoConcepto resultado, String acta, 
     public Decision {
         if (organo == null || resultado == null || fecha == null)
             throw new ReglaNegocioException("error.dominio.decision.datos_incompletos");
-        if (resultado != ResultadoConcepto.APROBADO && CheckString.isBlank(observaciones))
+        if (resultado != ResultadoConcepto.APROBADO && organo.exigeObservacionesSiNoAprueba()
+                && CheckString.isBlank(observaciones))
             throw new ReglaNegocioException("error.dominio.decision.observaciones_obligatorias");
         rutaArchivo = CheckString.isBlank(rutaArchivo) ? null : rutaArchivo.trim();
     }

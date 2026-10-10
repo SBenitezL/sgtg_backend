@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.infraestructure.output.exception.own.BadCredentialException;
@@ -33,9 +36,11 @@ import com.sgtg.backend.infraestructure.output.exception.structure.ErrorUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @ControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class RestApiException {
 
     /** Resuelve las claves de mensaje definidas en messages.properties */
@@ -68,6 +73,8 @@ public class RestApiException {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Error> handleException(final HttpServletRequest req,
             final Exception ex, final Locale locale) {
+        // Error no previsto: se registra completo, al cliente solo le llega el código genérico
+        log.error("Error no controlado en {} {}", req.getMethod(), req.getRequestURI(), ex);
         final Error error = ErrorUtils.createError(ErrorCode.GENERIC_ERROR.getCode(),
                 ErrorCode.GENERIC_ERROR.getMessageKey(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value()).setUrl(req.getRequestURL().toString())
@@ -216,14 +223,12 @@ public class RestApiException {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Error> handleBadCredentialsException(final HttpServletRequest req,
             final BadCredentialsException ex, final Locale locale) {
+        // El mensaje de Spring está en inglés: se responde con el mensaje uniforme del login
         final Error error = ErrorUtils
-                .createError(ErrorCode.BAD_CREDENTIALS.getCode(),
-                        String.format("%s, %s",
-                                ErrorCode.BAD_CREDENTIALS.getMessageKey(),
-                                mensaje(ex.getMessage(), locale)),
-                        HttpStatus.NOT_FOUND.value())
+                .createError(ErrorCode.BAD_CREDENTIALS.getCode(), mensaje("error.auth.invalid_credentials", locale),
+                        HttpStatus.UNAUTHORIZED.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
     /**
@@ -235,20 +240,18 @@ public class RestApiException {
      * @param ex     La excepción BadCredentialException que fue lanzada.
      * @param locale El objeto Locale que representa la configuración regional del
      *               cliente, utilizado para localizar mensajes de error.
-     * @return Una ResponseEntity que contiene un objeto Error con detalles del
-     *         error y un código de estado HTTP 404 (Not Found).
+     * @return Una ResponseEntity que contiene un objeto Error con el mensaje
+     *         traducido (para mostrarlo tal cual en el login) y un código de
+     *         estado HTTP 401 (Unauthorized).
      */
     @ExceptionHandler(BadCredentialException.class)
     public ResponseEntity<Error> handleBadCredentialException(final HttpServletRequest req,
             final BadCredentialException ex, final Locale locale) {
         final Error error = ErrorUtils
-                .createError(ErrorCode.BAD_CREDENTIALS.getCode(),
-                        String.format("%s, %s",
-                                ErrorCode.BAD_CREDENTIALS.getMessageKey(),
-                                mensaje(ex.getMessage(), locale)),
-                        HttpStatus.NOT_FOUND.value())
+                .createError(ErrorCode.BAD_CREDENTIALS.getCode(), mensaje(ex.getMessage(), locale),
+                        HttpStatus.UNAUTHORIZED.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
     /**
@@ -319,7 +322,8 @@ public class RestApiException {
      * convertibles o parámetros obligatorios ausentes): 400.
      */
     @ExceptionHandler({ HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
-            MissingServletRequestParameterException.class })
+            MissingServletRequestParameterException.class, MissingServletRequestPartException.class,
+            HttpMediaTypeNotSupportedException.class })
     public ResponseEntity<Error> handleHttpMessageNotReadableException(final HttpServletRequest req,
             final Exception ex) {
         final Error error = ErrorUtils
@@ -333,6 +337,20 @@ public class RestApiException {
      * Reglas de negocio incumplidas en el dominio: se responden como violación
      * de regla de negocio con el texto de la clave.
      */
+    /**
+     * Archivo que supera el tamaño máximo permitido
+     * ({@code spring.servlet.multipart.max-file-size}).
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Error> handleMaxUploadSizeExceededException(final HttpServletRequest req,
+            final MaxUploadSizeExceededException ex, final Locale locale) {
+        final Error error = ErrorUtils
+                .createError(ErrorCode.BAD_FORMAT.getCode(), mensaje("error.archivo.tamano_excedido", locale),
+                        HttpStatus.BAD_REQUEST.value())
+                .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(ReglaNegocioException.class)
     public ResponseEntity<Error> handleReglaNegocioException(final HttpServletRequest req,
             final ReglaNegocioException ex, final Locale locale) {

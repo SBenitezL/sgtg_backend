@@ -32,7 +32,8 @@ public abstract class MapperUsuarioAuth {
                 userEntity.getPrimerApellido(),
                 userEntity.getSegundoApellido(),
                 userEntity.getRole().stream().map(role -> role.getTrole().name()).toList().stream()
-                        .map(MapperRoleAuth::toDomain).toList());
+                        .map(MapperRoleAuth::toDomain).toList(),
+                userEntity.isActivo());
     }
 
     /**
@@ -55,6 +56,7 @@ public abstract class MapperUsuarioAuth {
                 .primerApellido(usuario.getPrimerApellido())
                 .segundoApellido(usuario.getSegundoApellido())
                 .role(usuario.getRole().stream().map(MapperRoleAuth::toEntity).toList())
+                .activo(usuario.isActivo())
                 .build();
     }
 }

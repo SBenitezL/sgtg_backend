@@ -1,50 +1,71 @@
 {
   "clientName": "Thunder Client",
-  "collectionName": "SGTG - Pruebas de integración (Fases 0 a 2)",
-  "collectionId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-  "dateExported": "2026-10-02T20:37:34.000Z",
+  "collectionName": "SGTG - Pruebas de integración (Fases 0 a 8)",
+  "collectionId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+  "dateExported": "2026-10-06T02:28:11.000Z",
   "version": "1.2",
   "folders": [
     {
-      "_id": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "1. Preparación (administrador)",
       "containerId": "",
-      "created": "2026-10-02T20:37:34.000Z",
+      "created": "2026-10-06T02:28:11.000Z",
       "sortNum": 10000
     },
     {
-      "_id": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "2. Flujo de la propuesta",
       "containerId": "",
-      "created": "2026-10-02T20:37:34.000Z",
+      "created": "2026-10-06T02:28:11.000Z",
       "sortNum": 20000
     },
     {
-      "_id": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
-      "name": "3. Flujo del anteproyecto",
+      "_id": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "3. Flujo del anteproyecto y aprobación del Consejo",
       "containerId": "",
-      "created": "2026-10-02T20:37:34.000Z",
+      "created": "2026-10-06T02:28:11.000Z",
       "sortNum": 30000
     },
     {
-      "_id": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
-      "name": "4. Permisos y reglas de negocio",
+      "_id": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "4. Trabajo en curso",
       "containerId": "",
-      "created": "2026-10-02T20:37:34.000Z",
+      "created": "2026-10-06T02:28:11.000Z",
       "sortNum": 40000
+    },
+    {
+      "_id": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "5. Permisos y reglas de negocio",
+      "containerId": "",
+      "created": "2026-10-06T02:28:11.000Z",
+      "sortNum": 50000
+    },
+    {
+      "_id": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "6. Sustentación (reloj ajustable)",
+      "containerId": "",
+      "created": "2026-10-06T02:28:11.000Z",
+      "sortNum": 60000
+    },
+    {
+      "_id": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "7. Cancelación",
+      "containerId": "",
+      "created": "2026-10-06T02:28:11.000Z",
+      "sortNum": 70000
     }
   ],
   "requests": [
     {
-      "_id": "477093f9-8898-4949-bfb0-50eab033e74d",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "852cbb30-d984-4121-a638-ebc674b57481",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Login administrador",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
       "method": "POST",
       "sortNum": 10000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -68,15 +89,46 @@
       "docs": "Usa el administrador inicial definido en el archivo .env (SGTG_ADMIN_EMAIL / SGTG_ADMIN_PASSWORD)."
     },
     {
-      "_id": "4a43c251-08a0-4f38-8f1a-9dce85349738",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "833cc083-6a9f-434c-9f7e-8c0cfc0d3158",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Restablecer el reloj a la fecha real",
+      "url": "{{baseUrl}}/api/v1/sgtg/reloj",
+      "method": "DELETE",
+      "sortNum": 20000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.desplazamientoDias",
+          "action": "equal",
+          "value": "0"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "Reloj de desarrollo (SGTG_RELOJ_AJUSTABLE=true, activo por defecto en docker-compose). Por si una ejecución anterior quedó con el reloj adelantado."
+    },
+    {
+      "_id": "93a728a1-425a-4cbf-958a-119e8e4699e5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear departamento",
       "url": "{{baseUrl}}/api/v1/sgtg/catalogos/departamentos",
       "method": "POST",
-      "sortNum": 20000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 30000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -103,15 +155,15 @@
       }
     },
     {
-      "_id": "5343e944-ddff-43ad-8247-4fd267e35427",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "78017623-5052-446c-aeb0-3a2e7cd37b64",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear programa",
       "url": "{{baseUrl}}/api/v1/sgtg/catalogos/programas",
       "method": "POST",
-      "sortNum": 30000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 40000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -138,15 +190,15 @@
       }
     },
     {
-      "_id": "6a5d4577-4af4-4d99-bc13-b258ee27f728",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "2d78840c-8a4e-4c3b-8399-564051f2dd6f",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear docente (director)",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 40000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 50000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -209,15 +261,15 @@
       }
     },
     {
-      "_id": "275811ee-0fea-4c21-a276-4e207315e0c1",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "f24fe7be-7ec1-4e01-b98b-d14832f150d0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear estudiante",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 50000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 60000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -280,15 +332,15 @@
       }
     },
     {
-      "_id": "950bdafe-1da9-4c67-a610-cb73a0611d14",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "7dd1c692-5f17-4b54-a539-dcba4dbba045",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear miembro del comité",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 60000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 70000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -351,15 +403,15 @@
       }
     },
     {
-      "_id": "383a3980-4d24-4435-9402-c96a41652574",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "9753dd56-3172-4e07-be50-94a064f0a226",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear jefe de departamento",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 70000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 80000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -422,15 +474,15 @@
       }
     },
     {
-      "_id": "fa32252f-dfc8-437f-801b-0831d3c69d17",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "1e98dd7b-f270-4316-804f-33b23390cf3e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear evaluador 1",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 80000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 90000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -493,15 +545,15 @@
       }
     },
     {
-      "_id": "a350c277-3a38-4621-a40a-b28eba179c11",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "5b5f666a-11b0-48c9-a05f-604e2679b2d7",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Crear evaluador 2 (docente)",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 90000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 100000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -564,15 +616,157 @@
       }
     },
     {
-      "_id": "92b070d9-478a-4cb5-82b3-b7a6083a9cbc",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "d4686b5c-6912-4c46-9322-1b7992194374",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear miembro del Consejo de Facultad",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 110000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "CONSEJO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{consejoId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{consejoEmail}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{consejoCodigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{consejoDocumento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"F-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"f.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Consejo\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"CONSEJO\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "6541dc8d-468f-4fbd-bc6e-69d86b521c1c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear jurado",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 120000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "JURADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{juradoId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{juradoEmail}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{juradoCodigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{juradoDocumento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"X-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"x.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Jurado\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"JURADO\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "02bcc5f8-79e0-4356-b9c8-410488f3360f",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Perfil docente (planta)",
       "url": "{{baseUrl}}/api/v1/sgtg/perfiles/docentes/{{docenteId}}",
       "method": "PUT",
-      "sortNum": 100000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 130000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -599,15 +793,15 @@
       }
     },
     {
-      "_id": "4d30672e-8492-450c-8a7d-7883505e1307",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "910dcee9-aa6f-4698-b000-b33f3451b1b2",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Perfil docente del jefe de departamento",
       "url": "{{baseUrl}}/api/v1/sgtg/perfiles/docentes/{{jefeId}}",
       "method": "PUT",
-      "sortNum": 110000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 140000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -635,15 +829,15 @@
       "docs": "El jefe solo asigna evaluadores a trabajos cuyo director pertenece a su departamento."
     },
     {
-      "_id": "97d15d91-303c-4023-9783-367406e5a60c",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "bd3191dc-1634-4fa5-8b23-891aa70fe9b6",
+      "_id": "a15db3be-03d0-41d6-b57f-2e345d687d24",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
       "name": "Perfil estudiante",
       "url": "{{baseUrl}}/api/v1/sgtg/perfiles/estudiantes/{{estudianteId}}",
       "method": "PUT",
-      "sortNum": 120000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 150000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -664,15 +858,15 @@
       }
     },
     {
-      "_id": "d5021617-b949-4957-9f7d-36c4c91f881f",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "68abc84e-c300-42f4-ad70-9894bde6d9d9",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Login docente",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
       "method": "POST",
-      "sortNum": 130000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 160000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -695,15 +889,15 @@
       }
     },
     {
-      "_id": "679c9d1d-cfb9-499f-b69c-0e0b92d87290",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "114e174f-c679-42d6-9038-cefcd7cabe05",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Crear trabajo de investigación",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
       "method": "POST",
-      "sortNum": 140000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 170000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -749,15 +943,15 @@
       "docs": "El docente autenticado queda como director (Art. 10)."
     },
     {
-      "_id": "afb52f51-0001-4c04-afeb-04d528daf425",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "123e73a7-c566-4aca-a282-fb01e8718d3a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Radicar propuesta (versión 1)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
       "method": "POST",
-      "sortNum": 150000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 180000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -796,15 +990,15 @@
       }
     },
     {
-      "_id": "c0525e4b-8560-4616-a7ab-df2d52dda09b",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "6070f45e-d8b7-4f98-bd8d-c76d9babca59",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Login comité",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
       "method": "POST",
-      "sortNum": 160000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 190000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -827,15 +1021,15 @@
       }
     },
     {
-      "_id": "d462a60f-8287-478b-adb9-675cd07283e9",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "dbafff7f-c2bd-4eb6-9b90-bbecd3399ef6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Comité: no aprobar propuesta",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta/decisiones",
       "method": "POST",
-      "sortNum": 170000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 200000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -875,15 +1069,15 @@
       "docs": "Si no se aprueba, el trabajo sigue en PROPUESTA y espera una nueva versión. La decisión guarda la ruta del archivo de soporte."
     },
     {
-      "_id": "c37292fb-bdf9-494b-a21b-cd19c70178c3",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "47210142-a391-4da9-81c1-531231059874",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Radicar propuesta (versión 2)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
       "method": "POST",
-      "sortNum": 180000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 210000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -916,15 +1110,15 @@
       }
     },
     {
-      "_id": "626a6a28-15e6-4116-a76b-d2219531c81d",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "57b88f50-9be4-482c-a964-a8a3b519b9d3",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Comité: aprobar propuesta",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta/decisiones",
       "method": "POST",
-      "sortNum": 190000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 220000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -970,15 +1164,15 @@
       "docs": "Al aprobarse, el trabajo avanza a ANTEPROYECTO y el cambio queda en el historial."
     },
     {
-      "_id": "e32319b6-3a1b-4cc8-9a4d-81b14347c880",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "65ee1a12-690e-4ef7-b3f4-a864d6f86c23",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Login estudiante",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
       "method": "POST",
-      "sortNum": 200000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 230000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1001,15 +1195,15 @@
       }
     },
     {
-      "_id": "b14441bd-00bc-457e-afa4-be8e4981d1f9",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "750c748f-7c8e-4ca2-a536-a05db9f9c848",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Estudiante consulta su trabajo",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}",
       "method": "GET",
-      "sortNum": 210000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 240000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1043,15 +1237,15 @@
       }
     },
     {
-      "_id": "b61c757b-fec4-499e-be28-50c12013a21c",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "8ec95eac-cef8-4145-9758-03757795a15a",
+      "_id": "a65b51d0-3020-4a2f-856c-fd0c971b7576",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
       "name": "Estudiante lista sus trabajos",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/mis-trabajos",
       "method": "GET",
-      "sortNum": 220000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 250000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1073,15 +1267,15 @@
       }
     },
     {
-      "_id": "b38d45a6-58af-4b75-855f-5e6613b2d65c",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "635ddbdc-05e2-4f15-b5cb-9db493eb6943",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Radicar anteproyecto (versión 1)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto",
       "method": "POST",
-      "sortNum": 230000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 260000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1121,15 +1315,15 @@
       "docs": "Solo el director radica. La primera versión espera la asignación de evaluadores."
     },
     {
-      "_id": "a2dc3cd4-dedf-4db8-91d2-9e342445a643",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "90f552db-276b-4ace-b2de-715932e314d0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Login jefe de departamento",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
       "method": "POST",
-      "sortNum": 240000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 270000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1152,15 +1346,15 @@
       }
     },
     {
-      "_id": "5d16d94a-a27a-4cfb-9b03-3401dcc6ebd2",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "b680cd26-12b8-4a4d-8beb-0771a2c1852a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Jefe lista los trabajos en anteproyecto",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado?etapa=ANTEPROYECTO",
       "method": "GET",
-      "sortNum": 250000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 280000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1183,15 +1377,15 @@
       "docs": "Consulta por etapa, para los roles COMITE, JEFE_DEP, CONSEJO y ADMINISTRADOR."
     },
     {
-      "_id": "1417e542-de1c-4540-9b73-5acb16701acf",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "b0b5f3ba-0ba6-4f51-bf55-b82ed759a2dc",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Jefe asigna los evaluadores",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/evaluadores",
       "method": "POST",
-      "sortNum": 260000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 290000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1237,15 +1431,15 @@
       "docs": "Dos evaluadores distintos, que no sean director, codirector, asesor ni estudiantes. Tienen 10 días hábiles."
     },
     {
-      "_id": "8aa29760-1a19-43a1-b5b7-5218efec5bdb",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "0cccfbeb-bc44-4c79-b6a8-1e952548987a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Login evaluador 1",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
       "method": "POST",
-      "sortNum": 270000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 300000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1268,15 +1462,15 @@
       }
     },
     {
-      "_id": "bbb89f45-6813-471b-97f5-d1d9e16514e9",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "b94a65be-b6ee-421d-8dda-6e7997890c48",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Login evaluador 2",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
       "method": "POST",
-      "sortNum": 280000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 310000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1299,15 +1493,15 @@
       }
     },
     {
-      "_id": "7dda7226-5fc5-4599-a269-fe1e32bd9c95",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "4c40e995-5972-404f-b1e4-7a31caafe1c3",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Evaluador 1 aprueba con formato B",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
       "method": "POST",
-      "sortNum": 290000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 320000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1341,15 +1535,15 @@
       "docs": "Con un solo concepto el anteproyecto sigue en evaluación."
     },
     {
-      "_id": "3e210151-d5e2-4771-9a1d-1f6f829f832c",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "c9d3f715-f530-469b-a16a-ca7e21457c1a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Evaluador 2 pide correcciones",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
       "method": "POST",
-      "sortNum": 300000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 330000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1383,15 +1577,15 @@
       "docs": "Si algún evaluador pide correcciones, vuelve a ANTEPROYECTO: el director tiene 10 días hábiles para reenviarlo."
     },
     {
-      "_id": "e3d69762-0a10-4a28-add2-adc476412be5",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "99a68c34-543e-4aea-9ff0-f3473745d55d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Radicar anteproyecto corregido (versión 2)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto",
       "method": "POST",
-      "sortNum": 310000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 340000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1425,15 +1619,15 @@
       "docs": "La versión corregida vuelve directamente a evaluación con los mismos evaluadores."
     },
     {
-      "_id": "a18dbe34-55fb-4de1-80af-75d1cd883ed3",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "bdf7cb8b-eb24-4f63-b96c-f1e1e4cc2bc6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Evaluador 1 aprueba la versión 2",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
       "method": "POST",
-      "sortNum": 320000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 350000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1460,15 +1654,15 @@
       }
     },
     {
-      "_id": "7ed9debc-8ef3-44a4-a411-e2cd04f4150e",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "f9bb0c98-42b2-440a-8795-21b8bf8d4aa0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Evaluador 2 aprueba la versión 2",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
       "method": "POST",
-      "sortNum": 330000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 360000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1508,15 +1702,254 @@
       "docs": "Con ambos conceptos aprobados, el trabajo pasa a la aprobación del Consejo de Facultad."
     },
     {
-      "_id": "c89c2810-61fb-4ab6-b2ea-c3441669edb1",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "f4b69f5a-c62b-4675-9c73-5d817cbd7aca",
+      "_id": "7edd33da-4359-474e-8ec2-53fa5537f79b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Login Consejo de Facultad",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 370000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{consejoToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{consejoEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "4e9416ce-5892-4280-abd3-4743732f2e18",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Consejo: no aprobar (sin comentario)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 380000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "ANTEPROYECTO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.estado",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.decisionesConsejo[0].rutaArchivo",
+          "action": "equal",
+          "value": "resoluciones/2026/res-correcciones.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-correcciones.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "El comentario es opcional: las correcciones vienen en el documento de la resolución. Vuelve a ANTEPROYECTO."
+    },
+    {
+      "_id": "45b2cee8-105c-4163-b5b0-1197b03c2058",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Radicar anteproyecto (versión 3)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto",
+      "method": "POST",
+      "sortNum": 390000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EVALUACION"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.versiones[2].version",
+          "action": "equal",
+          "value": "3"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/anteproyecto_v3.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "La versión que no aprobó el Consejo vuelve a pasar por los mismos evaluadores."
+    },
+    {
+      "_id": "5ee64759-dc8b-4c56-8129-2c6d1af3d311",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Evaluador 1 aprueba la versión 3",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
+      "method": "POST",
+      "sortNum": 400000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EVALUACION"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador1Token}}"
+      }
+    },
+    {
+      "_id": "8d5839f1-bf4d-46d4-adc1-2b796ec5d21e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Evaluador 2 aprueba la versión 3",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
+      "method": "POST",
+      "sortNum": 410000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador2Token}}"
+      }
+    },
+    {
+      "_id": "5eb1a62e-c140-43d8-a899-c4881a78e825",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Consejo: aprobar con la resolución",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 420000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EN_CURSO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.decisionesConsejo[1].resultado",
+          "action": "equal",
+          "value": "APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[8].destino",
+          "action": "equal",
+          "value": "EN_CURSO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-aprobacion.pdf\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "La fecha de la decisión es la de notificación: desde ahí corren los 9 meses (investigación). Ver el bloque ejecucion."
+    },
+    {
+      "_id": "eb017feb-606b-4b14-90dd-b4839e06c6b5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
       "name": "Evaluador ve el trabajo en sus trabajos",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/mis-trabajos",
       "method": "GET",
-      "sortNum": 340000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 430000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1538,15 +1971,909 @@
       }
     },
     {
-      "_id": "36a5ea00-bcb5-44a5-82bf-dc04ff55bbd4",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "7b083493-1ad2-4388-8ed6-ad15ac36ac35",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Director solicita cambio de título",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos",
+      "method": "POST",
+      "sortNum": 440000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.cambiosObjetivos[0].tituloAnterior",
+          "action": "equal",
+          "value": "Sistema de gestión de trabajos de grado"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.titulo",
+          "action": "equal",
+          "value": "Sistema de gestión de trabajos de grado"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado y sustentaciones\",\n  \"objetivos\": [\n    \"Gestionar el proceso de trabajo de grado hasta la sustentación\"\n  ],\n  \"justificacion\": \"Se amplía el alcance acordado con el programa\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Una sola vez, dentro de los primeros 6 meses desde la notificación. El título no cambia hasta que el Consejo apruebe."
+    },
+    {
+      "_id": "d7f32f8d-1670-47ed-ac50-f3e4075322b1",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Consejo no aprueba el cambio",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 450000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.cambiosObjetivos[0].decision.resultado",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.titulo",
+          "action": "equal",
+          "value": "Sistema de gestión de trabajos de grado"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cambio-negado.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "Un cambio no aprobado no consume la oportunidad."
+    },
+    {
+      "_id": "80fee4e7-5a08-45ff-8c89-eeef65456072",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Director solicita el cambio de nuevo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos",
+      "method": "POST",
+      "sortNum": 460000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.cambiosObjetivos[1].justificacion",
+          "action": "equal",
+          "value": "Se ajusta la justificación según la resolución"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado y sustentaciones\",\n  \"objetivos\": [\n    \"Gestionar el proceso de trabajo de grado hasta la sustentación\"\n  ],\n  \"justificacion\": \"Se ajusta la justificación según la resolución\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "61a66aba-85e8-422c-a414-5730624ee41c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Consejo aprueba el cambio",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 470000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.titulo",
+          "action": "equal",
+          "value": "Sistema de gestión de trabajos de grado y sustentaciones"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.objetivos[0]",
+          "action": "equal",
+          "value": "Gestionar el proceso de trabajo de grado hasta la sustentación"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EN_CURSO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cambio.pdf\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "f416050c-46ca-41b9-9b21-49376db09607",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Crear práctica profesional",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/practica-profesional",
+      "method": "POST",
+      "sortNum": 480000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.modalidad",
+          "action": "equal",
+          "value": "PRACTICA_PROFESIONAL"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{practicaId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Práctica en desarrollo de software\",\n  \"objetivos\": [\n    \"Apoyar el desarrollo de un sistema de información\"\n  ],\n  \"estudianteId\": \"{{estudianteId}}\",\n  \"asesor\": {\n    \"codigo\": \"{{#number}}\",\n    \"primerNombre\": \"Asesor\",\n    \"primerApellido\": \"Empresa\",\n    \"email\": \"asesor.{{#guid}}@empresa.com\",\n    \"organizacion\": \"Empresa S.A.S.\",\n    \"externo\": true\n  },\n  \"urlCartaAceptacion\": \"https://archivos.unicauca.edu.co/tg/carta.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Para probar los informes mensuales, que solo aplican a la práctica profesional."
+    },
+    {
+      "_id": "847d3721-4523-4bd6-84dd-f56728cc0e3a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: radicar propuesta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/propuesta",
+      "method": "POST",
+      "sortNum": 490000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].formato",
+          "action": "equal",
+          "value": "PP-A"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/pp_propuesta.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "06e90856-53ca-4f91-aa5b-c4f7031da508",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: comité aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/propuesta/decisiones",
+      "method": "POST",
+      "sortNum": 500000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "ANTEPROYECTO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 03\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      }
+    },
+    {
+      "_id": "855eb9c8-88af-4d22-aeab-fc6da705ef40",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: radicar anteproyecto",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/anteproyecto",
+      "method": "POST",
+      "sortNum": 510000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/pp_anteproyecto.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "348e23c6-b5a3-450c-8e05-78d958b2f41d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: jefe asigna evaluadores",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/anteproyecto/evaluadores",
+      "method": "POST",
+      "sortNum": 520000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EVALUACION"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"evaluador1Id\": \"{{evaluador1Id}}\",\n  \"evaluador2Id\": \"{{evaluador2Id}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jefeToken}}"
+      }
+    },
+    {
+      "_id": "e04770bd-6e6e-4bb6-b609-6d9298e2d6a4",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: evaluador 1 aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/anteproyecto/conceptos",
+      "method": "POST",
+      "sortNum": 530000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador1Token}}"
+      }
+    },
+    {
+      "_id": "57d3e8a7-acdf-4e85-96b6-31f05b3bab5b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: evaluador 2 aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/anteproyecto/conceptos",
+      "method": "POST",
+      "sortNum": 540000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador2Token}}"
+      }
+    },
+    {
+      "_id": "436fe7dd-386b-4e3c-ba3f-0013b7d833f9",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: Consejo aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 550000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EN_CURSO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "La práctica profesional tiene de 6 meses a 1 año: ver ejecucion.fechaMinimaSustentacion y ejecucion.fechaFin."
+    },
+    {
+      "_id": "788344e1-7cd0-4444-b182-da0c0f9dafba",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: informe mensual 1",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/informes-mensuales",
+      "method": "POST",
+      "sortNum": 560000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].numero",
+          "action": "equal",
+          "value": "1"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].rutaArchivo",
+          "action": "equal",
+          "value": "informes/2026/pp_informe_1.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_1.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Lo radica el director con el documento adjunto; solo se guarda la ruta."
+    },
+    {
+      "_id": "8bd30aa8-9771-4c1b-bf8c-84581010d800",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: informe mensual 2",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/informes-mensuales",
+      "method": "POST",
+      "sortNum": 570000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[1].numero",
+          "action": "equal",
+          "value": "2"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_2.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "c079879a-1ea6-49d6-a062-cf24beeef1ab",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: director solicita prórroga",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/prorroga",
+      "method": "POST",
+      "sortNum": 580000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EN_CURSO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.prorroga.meses",
+          "action": "equal",
+          "value": "3"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.prorroga.rutaSolicitud",
+          "action": "equal",
+          "value": "solicitudes/2026/pp_prorroga.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"meses\": 3,\n  \"rutaSolicitud\": \"solicitudes/2026/pp_prorroga.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "De 1 a 3 meses, una sola vez y con al menos 15 días calendario antes del fin del plazo."
+    },
+    {
+      "_id": "24c2a813-7488-424d-97ce-7bd1684b6fc3",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: Consejo aprueba la prórroga",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/prorroga/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 590000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PRORROGA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.prorroga.decision.resultado",
+          "action": "equal",
+          "value": "APROBADO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp-prorroga.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "El fin del plazo (ejecucion.fechaFin) se extiende por los meses solicitados."
+    },
+    {
+      "_id": "9a06ccbb-612c-4dfb-a31a-670a6f78a719",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: informe mensual en prórroga",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/informes-mensuales",
+      "method": "POST",
+      "sortNum": 600000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[2].numero",
+          "action": "equal",
+          "value": "3"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PRORROGA"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_3.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "acc025af-8f75-46d9-aaae-b5640d74cd1b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: director solicita suspensión",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/suspension",
+      "method": "POST",
+      "sortNum": 610000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PRORROGA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.suspensiones[0].rutaSolicitud",
+          "action": "equal",
+          "value": "solicitudes/2026/pp_suspension_1.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/pp_suspension_1.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Se permite desde EN_CURSO o PRORROGA, con el documento de la solicitud."
+    },
+    {
+      "_id": "1dead39b-3202-4cef-85cb-92cf2e747c90",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: Consejo no aprueba la suspensión",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/suspension/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 620000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PRORROGA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.suspensiones[0].decision.resultado",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp-susp-negada.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "Una suspensión negada no consume la oportunidad."
+    },
+    {
+      "_id": "56661bff-fc40-40ea-8175-c897b94c1a5e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: director solicita suspensión de nuevo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/suspension",
+      "method": "POST",
+      "sortNum": 630000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.suspensiones[1].rutaSolicitud",
+          "action": "equal",
+          "value": "solicitudes/2026/pp_suspension_2.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/pp_suspension_2.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "6a97d04a-9c9b-4174-8bb8-58b90195527e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: Consejo aprueba la suspensión",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/suspension/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 640000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "SUSPENDIDO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.suspensiones[1].etapaPrevia",
+          "action": "equal",
+          "value": "PRORROGA"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp-suspension.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "Rige desde hoy y congela los días restantes (diasRestantes). Se reanuda a más tardar el primer día del período académico posterior al siguiente (fechaMaximaReanudacion); si el director no la reanuda, lo hace la tarea diaria."
+    },
+    {
+      "_id": "8a9d0224-c733-4ddf-8d5c-4a893fde2a72",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: no se radican informes estando suspendida",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/informes-mensuales",
+      "method": "POST",
+      "sortNum": 650000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La operación no está permitida en la etapa actual del trabajo de grado."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "0435068b-5559-4349-9374-6dd81fb71874",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: director reanuda",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/suspension/reanudacion",
+      "method": "POST",
+      "sortNum": 660000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PRORROGA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.suspensiones[1].rutaReanudacion",
+          "action": "equal",
+          "value": "solicitudes/2026/pp_reanudacion.pdf"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.suspensiones[1].reanudacionAutomatica",
+          "action": "equal",
+          "value": "false"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/pp_reanudacion.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Vuelve a la etapa previa; el nuevo fin es la fecha de reanudación más los días congelados."
+    },
+    {
+      "_id": "87d74917-8630-44d8-a6de-37d373c74108",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Sin token responde 401",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me",
       "method": "GET",
-      "sortNum": 350000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 670000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1558,15 +2885,15 @@
       ]
     },
     {
-      "_id": "5559f941-57c8-440b-ab5d-31bb9e965521",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "df5e1536-ff02-418e-b830-b5f029b21d90",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Estudiante no puede crear trabajos (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
       "method": "POST",
-      "sortNum": 360000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 680000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1587,15 +2914,15 @@
       }
     },
     {
-      "_id": "27fc525a-23f9-4f70-b83a-2a77b75894fe",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "71daa6ee-8ac8-4cd6-b014-e95263d89b99",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Estudiante no puede crear usuarios (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 370000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 690000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1616,15 +2943,15 @@
       }
     },
     {
-      "_id": "69faaebd-f640-4e5c-95b1-bf7ba01cbd75",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "5f0f0525-4777-482d-839d-36544c81f371",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Solo el director radica la propuesta",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
       "method": "POST",
-      "sortNum": 380000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 700000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1651,15 +2978,15 @@
       }
     },
     {
-      "_id": "88ae468e-c903-4a9c-95e2-2859527edc02",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "347306fa-0ddc-43e3-a4be-4242cfe31c2b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "No se radica fuera de la etapa de propuesta",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
       "method": "POST",
-      "sortNum": 390000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 710000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1693,15 +3020,15 @@
       "docs": "El trabajo ya está en ANTEPROYECTO: la regla del dominio responde 400 con el mensaje en español."
     },
     {
-      "_id": "6310dc82-3701-4140-9758-5f0d0a2565fd",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "056d504f-193a-4be4-a552-42dd4a1acc5f",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Docente sin rol JEFE_DEP no asigna evaluadores (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/evaluadores",
       "method": "POST",
-      "sortNum": 400000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 720000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1722,15 +3049,15 @@
       }
     },
     {
-      "_id": "b5315fc8-2760-4568-b4fa-4d5f765d3ed0",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "9be1539c-6722-4caa-ad0d-fd11cec0b1c3",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Solo los evaluadores asignados emiten concepto",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
       "method": "POST",
-      "sortNum": 410000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 730000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1757,15 +3084,15 @@
       }
     },
     {
-      "_id": "d262b284-6de3-4afa-8bbb-10164787196e",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "af3c34c7-e636-4c9c-a41e-69cd947efc41",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "No se emite concepto fuera de la evaluación",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/conceptos",
       "method": "POST",
-      "sortNum": 420000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 740000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1790,18 +3117,625 @@
         "type": "bearer",
         "bearer": "{{evaluador1Token}}"
       },
-      "docs": "El trabajo ya está en APROBACION_CONSEJO."
+      "docs": "El trabajo ya está EN_CURSO."
     },
     {
-      "_id": "d5fd4311-f30b-454d-8193-ad2e801ba272",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "422ebd72-35ce-4a7c-8f13-001177938e25",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Docente no registra decisiones del Consejo (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 750000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "de195392-7988-475a-aec1-84e7a44614b6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "La ruta de la resolución es obligatoria (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 760000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.rutaResolucion",
+          "action": "equal",
+          "value": "La ruta del documento de la resolución es obligatoria"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "efc66d54-0f60-43bc-a96d-2d21e4dabd5b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El Consejo no decide fuera de su etapa (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 770000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La operación no está permitida en la etapa actual del trabajo de grado."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "El trabajo ya está EN_CURSO."
+    },
+    {
+      "_id": "c871e403-f190-4d61-a541-00239a649125",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Solo el director solicita el cambio de objetivos",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos",
+      "method": "POST",
+      "sortNum": 780000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"T\",\n  \"objetivos\": [\n    \"O\"\n  ],\n  \"justificacion\": \"J\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "100d3d6a-5a15-4392-88fd-7bed6cd857a4",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Docente no decide el cambio de objetivos (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 790000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "49227215-a8d3-40e7-86ec-77ccf050cfa9",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El cambio de objetivos solo se hace una vez (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos",
+      "method": "POST",
+      "sortNum": 800000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El título u objetivos del trabajo de grado solo pueden cambiarse una vez."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Otro título\",\n  \"objetivos\": [\n    \"Otro objetivo\"\n  ],\n  \"justificacion\": \"Otra justificación\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "f4977368-ef5b-4771-bb6e-f3f9820e56ec",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Informes mensuales solo en práctica (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales",
+      "method": "POST",
+      "sortNum": 810000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "Los informes mensuales solo aplican a la modalidad de práctica profesional."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"informes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "c23d670d-da5f-4459-966f-69a580c4a6ae",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Informe sin documento (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/informes-mensuales",
+      "method": "POST",
+      "sortNum": 820000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.rutaDocumento",
+          "action": "equal",
+          "value": "La ruta del documento del informe es obligatoria"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "e3b12fea-38df-4b12-aa04-364154d0e72c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Prórroga de más de 3 meses (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/prorroga",
+      "method": "POST",
+      "sortNum": 830000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.meses",
+          "action": "equal",
+          "value": "La prórroga debe ser de 1 a 3 meses"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"meses\": 4,\n  \"rutaSolicitud\": \"solicitudes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "a54e24de-6b11-47ce-a446-fa747cd6af3b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Solo el director solicita la prórroga",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/prorroga",
+      "method": "POST",
+      "sortNum": 840000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"meses\": 1,\n  \"rutaSolicitud\": \"solicitudes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "d0f8f234-6b64-4f51-ab2b-94a6dce79d9f",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Docente no decide la prórroga (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/prorroga/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 850000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "ea10042e-94e7-4ef5-bd8e-31a89ec03512",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Consejo no decide sin solicitud de prórroga (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/prorroga/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 860000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "No hay una solicitud de prórroga pendiente de decisión."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "aab5b748-46bf-4e73-aa75-79022a27e0dc",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "No se solicita otra prórroga estando en prórroga (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/prorroga",
+      "method": "POST",
+      "sortNum": 870000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La operación no está permitida en la etapa actual del trabajo de grado."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"meses\": 1,\n  \"rutaSolicitud\": \"solicitudes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "17015ca2-3fb3-46ee-9d0a-ba7463e1231d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Solo el director solicita la suspensión",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/suspension",
+      "method": "POST",
+      "sortNum": 880000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "c782472b-73ba-440c-9adf-0dbf7051175a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Suspensión sin documento (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/suspension",
+      "method": "POST",
+      "sortNum": 890000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.rutaDocumento",
+          "action": "equal",
+          "value": "La ruta del documento es obligatoria"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "430587fa-826a-400f-a2af-d0a41e730403",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Docente no decide la suspensión (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/suspension/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 900000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "b10e3bd2-7b0b-41b6-adc4-5f01e0b2a072",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Solo se suspende una vez (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/suspension",
+      "method": "POST",
+      "sortNum": 910000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El trabajo de grado solo puede suspenderse una vez."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "5bd7abe7-b3a3-4868-a58f-179ae013e663",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "No se reanuda un trabajo no suspendido (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/suspension/reanudacion",
+      "method": "POST",
+      "sortNum": 920000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La operación no está permitida en la etapa actual del trabajo de grado."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "58805386-d16c-4ec6-b025-449cd112fd24",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Estudiante no consulta por etapa (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado?etapa=ANTEPROYECTO",
       "method": "GET",
-      "sortNum": 430000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 930000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1817,15 +3751,15 @@
       }
     },
     {
-      "_id": "cee529d8-1058-4336-9f68-e519484b7846",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "3df92873-b789-4548-b323-ac590106d3e2",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Etapa inexistente (400)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado?etapa=NO_EXISTE",
       "method": "GET",
-      "sortNum": 440000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 940000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1841,15 +3775,15 @@
       }
     },
     {
-      "_id": "6abaa12e-4816-436e-b9c9-9cb70b8d0805",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "dda39fe1-4e3b-4cf3-bc66-0394ac000291",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Director de cátedra sin codirector (Art. 6)",
       "url": "{{baseUrl}}/api/v1/sgtg/perfiles/docentes/{{docenteId}}",
       "method": "PUT",
-      "sortNum": 450000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 950000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1871,15 +3805,15 @@
       "docs": "Cambia la vinculación del docente a cátedra para probar la regla del codirector."
     },
     {
-      "_id": "acfcb917-528f-4692-bdff-56554948e3cd",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "c30c815e-2707-460d-b9bb-d0b9fd3f0e2c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Crear trabajo sin codirector de planta (400)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
       "method": "POST",
-      "sortNum": 460000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 960000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1906,15 +3840,15 @@
       }
     },
     {
-      "_id": "4a038c41-1827-4bad-b170-674546fb5e2d",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "3eb82abf-23e5-467c-b18d-b8a895ee2f34",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Rol inexistente al crear usuario (400)",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 470000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 970000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1941,15 +3875,15 @@
       }
     },
     {
-      "_id": "d69b6c63-ccf6-4274-b225-e259fdb7974a",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "becce09b-9c30-496b-bae9-30885f06226a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Número de documento con letras (400)",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 480000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 980000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -1976,15 +3910,15 @@
       }
     },
     {
-      "_id": "8235771c-e284-4950-a889-20a0240c7f4e",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "e4223fa7-7dab-4e61-a9e5-c9f1c9dd4fef",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "Documento repetido (406)",
       "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
       "method": "POST",
-      "sortNum": 490000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 990000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -2012,15 +3946,15 @@
       "docs": "Mismo tipo y número de documento que el docente creado en la preparación."
     },
     {
-      "_id": "dbff7f21-413f-41b8-a4d5-a50233baaaa4",
-      "colId": "1f5e06ed-aa29-4377-a722-0fa725e00797",
-      "containerId": "a9a784bd-9ddb-4eab-88f2-0fdbbedec9c0",
+      "_id": "ff18e111-6293-417f-a64b-3d21e270f05e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
       "name": "No existe registro público (404)",
       "url": "{{baseUrl}}/api/v1/sgtg/auth/register",
       "method": "POST",
-      "sortNum": 500000,
-      "created": "2026-10-02T20:37:34.000Z",
-      "modified": "2026-10-02T20:37:34.000Z",
+      "sortNum": 1000000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
       "tests": [
         {
@@ -2035,6 +3969,1831 @@
         "raw": "{\n  \"codigo\": \"X-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"x.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Administrador\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ADMINISTRADOR\"\n  ]\n}",
         "form": []
       }
+    },
+    {
+      "_id": "32b6168b-543c-46f7-8ddc-23b7d02b4715",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Sustentación antes de los meses mínimos (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1010000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La sustentación solo puede solicitarse después de los meses mínimos de ejecución de la modalidad."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/tg.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/tg.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Investigación: desde el tercer mes tras la notificación; práctica: desde el sexto. El flujo completo de sustentación se prueba con las pruebas automáticas (reloj ajustable)."
+    },
+    {
+      "_id": "e7b64747-fb27-407a-9b95-6e7f62ecbae0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Sustentación sin paz y salvo (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1020000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.rutaPazYSalvo",
+          "action": "equal",
+          "value": "La ruta del paz y salvo es obligatoria"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/tg.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "d104194a-74c3-4709-8ac3-8f5bab079f0d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Solo el director solicita la sustentación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1030000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/tg.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/tg.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "d68730c8-f688-4489-a7f7-b425127c2d1d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Docente no programa la sustentación (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1040000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"jurado1Id\": \"{{evaluador1Id}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"2030-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "7ab236af-c110-454d-9802-98917b95da67",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Consejo no programa sin sustentación solicitada (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1050000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La operación no está permitida en la etapa actual del trabajo de grado."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"jurado1Id\": \"{{evaluador1Id}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"2030-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "e8722b3c-49f9-45a2-b798-31afe68ca3a8",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Solo los jurados califican (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1060000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"calificacion\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador1Token}}"
+      }
+    },
+    {
+      "_id": "882505e6-41d5-4188-b0bd-244861fd4118",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Login jurado",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 1070000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{juradoToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{juradoEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "92f08eb5-ea60-4403-8425-57540a175136",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Restaurar perfil docente de planta",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/docentes/{{docenteId}}",
+      "method": "PUT",
+      "sortNum": 1080000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"tipoVinculacion\": \"PLANTA\",\n  \"departamentoId\": \"{{departamentoId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "La carpeta 5 lo dejó en cátedra para probar la regla del codirector."
+    },
+    {
+      "_id": "b92fe1a6-d770-4ba8-9b84-c5953823ef06",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Crear trabajo de investigación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
+      "method": "POST",
+      "sortNum": 1090000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{trabajo2Id}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Plataforma de seguimiento de sustentaciones\",\n  \"objetivos\": [\n    \"Registrar el proceso de sustentación\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "9b573123-ffc9-4ae6-8a9f-7acf87de7b4a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Radicar propuesta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/propuesta",
+      "method": "POST",
+      "sortNum": 1100000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/a_propuesta.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "07d8e3d5-1446-413a-acf7-59d58cce4f1a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Comité aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/propuesta/decisiones",
+      "method": "POST",
+      "sortNum": 1110000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "ANTEPROYECTO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      }
+    },
+    {
+      "_id": "a4851f3e-6aad-440b-961b-32943e19a4d3",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Radicar anteproyecto",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/anteproyecto",
+      "method": "POST",
+      "sortNum": 1120000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/a_anteproyecto.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "7ddeb887-0bab-4459-ba35-ecfd16be144b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Jefe asigna evaluadores",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/anteproyecto/evaluadores",
+      "method": "POST",
+      "sortNum": 1130000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"evaluador1Id\": \"{{evaluador1Id}}\",\n  \"evaluador2Id\": \"{{evaluador2Id}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jefeToken}}"
+      }
+    },
+    {
+      "_id": "10eb26a1-6ada-4cbb-86bf-985aa93ea5ab",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Evaluador 1 aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/anteproyecto/conceptos",
+      "method": "POST",
+      "sortNum": 1140000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador1Token}}"
+      }
+    },
+    {
+      "_id": "9a6c9341-0116-4780-b8e9-e0d4dcb55643",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Evaluador 2 aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/anteproyecto/conceptos",
+      "method": "POST",
+      "sortNum": 1150000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador2Token}}"
+      }
+    },
+    {
+      "_id": "701334c7-f3c9-45d0-9dc3-96134ef2e027",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Consejo aprueba",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 1160000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EN_CURSO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/a_aprobacion.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "dae0376b-15c2-4920-8779-d9f2142cc9cb",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Adelantar el reloj 100 días",
+      "url": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+      "method": "POST",
+      "sortNum": 1170000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.fecha",
+          "action": "setto",
+          "value": "{{hoy}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"dias\": 100\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "En investigación la sustentación se solicita desde el tercer mes tras la notificación. Guarda la fecha simulada en {{hoy}}."
+    },
+    {
+      "_id": "8e5a7107-d725-424b-978e-74627d2edf2d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Director solicita la sustentación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1180000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "SUSTENTACION"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "SOLICITADA"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/a_documento_final.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/a.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Documento final (formato E) y paz y salvo (formato F). Con la sustentación solicitada ya no aplica el vencimiento del plazo."
+    },
+    {
+      "_id": "6c2d5f19-daee-473a-8c9d-c3b0098a67bd",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Consejo programa la sustentación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1190000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "PROGRAMADA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.sesiones[0].salon",
+          "action": "equal",
+          "value": "Salón 301"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.sesiones[0].jurados[0].usuarioId",
+          "action": "equal",
+          "value": "{{juradoId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"jurado1Id\": \"{{juradoId}}\",\n  \"jurado2Id\": \"{{evaluador1Id}}\",\n  \"fechaHora\": \"{{hoy}}T23:00:00\",\n  \"salon\": \"Salón 301\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
+    },
+    {
+      "_id": "cba6822a-008c-44be-b260-1f650a9d20a4",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Jurado califica APROBADO con el acta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1200000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "PROGRAMADA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.calificaciones[0].rutaActa",
+          "action": "equal",
+          "value": "actas/a_sesion_1.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"calificacion\": \"APROBADO\",\n  \"rutaActa\": \"actas/a_sesion_1.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      }
+    },
+    {
+      "_id": "f0e72c4a-cbe1-4b5e-a067-8ee8df02c4c5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Evaluador 1 (jurado) califica CON OBSERVACIONES",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1210000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "EN_AJUSTES"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"calificacion\": \"APROBADO_CON_OBSERVACIONES\",\n  \"observaciones\": \"Ajustar las conclusiones\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador1Token}}"
+      },
+      "docs": "Rige la calificación menos favorable: el director tiene 10 días hábiles para los ajustes (sustentacion.fechaLimiteAjustes)."
+    },
+    {
+      "_id": "93cee827-52cc-42b7-a65b-ac38042099bb",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Adelantar el reloj 3 días",
+      "url": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+      "method": "POST",
+      "sortNum": 1220000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.fecha",
+          "action": "setto",
+          "value": "{{hoy}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"dias\": 3\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "6d967247-d513-4255-b0d4-5eafcab37eae",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Director radica los ajustes",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/ajustes",
+      "method": "POST",
+      "sortNum": 1230000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "AJUSTES_RADICADOS"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"ajustes/a_ajustes.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "a5c993f4-10a0-4638-a12d-bf07ff329f4d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Jurado verifica: cumple",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/ajustes/verificaciones",
+      "method": "POST",
+      "sortNum": 1240000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "AJUSTES_RADICADOS"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"cumple\": true\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      }
+    },
+    {
+      "_id": "761cdf8b-f45b-470f-a5c9-ef8355cdafd5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Evaluador 1 verifica: cumple",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/ajustes/verificaciones",
+      "method": "POST",
+      "sortNum": 1250000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "APROBADA"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"cumple\": true\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador1Token}}"
+      }
+    },
+    {
+      "_id": "03de9bd0-7db4-4e24-b329-463bbfc4cf09",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. El director no carga la versión definitiva (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/version-definitiva",
+      "method": "POST",
+      "sortNum": 1260000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"definitivas/a.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "13c5f34e-0598-4400-8863-21969d533f34",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Jurado carga la versión definitiva",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/version-definitiva",
+      "method": "POST",
+      "sortNum": 1270000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "FINALIZADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "FINALIZADA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.rutaVersionDefinitiva",
+          "action": "equal",
+          "value": "definitivas/a_version_definitiva.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"definitivas/a_version_definitiva.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      }
+    },
+    {
+      "_id": "ac65b880-3e22-4b1b-a7b9-8610e625ff83",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. El jurado ve el trabajo en sus trabajos",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/mis-trabajos",
+      "method": "GET",
+      "sortNum": 1280000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].id",
+          "action": "equal",
+          "value": "{{trabajo2Id}}"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      }
+    },
+    {
+      "_id": "a899a03d-b293-4eda-84ce-2c7938ca9173",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Adelantar el reloj 90 días",
+      "url": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+      "method": "POST",
+      "sortNum": 1290000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.fecha",
+          "action": "setto",
+          "value": "{{hoy}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"dias\": 90\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "En práctica profesional la sustentación se solicita desde el sexto mes."
+    },
+    {
+      "_id": "c5bc1520-b34f-4a9a-99b3-6862fcf6c27f",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Práctica sin concepto del asesor (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1300000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "En práctica profesional la ruta del concepto favorable del asesor es obligatoria."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/b.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/b.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "1a87daa2-122e-40cc-80b2-3bdfdd84f00b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Director solicita la sustentación de la práctica",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1310000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "SUSTENTACION"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.rutaConceptoAsesor",
+          "action": "equal",
+          "value": "conceptos/b_asesor.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/b.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/b.pdf\",\n  \"rutaConceptoAsesor\": \"conceptos/b_asesor.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "La práctica estaba en PRORROGA; también se solicita desde esa etapa."
+    },
+    {
+      "_id": "f5ced4b0-8af0-4704-b718-532545a56220",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Consejo programa la primera sesión",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1320000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "PROGRAMADA"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"jurado1Id\": \"{{juradoId}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"{{hoy}}T22:00:00\",\n  \"salon\": \"Salón 205\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "758f00b1-66df-4bc4-ba04-fb5c60fbc909",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Jurado califica APLAZADO",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1330000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"calificacion\": \"APLAZADO\",\n  \"observaciones\": \"Repetir la presentación\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      }
+    },
+    {
+      "_id": "480cae22-53eb-48aa-ad02-21d37c6bc9ff",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Evaluador 2 (jurado) califica APROBADO",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1340000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APLAZADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.estado",
+          "action": "equal",
+          "value": "APLAZADA"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"calificacion\": \"APROBADO\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador2Token}}"
+      },
+      "docs": "Rige APLAZADO: el Consejo debe programar la segunda sesión en máximo 60 días calendario (sustentacion.fechaLimiteSegundaSesion)."
+    },
+    {
+      "_id": "8ac3e691-bd70-47fa-90bb-86dba5f8a634",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Consejo programa la segunda sesión",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1350000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "SUSTENTACION"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.sesiones[1].numero",
+          "action": "equal",
+          "value": "2"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"jurado1Id\": \"{{juradoId}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"{{hoy}}T23:30:00\",\n  \"salon\": \"Salón 205\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "76b5feb3-e338-4c86-9e47-6ecb57e3e4b7",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Jurado registra la inasistencia",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/inasistencia",
+      "method": "POST",
+      "sortNum": 1360000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.motivoCierre",
+          "action": "equal",
+          "value": "INASISTENCIA_SUSTENTACION"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"observaciones\": \"El estudiante no se presentó a la segunda sesión\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      },
+      "docs": "En la segunda sesión, la inasistencia (o un nuevo aplazamiento) deja el trabajo NO APROBADO."
+    },
+    {
+      "_id": "8de804b4-edb3-4a20-9f46-6dd61ef6339d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "C. Adelantar el reloj 100 días",
+      "url": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+      "method": "POST",
+      "sortNum": 1370000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.fecha",
+          "action": "setto",
+          "value": "{{hoy}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"dias\": 100\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "El trabajo de investigación de las carpetas 2 a 4 sigue EN_CURSO y su plazo de 9 meses ya terminó."
+    },
+    {
+      "_id": "b44c852c-2ff7-477b-9f17-a6b7887fce56",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "C. Ejecutar la verificación diaria de vencimientos",
+      "url": "{{baseUrl}}/api/v1/sgtg/reloj/tareas/vencimientos",
+      "method": "POST",
+      "sortNum": 1380000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "La misma tarea que corre todos los días a las 00:05."
+    },
+    {
+      "_id": "ea932131-6c40-4642-b48d-c122454566d1",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "C. El trabajo quedó NO APROBADO por vencimiento",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}",
+      "method": "GET",
+      "sortNum": 1390000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.motivoCierre",
+          "action": "equal",
+          "value": "VENCIMIENTO_PLAZO"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "509e0937-f8bb-4f84-adbd-bd35be976536",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Restablecer el reloj a la fecha real",
+      "url": "{{baseUrl}}/api/v1/sgtg/reloj",
+      "method": "DELETE",
+      "sortNum": 1400000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.desplazamientoDias",
+          "action": "equal",
+          "value": "0"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "7a58f17a-6b6d-401c-b86a-cb68c38c5ffa",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Crear trabajo de investigación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
+      "method": "POST",
+      "sortNum": 1410000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{trabajo3Id}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Repositorio de trabajos de grado\",\n  \"objetivos\": [\n    \"Publicar los trabajos de grado finalizados\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "498a00ed-59d1-4f14-9436-27eb2ac5a45a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Solo el director solicita la cancelación (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion",
+      "method": "POST",
+      "sortNum": 1420000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.errorCode",
+          "action": "equal",
+          "value": "GC-0008"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/cancelacion.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "55e43f32-abf9-4117-a190-dc7333aa7978",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Cancelación sin formato (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion",
+      "method": "POST",
+      "sortNum": 1430000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.rutaDocumento",
+          "action": "equal",
+          "value": "La ruta del documento es obligatoria"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "342b0578-7fd3-411b-b964-fcb5c7a63aab",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Director solicita la cancelación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion",
+      "method": "POST",
+      "sortNum": 1440000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.cancelaciones[0].etapaAlSolicitar",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.cancelaciones[0].rutaSolicitud",
+          "action": "equal",
+          "value": "solicitudes/2026/cancelacion_1.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/cancelacion_1.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Desde cualquier etapa no final, con el formato de solicitud obligatorio. La decide el Consejo de Facultad."
+    },
+    {
+      "_id": "143b3717-d4b9-48b6-943b-2f7760f94f9d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Solo una solicitud pendiente (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion",
+      "method": "POST",
+      "sortNum": 1450000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "Ya hay una solicitud de cancelación pendiente de decisión del Consejo de Facultad."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/otra.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "2ba8b544-a91e-4b51-9635-d050b2a8d234",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "El trabajo sigue mientras está pendiente",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/propuesta",
+      "method": "POST",
+      "sortNum": 1460000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.estado",
+          "action": "equal",
+          "value": "RADICADO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/c_propuesta.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Mientras el Consejo decide, el trabajo puede seguir avanzando."
+    },
+    {
+      "_id": "2369e143-b428-4a3f-a8d5-4bbfde84eea7",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Docente no decide la cancelación (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 1470000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "67352d91-7204-4759-9e49-0b40d8fc0953",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Consejo no aprueba la cancelación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 1480000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.cancelaciones[0].decision.resultado",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cancelacion-negada.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "El trabajo sigue y se puede volver a solicitar."
+    },
+    {
+      "_id": "56f1adc2-d637-43b5-bef7-ad06b6c15c2f",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Director solicita la cancelación de nuevo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion",
+      "method": "POST",
+      "sortNum": 1490000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.cancelaciones[1].rutaSolicitud",
+          "action": "equal",
+          "value": "solicitudes/2026/cancelacion_2.pdf"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/cancelacion_2.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "52185b92-0e6f-43e2-9faf-0def5ef1f53e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Consejo aprueba la cancelación",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 1500000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "CANCELADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.motivoCierre",
+          "action": "equal",
+          "value": "CANCELACION_DIRECTOR"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.cancelaciones[1].decision.resultado",
+          "action": "equal",
+          "value": "APROBADO"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cancelacion.pdf\",\n  \"observaciones\": \"Cancelación aprobada en sesión ordinaria\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "0eefe364-2842-49fb-844d-ce2f6eee2397",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
+      "name": "Un trabajo finalizado no se cancela (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/cancelacion",
+      "method": "POST",
+      "sortNum": 1510000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La operación no está permitida en la etapa actual del trabajo de grado."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "El trabajo de la carpeta 6 (escenario A) está FINALIZADO."
     }
   ],
   "ref": "SGTG"

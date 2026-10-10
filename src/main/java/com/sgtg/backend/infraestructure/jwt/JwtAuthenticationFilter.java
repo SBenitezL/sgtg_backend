@@ -48,7 +48,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String email = jwtService.getUsernameFromToken(token);
             UserDetails user = userDetailsService.loadUserByUsername(email);
-            if (!jwtService.isTokenValid(token, user))
+            // Un usuario inactivado deja de poder usar los tokens que ya tenía
+            if (!user.isEnabled() || !jwtService.isTokenValid(token, user))
                 return;
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null,
                     user.getAuthorities());

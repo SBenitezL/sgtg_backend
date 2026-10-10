@@ -1,7 +1,7 @@
 package com.sgtg.backend.domain.models.trabajo_grado;
 
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.LUNES;
-import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.URL_PROPUESTA;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_PROPUESTA;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.decisionComite;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,7 +43,7 @@ class EtapaPropuestaTest {
 
     @Test
     void radicarCreaLaPrimeraVersionYCalculaElPlazoDelComite() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
 
         Propuesta propuesta = trabajo.getPropuesta();
         assertEquals(Estado.RADICADO, propuesta.getEstado());
@@ -56,7 +56,7 @@ class EtapaPropuestaTest {
 
     @Test
     void propuestaAprobadaAvanzaAAnteproyectoYQuedaEnElHistorial() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(5)), "C001", ahora);
 
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
@@ -71,7 +71,7 @@ class EtapaPropuestaTest {
 
     @Test
     void noAprobadaSeRadicaUnaNuevaVersionHastaSerAprobada() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.NO_APROBADO, LUNES.plusDays(3)),
                 "C001", ahora);
 
@@ -79,7 +79,7 @@ class EtapaPropuestaTest {
         assertEquals(Estado.NO_APROBADO, trabajo.getPropuesta().getEstado());
         assertTrue(trabajo.getHistorial().isEmpty());
 
-        trabajo.radicarPropuesta("https://archivos.unicauca.edu.co/tg/propuesta_v2.pdf", LUNES.plusDays(7),
+        trabajo.radicarPropuesta("1/tg/propuesta_v2.pdf", LUNES.plusDays(7),
                 calendario);
         assertEquals(2, trabajo.getPropuesta().versionActual().get().version());
         assertEquals(Estado.RADICADO, trabajo.getPropuesta().getEstado());
@@ -94,7 +94,7 @@ class EtapaPropuestaTest {
     @EnumSource(value = ResultadoConcepto.class, names = { "APROBADO", "NO_APROBADO" },
             mode = EnumSource.Mode.EXCLUDE)
     void elComiteSoloApruebaONoAprueba(ResultadoConcepto resultado) {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         assertRegla("error.dominio.propuesta.resultado_invalido", () -> trabajo
                 .registrarDecisionComite(decisionComite(resultado, LUNES.plusDays(1)), "C001", ahora));
         assertEquals(Estado.RADICADO, trabajo.getPropuesta().getEstado());
@@ -103,7 +103,7 @@ class EtapaPropuestaTest {
 
     @Test
     void laDecisionGuardaLaRutaDelArchivoDeSoporte() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         Decision decision = new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, "Acta 01",
                 "actas/2026/acta-01.pdf", null, LUNES.plusDays(1));
         trabajo.registrarDecisionComite(decision, "C001", ahora);
@@ -113,9 +113,9 @@ class EtapaPropuestaTest {
 
     @Test
     void noSeRadicaMientrasHayUnaVersionPendienteDeConcepto() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         assertRegla("error.dominio.propuesta.radicacion_no_permitida",
-                () -> trabajo.radicarPropuesta(URL_PROPUESTA, LUNES.plusDays(1), calendario));
+                () -> trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES.plusDays(1), calendario));
     }
 
     @Test
@@ -126,7 +126,7 @@ class EtapaPropuestaTest {
 
     @Test
     void soloElComiteDeProgramaEmiteConceptoSobreLaPropuesta() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         Decision delConsejo = new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, "Res. 1", null, null, LUNES);
         assertRegla("error.dominio.propuesta.organo_invalido",
                 () -> trabajo.registrarDecisionComite(delConsejo, "C001", ahora));
@@ -134,14 +134,14 @@ class EtapaPropuestaTest {
 
     @Test
     void laDecisionNoPuedeSerAnteriorALaRadicacion() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         assertRegla("error.dominio.propuesta.fecha_decision_invalida", () -> trabajo
                 .registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.minusDays(1)), "C001", ahora));
     }
 
     @Test
     void sinResponsableNoSeAvanzaNiSeModificaLaPropuesta() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         assertRegla("error.dominio.cambio_etapa.datos_incompletos", () -> trabajo
                 .registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(1)), " ", ahora));
 
@@ -152,25 +152,25 @@ class EtapaPropuestaTest {
 
     @Test
     void despuesDeAprobadaNoSeOperaSobreLaPropuesta() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(1)), "C001", ahora);
 
         assertRegla("error.dominio.trabajo_grado.etapa_invalida",
-                () -> trabajo.radicarPropuesta(URL_PROPUESTA, LUNES.plusDays(2), calendario));
+                () -> trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES.plusDays(2), calendario));
         assertRegla("error.dominio.trabajo_grado.etapa_invalida", () -> trabajo
                 .registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(2)), "C001", ahora));
     }
 
     @Test
-    void radicarRequiereUnaUrlValida() {
-        assertRegla("error.dominio.documento.url_invalida",
-                () -> trabajo.radicarPropuesta("propuesta.pdf", LUNES, calendario));
+    void radicarRequiereUnaRutaValida() {
+        assertRegla("error.dominio.documento.ruta_invalida",
+                () -> trabajo.radicarPropuesta("../propuesta.pdf", LUNES, calendario));
         assertEquals(null, trabajo.getPropuesta().getEstado());
     }
 
     @Test
     void conceptoVencidoSoloMientrasEstaPendiente() {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         Propuesta propuesta = trabajo.getPropuesta();
 
         assertFalse(propuesta.conceptoVencido(LocalDate.of(2026, 3, 16)));

@@ -11,12 +11,12 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 | 0 | Base común | Completa |
 | 1 | Propuesta | Completa |
 | 2 | Anteproyecto y evaluación | Completa |
-| 3 | Aprobación del Consejo | Pendiente |
-| 4 | En curso | Pendiente |
-| 5 | Prórroga | Pendiente |
-| 6 | Suspensión | Pendiente |
-| 7 | Sustentación | Pendiente |
-| 8 | Cancelación | Pendiente |
+| 3 | Aprobación del Consejo | Completa |
+| 4 | En curso | Completa |
+| 5 | Prórroga | Completa |
+| 6 | Suspensión | Completa |
+| 7 | Sustentación | Completa |
+| 8 | Cancelación | Completa |
 
 ## Decisiones de diseño
 
@@ -26,7 +26,7 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 - **Etapas finales:** `FINALIZADO`, `NO_APROBADO` y `CANCELADO`. La causa se guarda en `MotivoCierre`. No existe `ABANDONADO`: el reglamento trata el vencimiento de plazos como NO APROBADO.
 - **Un NO APROBADO cierra el trabajo.** El estudiante inicia un trabajo de grado **nuevo**; no se vuelve a `PROPUESTA` dentro del mismo.
 - **Concepto sobre la propuesta:** el Comité de Programa solo emite `APROBADO` o `NO_APROBADO`. Si no es aprobada, sigue en `PROPUESTA` y se radica una nueva versión.
-- **Decisiones con archivo de soporte:** toda `Decision` puede llevar la ruta de un archivo (ej. el acta) en el servidor de archivos (`rutaArchivo`, opcional).
+- **Decisiones con archivo de soporte:** toda `Decision` puede llevar la ruta de un archivo (ej. el acta) en el servidor de archivos (`rutaArchivo`, opcional). Para el Consejo de Facultad sobre el anteproyecto la ruta de la resolución es obligatoria y el comentario es opcional, aun si no aprueba (`Organo.exigeObservacionesSiNoAprueba()`).
 - **Usuarios:** tienen tipo de documento (`TipoDocumentoIdentidad`: CC, CE, PASAPORTE) y número de documento (solo dígitos, único junto con el tipo), y el nombre separado en primer y segundo nombre, primer y segundo apellido (los segundos son opcionales). Los participantes copian el nombre como `NombrePersona`.
 - **Sin devoluciones manuales.** Solo se retrocede cuando el reglamento lo indica: correcciones del anteproyecto, Consejo que no aprueba y reanudación tras una suspensión.
 - **Participantes por composición, no herencia de `Usuario`.** Una persona puede cumplir roles distintos en trabajos distintos (director en uno, evaluador en otro). Cada `Participante` referencia al usuario por `usuarioId` y copia los datos que necesita el dominio, nunca la contraseña.
@@ -40,15 +40,15 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 - **Plazos:** los que tienen consecuencia en el proceso los aplica el dominio. Los de órganos o docentes (Comité, evaluadores, jurados) solo guardan la fecha límite, para alertas.
 - **Días hábiles:** se calculan con la interfaz `domain/services/CalendarioHabil`; la implementación con festivos va en infraestructura.
 - **Prórroga:** se cuenta en **días calendario** (al menos 15 antes del fin).
-- **Suspensión:** congela el tiempo restante. Al reanudar, fin = fecha de reanudación + días que faltaban.
-- **Vencimientos:** `TrabajoGrado.verificarVencimientos(hoy)` aplica las reglas; una tarea programada en infraestructura lo invoca.
+- **Suspensión:** congela el tiempo restante. Al reanudar, fin = fecha de reanudación + días que faltaban. Dura hasta el fin del período académico siguiente (períodos enero–junio y julio–diciembre).
+- **Vencimientos:** `TrabajoGrado.verificarVencimientos(ahora)` aplica las reglas; la tarea programada `VencimientosScheduler` lo invoca a diario por medio del caso de uso.
 - **Errores:** el dominio lanza `ReglaNegocioException` con claves de `src/main/message.properties` (`error.dominio.*`).
 
 ### Casos no definidos por el reglamento (decididos)
 
 1. Una prórroga **negada** consume la única oportunidad.
 2. Una suspensión no reanudada al llegar su fecha máxima se **reanuda automáticamente** en `verificarVencimientos`.
-3. Si el Consejo **no aprueba** el anteproyecto, vuelve a `ANTEPROYECTO`.
+3. Si el Consejo **no aprueba** el anteproyecto, vuelve a `ANTEPROYECTO` y la nueva versión pasa por los mismos evaluadores.
 4. Si pasan los 60 días de `APLAZADO` sin segunda sesión, el trabajo queda `NO_APROBADO` con motivo `VENCIMIENTO_PLAZO`.
 
 ## Paquetes
@@ -57,7 +57,7 @@ El alcance actual es **solo la capa de dominio** (`domain/`): POJOs y records si
 domain/models/trabajo_grado/   agregado, etapas, Proceso, Documento, CambioEtapa y enums del proceso
 domain/models/participantes/   Participante, Estudiante, Director, Evaluador, Asesor, PerfilDocente, PerfilEstudiante,
                                TipoVinculacion, Departamento, Programa
-domain/models/comun/           Periodo, Decision, Organo, Concepto, ResultadoConcepto
+domain/models/comun/           Periodo, PeriodoAcademico, Decision, Organo, Concepto, ResultadoConcepto
 domain/services/               CalendarioHabil
 domain/exceptions/             ReglaNegocioException
 ```
@@ -146,57 +146,69 @@ Detalle de clases, reglas, API y plan de pruebas: [fase-2-anteproyecto.md](fase-
 
 **Operaciones:** `radicarAnteproyecto(url, responsable, ahora, calendario)`, `asignarEvaluadores(e1, e2, responsable, ahora, calendario)`, `registrarConceptoEvaluador(concepto, urlFormato, ahora, calendario)`.
 
-## Fase 3: Aprobación del Consejo (Art. 14)
+## Fase 3: Aprobación del Consejo (Art. 14) (completa)
+
+Detalle de clases, reglas, API y plan de pruebas: [fase-3-aprobacion-consejo.md](fase-3-aprobacion-consejo.md).
 
 **Reglas**
-- La resolución del Consejo aprueba el anteproyecto.
-- Desde la fecha de notificación empiezan los plazos (9 meses).
-- Si el Consejo no aprueba, vuelve a `ANTEPROYECTO`.
+- El Consejo de Facultad (rol `CONSEJO`) emite `APROBADO` o `NO_APROBADO` sobre el anteproyecto aprobado por los evaluadores, con la ruta obligatoria del documento de la resolución y un comentario opcional. No se guarda el número de la resolución.
+- Si aprueba, la fecha de la decisión es la fecha de notificación: el trabajo pasa a `EN_CURSO` y empieza el plazo de la modalidad (investigación 9 meses; práctica profesional mínimo 6 y máximo 12).
+- Si no aprueba, vuelve a `ANTEPROYECTO`; la nueva versión pasa por los mismos evaluadores.
 
-**Clases:** `Decision` (resolución), `Ejecucion` (se crea aquí con `Periodo.desde(notificacion, 9)`).
+**Clases:** `Ejecucion` (periodo desde la notificación y fecha mínima para solicitar la sustentación), `DatosEjecucion`; `Anteproyecto` guarda las `Decision` del Consejo; `Modalidad` conoce sus meses mínimos y máximos.
 
-**Operación:** `aprobarAnteproyecto(Decision, fechaNotificacion)`.
+**Operación:** `registrarDecisionConsejo(decision, responsable, ahora)`.
 
-## Fase 4: En curso (Arts. 15, 17–18, 20–21, 43–45)
+## Fase 4: En curso (Arts. 15, 17–18, 21, 45) (completa)
 
-**Reglas**
-- Cambio de título u objetivos: una sola vez, dentro de los primeros 6 meses, con decisión del Consejo.
-- PP: informes mensuales con el aval del asesor.
-- Vencimiento sin iniciar la sustentación → `NO_APROBADO` por `VENCIMIENTO_PLAZO`.
-
-**Clases:** `Ejecucion`, `CambioObjetivos`, `InformeMensual` (solo PP).
-
-**Operaciones:** `cambiarObjetivos`, `registrarInformeMensual`, `verificarVencimientos(hoy, calendario)`.
-
-## Fase 5: Prórroga (Arts. 16, 41)
+Detalle de clases, reglas, API, tarea programada y plan de pruebas: [fase-4-en-curso.md](fase-4-en-curso.md).
 
 **Reglas**
-- La solicita el director, una sola vez (una negada también cuenta), por máximo 3 meses.
+- Cambio de título u objetivos: lo solicita el director y lo decide el Consejo de Facultad con la resolución adjunta (ruta obligatoria, comentario opcional). Una sola vez (un cambio no aprobado no consume la oportunidad), solicitado dentro de los primeros 6 meses desde la notificación, con una sola solicitud pendiente a la vez.
+- PP: el director radica los informes mensuales con el documento adjunto (solo se guarda la ruta), en `EN_CURSO` o `PRORROGA`.
+- Vencimiento sin iniciar la sustentación → `NO_APROBADO` por `VENCIMIENTO_PLAZO`, aplicado por una tarea programada diaria (`sgtg.vencimientos.cron`, por defecto 00:05 hora de Colombia).
+
+**Clases:** `Ejecucion` (+ cambios e informes), `CambioObjetivos`, `InformeMensual` (solo PP).
+
+**Operaciones:** `solicitarCambioObjetivos(titulo, objetivos, justificacion, hoy)`, `resolverCambioObjetivos(decision)`, `registrarInformeMensual(ruta, hoy)`, `verificarVencimientos(ahora)`.
+
+## Fase 5: Prórroga (Arts. 16, 41) (completa)
+
+Detalle de clases, reglas, API y plan de pruebas: [fase-5-prorroga.md](fase-5-prorroga.md).
+
+**Reglas**
+- La solicita el director desde `EN_CURSO`, una sola vez (una negada también cuenta), por 1 a 3 meses, con el documento de la solicitud (ruta obligatoria). Aplica a ambas modalidades.
 - Debe pedirse con al menos 15 días calendario antes del fin.
-- La decide el Consejo; si la aprueba, pasa a `PRORROGA` y se extiende el fin.
+- La decide el Consejo con la resolución adjunta (ruta obligatoria, comentario opcional); si la aprueba, pasa a `PRORROGA` y el fin se extiende por los meses solicitados.
+- Mientras esté pendiente, el vencimiento no cierra el trabajo.
 
-**Clases:** `Prorroga` (meses, fecha de solicitud, `Decision`, estado `SOLICITADA`/`APROBADA`/`NEGADA`).
+**Clases:** `Prorroga` (meses, ruta de la solicitud, fecha de solicitud y `Decision`; pendiente mientras la decisión sea null).
 
-**Operaciones:** `solicitarProrroga(meses, hoy)`, `resolverProrroga(Decision)`.
+**Operaciones:** `solicitarProrroga(meses, rutaSolicitud, hoy)`, `resolverProrroga(decision, responsable, ahora)`.
 
-## Fase 6: Suspensión (Arts. 27, 57)
+## Fase 6: Suspensión (Arts. 27, 57) (completa)
 
-**Reglas**
-- Una sola vez, hasta un período académico, con decisión del Consejo.
-- Se puede suspender desde `EN_CURSO` o `PRORROGA`, y se vuelve a la misma etapa.
-- Al suspender se guardan los días restantes; al reanudar, fin = reanudación + esos días.
-- Si llega la fecha máxima sin reanudar, se reanuda automáticamente.
-
-**Clases:** `Suspension` (etapa previa, fecha de inicio, días restantes, fecha máxima de reanudación, fecha de reanudación, `Decision`).
-
-**Operaciones:** `suspender(Decision, fechaMaximaReanudacion, hoy)`, `reanudar(hoy)`.
-
-## Fase 7: Sustentación (Arts. 19–25, 46–55)
+Detalle de clases, reglas, API y plan de pruebas: [fase-6-suspension.md](fase-6-suspension.md).
 
 **Reglas**
-- Se solicita con el documento final (formato E), después de al menos 3 meses desde la aprobación y antes del vencimiento.
-- PP exige además el concepto favorable del asesor.
-- El Consejo asigna 2 jurados, fecha, hora y salón, con el paz y salvo (formato F).
+- La solicita el director con el documento adjunto, desde `EN_CURSO` o `PRORROGA`; la decide el Consejo con la resolución adjunta. Una sola suspensión aprobada; una negada no consume la oportunidad.
+- Rige desde la fecha de la decisión y dura hasta el fin del período académico siguiente (se reanuda a más tardar el primer día del período posterior). Períodos: enero–junio y julio–diciembre.
+- Al suspender se guardan los días restantes; al reanudar (el director, con documento) se vuelve a la etapa previa y fin = reanudación + esos días.
+- Si llega la fecha máxima sin reanudar, la tarea diaria la reanuda en esa fecha.
+
+**Clases:** `Suspension` (solicitud, `Decision`, etapa previa, días restantes, fecha máxima de reanudación, reanudación), `PeriodoAcademico` (comun).
+
+**Operaciones:** `solicitarSuspension(ruta, hoy)`, `resolverSuspension(decision, responsable, ahora)`, `reanudar(ruta, responsable, ahora)`; la reanudación automática ocurre en `verificarVencimientos(ahora)`.
+
+## Fase 7: Sustentación (Arts. 19–25, 46–55) (completa)
+
+Detalle de clases, reglas, API y plan de pruebas: [fase-7-sustentacion.md](fase-7-sustentacion.md).
+
+**Reglas**
+- La solicita el director con el documento final (formato E) y el paz y salvo (formato F), después de los meses mínimos (3 en TI, 6 en PP) y antes del vencimiento; pasa a `SUSTENTACION` y se detiene el vencimiento.
+- PP exige además la ruta del concepto favorable del asesor, que adjunta el director.
+- El Consejo asigna 2 jurados (pueden ser los evaluadores; no director, codirector, asesor ni estudiantes), fecha, hora y salón.
+- Cada jurado califica; si no coinciden, rige la menos favorable (por confirmar). Los jurados verifican los ajustes, registran la inasistencia y cargan la versión definitiva.
 
 | Calificación | Sesión 1 | Sesión 2 |
 |---|---|---|
@@ -205,19 +217,22 @@ Detalle de clases, reglas, API y plan de pruebas: [fase-2-anteproyecto.md](fase-
 | `APLAZADO` o inasistencia | `APLAZADO`, nueva sesión en ≤ 60 días calendario | `NO_APROBADO` |
 | `NO_APROBADO` | `NO_APROBADO` | `NO_APROBADO` |
 
-**Clases:** `Sustentacion` (sesión 1 o 2, documento final, paz y salvo, 2 jurados, fecha y hora, salón, calificación, observaciones, fecha límite de ajustes, asistencia, versión definitiva), `Calificacion`.
+**Clases:** `Sustentacion` (solicitud, sesiones, calificaciones, inasistencias, ajustes y su verificación, plazos, versión definitiva), `SesionSustentacion`, `CalificacionJurado`, `RegistroJurado`, `EstadoSustentacion`, `Calificacion`.
 
-**Operaciones:** `solicitarSustentacion`, `registrarConceptoAsesor`, `programarSustentacion`, `calificarSustentacion`, `registrarInasistencia`, `cargarVersionDefinitiva`.
+**Operaciones:** `solicitarSustentacion`, `programarSustentacion`, `calificarSustentacion`, `registrarInasistencia`, `radicarAjustesSustentacion`, `verificarAjustesSustentacion`, `cargarVersionDefinitiva`; los plazos de ajustes y segunda sesión se aplican en `verificarVencimientos`.
 
-## Fase 8: Cancelación (Arts. 26, 56)
+## Fase 8: Cancelación (Arts. 26, 56) (completa)
+
+Detalle de clases, reglas, API y plan de pruebas: [fase-8-cancelacion.md](fase-8-cancelacion.md).
 
 **Reglas**
-- La solicita el estudiante (con visto bueno del director) o el director (con visto bueno del Comité).
-- La decide el Consejo y se permite desde cualquier etapa no final.
+- Solo la solicita el director, con el formato de solicitud obligatorio (ruta), desde cualquier etapa no final; solo una pendiente a la vez.
+- La decide el Consejo con la resolución adjunta (ruta obligatoria, comentario opcional). Si aprueba → `CANCELADO` con motivo `CANCELACION_DIRECTOR`; si no, el trabajo sigue y se puede volver a solicitar.
+- Mientras está pendiente, el trabajo sigue su curso.
 
-**Clases:** `Cancelacion` (quién solicita, justificación, `Decision`).
+**Clases:** `Cancelacion` (formato de solicitud, fecha, etapa al solicitar, `Decision`).
 
-**Operación:** `cancelar(Cancelacion)` → `CANCELADO`.
+**Operaciones:** `solicitarCancelacion(rutaSolicitud, hoy)`, `resolverCancelacion(decision, responsable, ahora)`.
 
 ## Versión 2 (fuera de alcance)
 

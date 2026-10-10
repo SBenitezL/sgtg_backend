@@ -22,9 +22,9 @@ final class DatosPrueba {
     static final Departamento TELEMATICA = new Departamento(2L, "Telemática");
     static final Programa ING_SISTEMAS = new Programa(1L, "Ingeniería de Sistemas");
     static final List<String> OBJETIVOS = List.of("Diseñar un sistema de gestión de trabajos de grado");
-    static final String URL_PROPUESTA = "https://archivos.unicauca.edu.co/tg/propuesta.pdf";
-    static final String URL_ANTEPROYECTO = "https://archivos.unicauca.edu.co/tg/anteproyecto.pdf";
-    static final String URL_FORMATO_B = "https://archivos.unicauca.edu.co/tg/formato-b.pdf";
+    static final String RUTA_PROPUESTA = "1/tg/propuesta.pdf";
+    static final String RUTA_ANTEPROYECTO = "1/tg/anteproyecto.pdf";
+    static final String RUTA_FORMATO_B = "1/tg/formato-b.pdf";
     /** Lunes 2 de marzo de 2026 */
     static final LocalDate LUNES = LocalDate.of(2026, 3, 2);
 
@@ -55,7 +55,7 @@ final class DatosPrueba {
     }
 
     static Documento cartaAceptacion() {
-        return Documento.inicial(TipoDocumento.CARTA_ACEPTACION, "https://archivos.unicauca.edu.co/tg/carta.pdf",
+        return Documento.inicial(TipoDocumento.CARTA_ACEPTACION, "1/tg/carta.pdf",
                 LUNES);
     }
 

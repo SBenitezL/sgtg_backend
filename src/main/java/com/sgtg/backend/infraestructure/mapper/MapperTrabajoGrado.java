@@ -12,18 +12,33 @@ import com.sgtg.backend.domain.models.participantes.Estudiante;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.trabajo_grado.Anteproyecto;
+import com.sgtg.backend.domain.models.trabajo_grado.CalificacionJurado;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioEtapa;
+import com.sgtg.backend.domain.models.trabajo_grado.Cancelacion;
+import com.sgtg.backend.domain.models.trabajo_grado.CambioObjetivos;
 import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosAnteproyecto;
+import com.sgtg.backend.domain.models.trabajo_grado.DatosEjecucion;
+import com.sgtg.backend.domain.models.trabajo_grado.DatosSustentacion;
+import com.sgtg.backend.domain.models.trabajo_grado.Ejecucion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosPropuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
+import com.sgtg.backend.domain.models.trabajo_grado.InformeMensual;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
+import com.sgtg.backend.domain.models.trabajo_grado.Prorroga;
+import com.sgtg.backend.domain.models.trabajo_grado.RegistroJurado;
+import com.sgtg.backend.domain.models.trabajo_grado.SesionSustentacion;
+import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
+import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.Propuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.AsesorEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.CalificacionJuradoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.CambioEtapaEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.CancelacionEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.CambioObjetivosEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.ConceptoEvaluacionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DecisionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DirectorTrabajoEmbeddable;
@@ -31,6 +46,11 @@ import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grad
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DocumentoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EstudianteTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EvaluadorTrabajoEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.InformeMensualEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.ProrrogaEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.RegistroJuradoEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SesionSustentacionEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SuspensionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.TrabajoGradoEntity;
 
 /**
@@ -71,7 +91,25 @@ public abstract class MapperTrabajoGrado {
         anteproyecto.getVersiones().forEach(v -> entity.getAnteproyectoVersiones().add(toEmbeddable(v)));
         anteproyecto.getEvaluadores().forEach(e -> entity.getAnteproyectoEvaluadores().add(toEmbeddable(e)));
         anteproyecto.getConceptos().forEach(c -> entity.getAnteproyectoConceptos().add(toEmbeddable(c)));
+        anteproyecto.getDecisionesConsejo()
+                .forEach(d -> entity.getAnteproyectoDecisionesConsejo().add(toEmbeddable(d)));
 
+        Ejecucion ejecucion = trabajo.getEjecucion();
+        if (ejecucion != null) {
+            entity.setEjecucionFechaNotificacion(ejecucion.getFechaNotificacion());
+            entity.setEjecucionFechaFin(ejecucion.getFechaFin());
+            entity.setEjecucionFechaMinimaSustentacion(ejecucion.getFechaMinimaSustentacion());
+            ejecucion.getCambiosObjetivos().forEach(c -> entity.getEjecucionCambiosObjetivos().add(toEmbeddable(c)));
+            ejecucion.getInformesMensuales()
+                    .forEach(i -> entity.getEjecucionInformesMensuales().add(toEmbeddable(i)));
+            entity.setProrroga(toEmbeddable(ejecucion.getProrroga()));
+            ejecucion.getSuspensiones().forEach(s -> entity.getEjecucionSuspensiones().add(toEmbeddable(s)));
+        }
+
+        if (trabajo.getSustentacion() != null)
+            copiarSustentacion(trabajo.getSustentacion(), entity);
+
+        trabajo.getCancelaciones().forEach(c -> entity.getCancelaciones().add(toEmbeddable(c)));
         trabajo.getHistorial().forEach(c -> entity.getHistorial().add(toEmbeddable(c)));
         return entity;
     }
@@ -106,13 +144,77 @@ public abstract class MapperTrabajoGrado {
     private static ConceptoEvaluacionEmbeddable toEmbeddable(ConceptoEvaluacion c) {
         Concepto concepto = c.concepto();
         return new ConceptoEvaluacionEmbeddable(c.version(), concepto.emisor().getUsuarioId(), concepto.resultado(),
-                concepto.observaciones(), concepto.fecha(), c.formato() == null ? null : c.formato().url());
+                concepto.observaciones(), concepto.fecha(), c.formato() == null ? null : c.formato().ruta());
+    }
+
+    private static CambioObjetivosEmbeddable toEmbeddable(CambioObjetivos c) {
+        return new CambioObjetivosEmbeddable(c.tituloAnterior(), c.objetivosAnteriores(), c.tituloPropuesto(),
+                c.objetivosPropuestos(), c.justificacion(), c.fechaSolicitud(),
+                c.decision() == null ? null : toEmbeddable(c.decision()));
+    }
+
+    private static ProrrogaEmbeddable toEmbeddable(Prorroga p) {
+        if (p == null)
+            return null;
+        return new ProrrogaEmbeddable(p.meses(), p.rutaSolicitud(), p.fechaSolicitud(),
+                p.decision() == null ? null : toEmbeddable(p.decision()));
+    }
+
+    private static void copiarSustentacion(Sustentacion s, TrabajoGradoEntity entity) {
+        entity.setSustentacionRutaDocumentoFinal(s.getRutaDocumentoFinal());
+        entity.setSustentacionRutaPazYSalvo(s.getRutaPazYSalvo());
+        entity.setSustentacionRutaConceptoAsesor(s.getRutaConceptoAsesor());
+        entity.setSustentacionFechaSolicitud(s.getFechaSolicitud());
+        entity.setSustentacionEstado(s.getEstado());
+        entity.setSustentacionRutaAjustes(s.getRutaAjustes());
+        entity.setSustentacionFechaAjustes(s.getFechaAjustes());
+        entity.setSustentacionFechaLimiteAjustes(s.getFechaLimiteAjustes());
+        entity.setSustentacionFechaLimiteSegundaSesion(s.getFechaLimiteSegundaSesion());
+        entity.setSustentacionRutaVersionDefinitiva(s.getRutaVersionDefinitiva());
+        entity.setSustentacionFechaVersionDefinitiva(s.getFechaVersionDefinitiva());
+        entity.setSustentacionJuradoVersionDefinitivaId(
+                s.getJuradoVersionDefinitiva() == null ? null : s.getJuradoVersionDefinitiva().getUsuarioId());
+        entity.setSustentacionMotivoNoAprobacion(s.getMotivoNoAprobacion());
+        s.getSesiones().forEach(sesion -> entity.getSustentacionSesiones().add(new SesionSustentacionEmbeddable(
+                sesion.numero(), sesion.fechaHora(), sesion.salon(), sesion.fechaProgramacion(),
+                toEmbeddable(sesion.jurados().get(0)), toEmbeddable(sesion.jurados().get(1)))));
+        s.getCalificaciones().forEach(c -> entity.getSustentacionCalificaciones()
+                .add(new CalificacionJuradoEmbeddable(c.sesion(), c.jurado().getUsuarioId(), c.calificacion(),
+                        c.observaciones(), c.rutaActa(), c.fecha())));
+        s.getInasistencias().forEach(r -> entity.getSustentacionInasistencias().add(toEmbeddable(r)));
+        s.getVerificaciones().forEach(r -> entity.getSustentacionVerificaciones().add(toEmbeddable(r)));
+    }
+
+    private static CancelacionEmbeddable toEmbeddable(Cancelacion c) {
+        return new CancelacionEmbeddable(c.rutaSolicitud(), c.fechaSolicitud(), c.etapaAlSolicitar(),
+                c.decision() == null ? null : toEmbeddable(c.decision()));
+    }
+
+    private static Cancelacion toDomain(CancelacionEmbeddable c) {
+        DecisionEmbeddable decision = c.getDecision();
+        return new Cancelacion(c.getRutaSolicitud(), c.getFechaSolicitud(), c.getEtapaAlSolicitar(),
+                decision == null || decision.getOrgano() == null ? null : toDomain(decision));
+    }
+
+    private static RegistroJuradoEmbeddable toEmbeddable(RegistroJurado r) {
+        return new RegistroJuradoEmbeddable(r.sesion(), r.jurado().getUsuarioId(), r.favorable(), r.observaciones(),
+                r.fecha());
+    }
+
+    private static SuspensionEmbeddable toEmbeddable(Suspension s) {
+        return new SuspensionEmbeddable(s.rutaSolicitud(), s.fechaSolicitud(),
+                s.decision() == null ? null : toEmbeddable(s.decision()), s.etapaPrevia(), s.diasRestantes(),
+                s.fechaMaximaReanudacion(), s.fechaReanudacion(), s.rutaReanudacion());
+    }
+
+    private static InformeMensualEmbeddable toEmbeddable(InformeMensual i) {
+        return new InformeMensualEmbeddable(i.numero(), i.rutaArchivo(), i.fecha());
     }
 
     private static DocumentoEmbeddable toEmbeddable(Documento d) {
         if (d == null)
             return null;
-        return new DocumentoEmbeddable(d.tipo(), d.url(), d.version(), d.fechaCarga());
+        return new DocumentoEmbeddable(d.tipo(), d.ruta(), d.version(), d.fechaCarga());
     }
 
     private static DecisionEmbeddable toEmbeddable(Decision d) {
@@ -139,7 +241,9 @@ public abstract class MapperTrabajoGrado {
                 entity.getId(), entity.getModalidad(), entity.getTitulo(), List.copyOf(entity.getObjetivos()),
                 entity.getEstudiantes().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 director, codirector, toDomain(entity.getAsesor()), toDomain(entity.getCartaAceptacion()),
-                entity.getEtapa(), propuesta, toDatosAnteproyecto(entity),
+                entity.getEtapa(), propuesta, toDatosAnteproyecto(entity), toDatosEjecucion(entity),
+                toDatosSustentacion(entity),
+                entity.getCancelaciones().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 entity.getHistorial().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 entity.getMotivoCierre()));
     }
@@ -151,8 +255,85 @@ public abstract class MapperTrabajoGrado {
                 entity.getAnteproyectoVersiones().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 evaluadores,
                 entity.getAnteproyectoConceptos().stream().map(c -> toDomain(c, evaluadores)).toList(),
+                entity.getAnteproyectoDecisionesConsejo().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 entity.getAnteproyectoEstado(), entity.getAnteproyectoFechaLimiteEvaluacion(),
                 entity.getAnteproyectoFechaLimiteCorrecciones());
+    }
+
+    private static DatosEjecucion toDatosEjecucion(TrabajoGradoEntity entity) {
+        if (entity.getEjecucionFechaNotificacion() == null)
+            return null;
+        return new DatosEjecucion(entity.getEjecucionFechaNotificacion(), entity.getEjecucionFechaFin(),
+                entity.getEjecucionFechaMinimaSustentacion(),
+                entity.getEjecucionCambiosObjetivos().stream().map(MapperTrabajoGrado::toDomain).toList(),
+                entity.getEjecucionInformesMensuales().stream().map(MapperTrabajoGrado::toDomain).toList(),
+                toDomain(entity.getProrroga()),
+                entity.getEjecucionSuspensiones().stream().map(MapperTrabajoGrado::toDomain).toList());
+    }
+
+    private static Suspension toDomain(SuspensionEmbeddable s) {
+        DecisionEmbeddable decision = s.getDecision();
+        return new Suspension(s.getRutaSolicitud(), s.getFechaSolicitud(),
+                decision == null || decision.getOrgano() == null ? null : toDomain(decision), s.getEtapaPrevia(),
+                s.getDiasRestantes(), s.getFechaMaximaReanudacion(), s.getFechaReanudacion(),
+                s.getRutaReanudacion());
+    }
+
+    private static Prorroga toDomain(ProrrogaEmbeddable p) {
+        if (p == null || p.getMeses() == null)
+            return null;
+        DecisionEmbeddable decision = p.getDecision();
+        return new Prorroga(p.getMeses(), p.getRutaSolicitud(), p.getFechaSolicitud(),
+                decision == null || decision.getOrgano() == null ? null : toDomain(decision));
+    }
+
+    private static CambioObjetivos toDomain(CambioObjetivosEmbeddable c) {
+        DecisionEmbeddable decision = c.getDecision();
+        return new CambioObjetivos(c.getTituloAnterior(), c.getObjetivosAnteriores(), c.getTituloPropuesto(),
+                c.getObjetivosPropuestos(), c.getJustificacion(), c.getFechaSolicitud(),
+                decision == null || decision.getOrgano() == null ? null : toDomain(decision));
+    }
+
+    private static InformeMensual toDomain(InformeMensualEmbeddable i) {
+        return new InformeMensual(i.getNumero(), i.getRutaArchivo(), i.getFecha());
+    }
+
+    private static DatosSustentacion toDatosSustentacion(TrabajoGradoEntity entity) {
+        if (entity.getSustentacionEstado() == null)
+            return null;
+        List<SesionSustentacion> sesiones = entity.getSustentacionSesiones().stream()
+                .map(s -> new SesionSustentacion(s.getNumero(), List.of(toDomain(s.getJurado1()), toDomain(s.getJurado2())),
+                        s.getFechaHora(), s.getSalon(), s.getFechaProgramacion()))
+                .toList();
+        Long juradoDefinitiva = entity.getSustentacionJuradoVersionDefinitivaId();
+        return new DatosSustentacion(entity.getSustentacionRutaDocumentoFinal(),
+                entity.getSustentacionRutaPazYSalvo(), entity.getSustentacionRutaConceptoAsesor(),
+                entity.getSustentacionFechaSolicitud(), entity.getSustentacionEstado(), sesiones,
+                entity.getSustentacionCalificaciones().stream()
+                        .map(c -> new CalificacionJurado(c.getSesion(), jurado(sesiones, c.getSesion(),
+                                c.getJuradoUsuarioId()), c.getCalificacion(), c.getObservaciones(), c.getRutaActa(),
+                                c.getFecha()))
+                        .toList(),
+                entity.getSustentacionInasistencias().stream().map(r -> toDomain(r, sesiones)).toList(),
+                entity.getSustentacionVerificaciones().stream().map(r -> toDomain(r, sesiones)).toList(),
+                entity.getSustentacionRutaAjustes(), entity.getSustentacionFechaAjustes(),
+                entity.getSustentacionFechaLimiteAjustes(), entity.getSustentacionFechaLimiteSegundaSesion(),
+                entity.getSustentacionRutaVersionDefinitiva(), entity.getSustentacionFechaVersionDefinitiva(),
+                juradoDefinitiva == null ? null : jurado(sesiones, sesiones.size(), juradoDefinitiva),
+                entity.getSustentacionMotivoNoAprobacion());
+    }
+
+    private static RegistroJurado toDomain(RegistroJuradoEmbeddable r, List<SesionSustentacion> sesiones) {
+        return new RegistroJurado(r.getSesion(), jurado(sesiones, r.getSesion(), r.getJuradoUsuarioId()),
+                Boolean.TRUE.equals(r.getFavorable()), r.getObservaciones(), r.getFecha());
+    }
+
+    /** Jurado de la sesión indicada que corresponde al usuario. */
+    private static Evaluador jurado(List<SesionSustentacion> sesiones, int numero, Long usuarioId) {
+        return sesiones.stream().filter(s -> s.numero() == numero).flatMap(s -> s.jurados().stream())
+                .filter(j -> j.getUsuarioId().equals(usuarioId)).findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Registro de un jurado no asignado a la sesión " + numero + ": usuario " + usuarioId));
     }
 
     private static Evaluador toDomain(EvaluadorTrabajoEmbeddable e) {

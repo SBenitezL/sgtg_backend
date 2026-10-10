@@ -50,18 +50,18 @@ public class Propuesta {
      * Radica una nueva versión de la propuesta. Se permite la primera vez o
      * después de que el Comité no la apruebe.
      *
-     * @param url        ubicación del documento en el servidor de archivos
+     * @param ruta       ruta del documento en el almacenamiento de archivos
      * @param hoy        fecha de radicación
      * @param calendario calendario para calcular la fecha límite del concepto
      */
-    void radicar(String url, LocalDate hoy, CalendarioHabil calendario) {
+    void radicar(String ruta, LocalDate hoy, CalendarioHabil calendario) {
         if (hoy == null || calendario == null)
             throw new ReglaNegocioException("error.dominio.propuesta.datos_incompletos");
         if (!puedeRadicar())
             throw new ReglaNegocioException("error.dominio.propuesta.radicacion_no_permitida");
         Documento documento = this.versiones.isEmpty()
-                ? Documento.inicial(TipoDocumento.PROPUESTA, url, hoy)
-                : this.versiones.get(this.versiones.size() - 1).nuevaVersion(url, hoy);
+                ? Documento.inicial(TipoDocumento.PROPUESTA, ruta, hoy)
+                : this.versiones.get(this.versiones.size() - 1).nuevaVersion(ruta, hoy);
         this.versiones.add(documento);
         this.estado = Estado.RADICADO;
         this.fechaLimiteConcepto = calendario.sumarDiasHabiles(hoy, DIAS_HABILES_CONCEPTO_COMITE);

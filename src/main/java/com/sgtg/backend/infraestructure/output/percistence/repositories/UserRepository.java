@@ -18,4 +18,11 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByTipoDocumentoAndNumeroDocumento(TipoDocumentoIdentidad tipoDocumento, String numeroDocumento);
 
+    boolean existsByEmailAndCusuariNot(String email, Long cusuari);
+
+    boolean existsByCodigoAndCusuariNot(String codigo, Long cusuari);
+
+    boolean existsByTipoDocumentoAndNumeroDocumentoAndCusuariNot(TipoDocumentoIdentidad tipoDocumento,
+            String numeroDocumento, Long cusuari);
+
 }

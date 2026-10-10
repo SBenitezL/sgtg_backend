@@ -82,9 +82,20 @@ public class UserEntity implements UserDetails {
                 .collect(Collectors.toList());
     }
 
+    /** Indica si el usuario puede iniciar sesión; por defecto activo */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean activo = true;
+
     @Override
     public String getUsername() {
         return email;
+    }
+
+    /** Un usuario inactivo no puede autenticarse (ni con contraseña ni con token). */
+    @Override
+    public boolean isEnabled() {
+        return activo;
     }
 
 }

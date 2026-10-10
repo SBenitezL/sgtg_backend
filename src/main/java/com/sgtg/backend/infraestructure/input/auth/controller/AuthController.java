@@ -8,10 +8,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgtg.backend.application.input.auth.ManageAuthCUIntPort;
 import com.sgtg.backend.infraestructure.input.auth.dto.input.LoginDTORequest;
 import com.sgtg.backend.infraestructure.input.auth.dto.output.AuthDTOResponse;
-import com.sgtg.backend.infraestructure.output.auth.AuthService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -22,12 +23,16 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/sgtg/auth/")
 @RequiredArgsConstructor
 public class AuthController {
-    private final AuthService authService;
+    private final ManageAuthCUIntPort manageAuth;
 
+    /**
+     * Inicia sesión y devuelve el token. Credenciales incorrectas o usuario
+     * inactivo: 401 con el mensaje correspondiente.
+     */
     @PostMapping("login")
-    public ResponseEntity<AuthDTOResponse> login(@RequestBody LoginDTORequest loginRequest) {
+    public ResponseEntity<AuthDTOResponse> login(@Valid @RequestBody LoginDTORequest loginRequest) {
         return ResponseEntity
-                .ok(new AuthDTOResponse(authService.login(loginRequest.getEmail(), loginRequest.getPassword())));
+                .ok(new AuthDTOResponse(manageAuth.login(loginRequest.getEmail(), loginRequest.getPassword())));
     }
 
     @GetMapping("")

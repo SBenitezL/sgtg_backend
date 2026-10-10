@@ -69,4 +69,25 @@ class UsuarioTest {
         assertEquals("Ana María Pérez Gómez", new NombrePersona("Ana", "María", "Pérez", "Gómez").completo());
         assertEquals("Ana Pérez", new NombrePersona("Ana", " ", "Pérez", "").completo());
     }
+
+    @Test
+    void unUsuarioNuevoEstaActivoYSePuedeInactivar() {
+        Usuario usuario = usuario(TipoDocumentoIdentidad.CC, "1061234567", null);
+        assertTrue(usuario.isActivo());
+        usuario.cambiarEstado(false);
+        assertFalse(usuario.isActivo());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "", "corta12", " Clave123", "Clave123 " })
+    void laContrasenaNuevaExigeOchoCaracteresSinEspaciosAlBorde(String password) {
+        assertFalse(Usuario.isPasswordNuevaValida(password));
+    }
+
+    @Test
+    void contrasenaNuevaValida() {
+        assertTrue(Usuario.isPasswordNuevaValida("Clave123"));
+        assertTrue(Usuario.isPasswordNuevaValida("una clave larga"));
+        assertFalse(Usuario.isPasswordNuevaValida(null));
+    }
 }

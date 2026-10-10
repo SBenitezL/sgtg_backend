@@ -54,6 +54,17 @@ public class PracticaProfesional extends TrabajoGrado {
         return getEstudiantes().get(0);
     }
 
+    /**
+     * Actualiza la ruta de la carta de aceptación cuando el archivo se mueve a
+     * su ubicación definitiva (la carta se carga antes de que el trabajo tenga
+     * identificador). Conserva el tipo, la versión y la fecha de carga.
+     *
+     * @param ruta nueva ruta de la carta
+     */
+    public void reubicarCartaAceptacion(String ruta) {
+        this.cartaAceptacion = this.cartaAceptacion.conRuta(ruta);
+    }
+
     public Documento getCartaAceptacion() {
         return cartaAceptacion;
     }

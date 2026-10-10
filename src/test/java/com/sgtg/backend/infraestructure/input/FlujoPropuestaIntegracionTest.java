@@ -1,11 +1,16 @@
 package com.sgtg.backend.infraestructure.input;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +22,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -68,6 +75,33 @@ class FlujoPropuestaIntegracionTest {
         if (cuerpo != null)
             peticion.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(cuerpo));
         return mvc.perform(peticion);
+    }
+
+    /**
+     * Petición multipart: el JSON {@code datos} (si no es null) en la parte
+     * {@code datos} y los archivos en sus partes.
+     */
+    private ResultActions subir(String url, String token, Object datos, MockMultipartFile... archivos)
+            throws Exception {
+        MockMultipartHttpServletRequestBuilder peticion = multipart(url);
+        if (datos != null)
+            peticion.file(new MockMultipartFile("datos", "", MediaType.APPLICATION_JSON_VALUE,
+                    json.writeValueAsBytes(datos)));
+        for (MockMultipartFile archivo : archivos)
+            peticion.file(archivo);
+        if (token != null)
+            peticion.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        return mvc.perform(peticion);
+    }
+
+    /** PDF de prueba en la parte {@code archivo}. */
+    private static MockMultipartFile archivo(String nombre) {
+        return pdf("archivo", nombre);
+    }
+
+    private static MockMultipartFile pdf(String parte, String nombre) {
+        return new MockMultipartFile(parte, nombre, MediaType.APPLICATION_PDF_VALUE,
+                "%PDF-1.4 prueba".getBytes(StandardCharsets.US_ASCII));
     }
 
     private long id(ResultActions resultado, String ruta) throws Exception {
@@ -136,29 +170,36 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.director.usuarioId").value(docenteId))
                 .andExpect(jsonPath("$.director.tipoVinculacion").value("PLANTA")), "$.id");
 
-        // Radica la propuesta
-        enviar(post(API + "/trabajos-grado/" + trabajoId + "/propuesta"), docente,
-                Map.of("url", "https://archivos.unicauca.edu.co/propuesta.pdf"))
+        // Solo se aceptan documentos PDF
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, new MockMultipartFile("archivo",
+                "propuesta.docx", "application/msword", "contenido".getBytes(StandardCharsets.US_ASCII)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Solo se permiten documentos en formato PDF."));
+
+        // Radica la propuesta: se guarda en la carpeta del formato y la respuesta solo trae la ruta
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.propuesta.estado").value("RADICADO"))
-                .andExpect(jsonPath("$.propuesta.versiones[0].formato").value("TI-A"));
+                .andExpect(jsonPath("$.propuesta.versiones[0].formato").value("TI-A"))
+                .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/propuesta.pdf"));
 
         // El comité no la aprueba: sigue en propuesta y se radica una nueva versión
         String comite = login(correo("C"), CLAVE);
-        enviar(post(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones"), comite,
-                Map.of("resultado", "NO_APROBADO", "acta", "Acta 01", "rutaArchivo", "actas/2026/acta-01.pdf",
-                        "observaciones", "Precisar los objetivos"))
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", comite,
+                Map.of("resultado", "NO_APROBADO", "acta", "Acta 01", "observaciones", "Precisar los objetivos"),
+                archivo("acta-01.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("PROPUESTA"))
                 .andExpect(jsonPath("$.propuesta.estado").value("NO_APROBADO"))
-                .andExpect(jsonPath("$.propuesta.decisiones[0].rutaArchivo").value("actas/2026/acta-01.pdf"));
-        enviar(post(API + "/trabajos-grado/" + trabajoId + "/propuesta"), docente,
-                Map.of("url", "https://archivos.unicauca.edu.co/propuesta_v2.pdf"))
+                .andExpect(jsonPath("$.propuesta.decisiones[0].rutaArchivo")
+                        .value(trabajoId + "/ACTA_COMITE/v1/acta-01.pdf"));
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta_v2.pdf"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.propuesta.versiones[1].version").value(2));
+                .andExpect(jsonPath("$.propuesta.versiones[1].version").value(2))
+                .andExpect(jsonPath("$.propuesta.versiones[1].ruta").value(trabajoId + "/TI-A/v2/propuesta_v2.pdf"));
 
         // El comité aprueba: el trabajo pasa a anteproyecto
-        enviar(post(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones"), comite,
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", comite,
                 Map.of("resultado", "APROBADO", "acta", "Acta 02"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
@@ -174,6 +215,26 @@ class FlujoPropuestaIntegracionTest {
         enviar(get(API + "/trabajos-grado/mis-trabajos"), estudiante, null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(trabajoId));
+
+        // Los archivos se descargan por su ruta: el estudiante y el comité sí pueden
+        String archivos = API + "/trabajos-grado/" + trabajoId + "/archivos";
+        String ruta = trabajoId + "/TI-A/v1/propuesta.pdf";
+        for (String usuario : List.of(estudiante, comite))
+            enviar(get(archivos).param("ruta", ruta), usuario, null)
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("propuesta.pdf")))
+                    .andExpect(content().bytes("%PDF-1.4 prueba".getBytes(StandardCharsets.US_ASCII)));
+        // Un usuario sin relación con el trabajo no tiene acceso
+        crearUsuario("X", "DOCENTE");
+        enviar(get(archivos).param("ruta", ruta), login(correo("X"), CLAVE), null)
+                .andExpect(status().isNotAcceptable())
+                .andExpect(jsonPath("$.message", containsString("No tiene acceso a la información de este trabajo")));
+        // Rutas de otro trabajo o inexistentes
+        enviar(get(archivos).param("ruta", (trabajoId + 1) + "/TI-A/v1/propuesta.pdf"), estudiante, null)
+                .andExpect(status().isNotFound());
+        enviar(get(archivos).param("ruta", trabajoId + "/TI-A/v9/propuesta.pdf"), estudiante, null)
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -221,6 +282,11 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.primerNombre").value("Nombre"))
                 .andExpect(jsonPath("$.segundoNombre").value("E"))
                 .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    void elRelojDeDesarrolloNoSeExponePorDefecto() throws Exception {
+        enviar(post(API + "/reloj/avanzar"), admin, Map.of("dias", 1)).andExpect(status().isNotFound());
     }
 
     @Test

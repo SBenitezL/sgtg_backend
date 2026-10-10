@@ -27,10 +27,24 @@ public class Usuario {
     private String segundoApellido;
     /** Roles del usuario */
     private List<Role> role;
+    /** Indica si el usuario puede iniciar sesión; un usuario inactivo conserva sus datos */
+    private boolean activo;
 
+    /** Longitud mínima de una contraseña nueva */
+    public static final int LONGITUD_MINIMA_PASSWORD = 8;
+
+    /** Crea un usuario activo. */
     public Usuario(Long cusuari, String codigo, TipoDocumentoIdentidad tipoDocumento, String numeroDocumento,
             String email, String password, String primerNombre, String segundoNombre, String primerApellido,
             String segundoApellido, List<Role> role) {
+        this(cusuari, codigo, tipoDocumento, numeroDocumento, email, password, primerNombre, segundoNombre,
+                primerApellido, segundoApellido, role, true);
+    }
+
+    public Usuario(Long cusuari, String codigo, TipoDocumentoIdentidad tipoDocumento, String numeroDocumento,
+            String email, String password, String primerNombre, String segundoNombre, String primerApellido,
+            String segundoApellido, List<Role> role, boolean activo) {
+        this.activo = activo;
         this.cusuari = cusuari;
         this.codigo = codigo;
         this.tipoDocumento = tipoDocumento;
@@ -116,6 +130,48 @@ public class Usuario {
 
     public List<Role> getRole() {
         return this.role;
+    }
+
+    /**
+     * @return true si el usuario puede iniciar sesión
+     */
+    public boolean isActivo() {
+        return this.activo;
+    }
+
+    /**
+     * Activa o inactiva al usuario. Un usuario inactivo no puede iniciar sesión
+     * y sus tokens dejan de ser válidos.
+     *
+     * @param activo nuevo estado
+     */
+    public void cambiarEstado(boolean activo) {
+        this.activo = activo;
+    }
+
+    /**
+     * Reemplaza los datos de identificación y contacto del usuario (lo hace el
+     * administrador). La contraseña, los roles y el estado se cambian aparte.
+     */
+    public void actualizarDatos(String codigo, TipoDocumentoIdentidad tipoDocumento, String numeroDocumento,
+            String email, String primerNombre, String segundoNombre, String primerApellido, String segundoApellido) {
+        this.codigo = codigo;
+        this.tipoDocumento = tipoDocumento;
+        this.numeroDocumento = numeroDocumento;
+        this.email = email;
+        this.primerNombre = primerNombre;
+        this.segundoNombre = CheckString.isBlank(segundoNombre) ? null : segundoNombre;
+        this.primerApellido = primerApellido;
+        this.segundoApellido = CheckString.isBlank(segundoApellido) ? null : segundoApellido;
+    }
+
+    /**
+     * @param password contraseña nueva en texto plano
+     * @return true si cumple la longitud mínima y no tiene espacios al inicio ni al final
+     */
+    public static boolean isPasswordNuevaValida(String password) {
+        return password != null && password.length() >= LONGITUD_MINIMA_PASSWORD
+                && password.equals(password.strip());
     }
 
     /**

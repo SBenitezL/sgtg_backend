@@ -25,6 +25,15 @@ class DecisionConceptoTest {
     }
 
     @Test
+    void elConsejoNoExigeObservacionesPorqueLasSoportaEnLaResolucion() {
+        Decision decision = new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.NO_APROBADO, null,
+                "resoluciones/res-1.pdf", null, hoy);
+        assertFalse(decision.esAprobatoria());
+        assertThrows(ReglaNegocioException.class,
+                () -> new Decision(Organo.DEPARTAMENTO, ResultadoConcepto.NO_APROBADO, null, null, null, hoy));
+    }
+
+    @Test
     void decisionExigeOrganoResultadoYFecha() {
         assertThrows(ReglaNegocioException.class,
                 () -> new Decision(null, ResultadoConcepto.APROBADO, null, null, null, hoy));

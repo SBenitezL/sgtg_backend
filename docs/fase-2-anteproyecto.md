@@ -23,9 +23,9 @@ ANTEPROYECTO ──────────────► ANTEPROYECTO ──�
                                                        (CON_CORRECCIONES)
 ```
 
-## Decisiones tomadas por defecto (pendientes de confirmar)
+## Decisiones (confirmadas por el usuario)
 
-El reglamento no define estos puntos. Se implementaron como se propuso antes de iniciar la fase:
+El reglamento no define estos puntos. Se propusieron antes de iniciar la fase y el usuario las confirmó:
 
 | # | Decisión |
 |---|---|
@@ -200,5 +200,5 @@ Total del proyecto: **197 pruebas** (antes eran 163).
 La colección de `thunder-tests/` tiene una carpeta nueva, **3. Flujo del anteproyecto**, con 12 peticiones. La carpeta de permisos pasa a ser la 4 y gana 5 pruebas. En total son 50 peticiones.
 
 ### Qué no se prueba en esta fase
-- La aprobación del Consejo de Facultad (Fase 3).
+- La aprobación del Consejo de Facultad: ver [fase-3-aprobacion-consejo.md](fase-3-aprobacion-consejo.md).
 - Alertas o tareas programadas sobre los plazos vencidos: el dominio solo expone `evaluacionVencida` y `correccionesVencidas`.

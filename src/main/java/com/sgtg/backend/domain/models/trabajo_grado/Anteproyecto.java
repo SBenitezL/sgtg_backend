@@ -8,6 +8,8 @@ import java.util.Optional;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.comun.Concepto;
+import com.sgtg.backend.domain.models.comun.Decision;
+import com.sgtg.backend.domain.models.comun.Organo;
 import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.services.CalendarioHabil;
@@ -20,6 +22,10 @@ import com.sgtg.backend.domain.utils.CheckString;
  * se rechaza: cada evaluador lo aprueba o lo devuelve con correcciones. Si
  * alguno pide correcciones, el director tiene 10 días hábiles para radicar una
  * nueva versión, que revisan los mismos evaluadores.
+ *
+ * Aprobado por ambos evaluadores, el Consejo de Facultad emite su concepto
+ * (Art. 14) con la resolución adjunta: APROBADO o NO_APROBADO. Si no lo
+ * aprueba, el director radica una nueva versión que vuelve a los evaluadores.
  *
  * Sus operaciones que modifican el estado solo son accesibles desde el
  * paquete, para que únicamente {@link TrabajoGrado} las invoque.
@@ -38,6 +44,8 @@ public class Anteproyecto {
     private final List<Evaluador> evaluadores;
     /** Conceptos de los evaluadores sobre cada versión */
     private final List<ConceptoEvaluacion> conceptos;
+    /** Decisiones del Consejo de Facultad sobre las versiones aprobadas por los evaluadores */
+    private final List<Decision> decisionesConsejo;
     /** Estado de la versión actual, null mientras no se haya radicado */
     private Estado estado;
     /** Fecha límite para que los evaluadores emitan concepto sobre la versión actual */
@@ -55,28 +63,30 @@ public class Anteproyecto {
         this.versiones = new ArrayList<>(datos.versiones());
         this.evaluadores = new ArrayList<>(datos.evaluadores());
         this.conceptos = new ArrayList<>(datos.conceptos());
+        this.decisionesConsejo = new ArrayList<>(datos.decisionesConsejo());
         this.estado = datos.estado();
         this.fechaLimiteEvaluacion = datos.fechaLimiteEvaluacion();
         this.fechaLimiteCorrecciones = datos.fechaLimiteCorrecciones();
     }
 
     /**
-     * Radica una versión del anteproyecto. Se permite la primera vez o después
-     * de que algún evaluador solicite correcciones. Si los evaluadores ya
+     * Radica una versión del anteproyecto. Se permite la primera vez, después
+     * de que algún evaluador solicite correcciones o después de que el Consejo
+     * de Facultad no lo apruebe. Si los evaluadores ya
      * fueron asignados, la nueva versión queda de inmediato en revisión.
      *
-     * @param url        ubicación del documento en el servidor de archivos
+     * @param ruta       ruta del documento en el almacenamiento de archivos
      * @param hoy        fecha de radicación
      * @param calendario calendario para calcular el plazo de los evaluadores
      */
-    void radicar(String url, LocalDate hoy, CalendarioHabil calendario) {
+    void radicar(String ruta, LocalDate hoy, CalendarioHabil calendario) {
         if (hoy == null || calendario == null)
             throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
         if (!puedeRadicar())
             throw new ReglaNegocioException("error.dominio.anteproyecto.radicacion_no_permitida");
         Documento documento = this.versiones.isEmpty()
-                ? Documento.inicial(TipoDocumento.ANTEPROYECTO, url, hoy)
-                : this.versiones.get(this.versiones.size() - 1).nuevaVersion(url, hoy);
+                ? Documento.inicial(TipoDocumento.ANTEPROYECTO, ruta, hoy)
+                : this.versiones.get(this.versiones.size() - 1).nuevaVersion(ruta, hoy);
         this.versiones.add(documento);
         this.fechaLimiteCorrecciones = null;
         if (tieneEvaluadores()) {
@@ -157,24 +167,61 @@ public class Anteproyecto {
      * correcciones; en este último caso se calcula el plazo del director.
      *
      * @param concepto   concepto del evaluador
-     * @param urlFormato ubicación del formato B, null si no se cargó
+     * @param rutaFormato ruta del formato B, null si no se cargó
      * @param calendario calendario para calcular el plazo de las correcciones
      */
-    void registrarConcepto(Concepto concepto, String urlFormato, CalendarioHabil calendario) {
+    void registrarConcepto(Concepto concepto, String rutaFormato, CalendarioHabil calendario) {
         if (calendario == null)
             throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
         Estado resultado = estadoTrasConcepto(concepto);
         int version = this.versionActual().get().version();
-        Documento formato = CheckString.isBlank(urlFormato) ? null
-                : new Documento(TipoDocumento.EVALUACION_ANTEPROYECTO, urlFormato.trim(), version, concepto.fecha());
+        Documento formato = CheckString.isBlank(rutaFormato) ? null
+                : new Documento(TipoDocumento.EVALUACION_ANTEPROYECTO, rutaFormato.trim(), version, concepto.fecha());
         this.conceptos.add(new ConceptoEvaluacion(version, concepto, formato));
         this.estado = resultado;
         if (resultado == Estado.CON_CORRECCIONES)
             this.fechaLimiteCorrecciones = calendario.sumarDiasHabiles(concepto.fecha(), DIAS_HABILES_CORRECCIONES);
     }
 
+    /**
+     * Valida la decisión del Consejo de Facultad sobre la versión aprobada por
+     * los evaluadores, sin modificar el anteproyecto.
+     *
+     * @param decision decisión del Consejo con la ruta de la resolución
+     * @return APROBADO o NO_APROBADO
+     */
+    Estado estadoTrasDecisionConsejo(Decision decision) {
+        if (decision == null)
+            throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
+        if (!decision.emitidaPor(Organo.CONSEJO_FACULTAD))
+            throw new ReglaNegocioException("error.dominio.anteproyecto.organo_invalido");
+        if (this.estado != Estado.APROBADO)
+            throw new ReglaNegocioException("error.dominio.anteproyecto.decision_consejo_no_permitida");
+        if (decision.rutaArchivo() == null)
+            throw new ReglaNegocioException("error.dominio.anteproyecto.resolucion_obligatoria");
+        if (conceptosVersionActual().stream().anyMatch(c -> decision.fecha().isBefore(c.concepto().fecha())))
+            throw new ReglaNegocioException("error.dominio.anteproyecto.fecha_invalida");
+        return switch (decision.resultado()) {
+            case APROBADO -> Estado.APROBADO;
+            case NO_APROBADO -> Estado.NO_APROBADO;
+            default -> throw new ReglaNegocioException("error.dominio.anteproyecto.resultado_consejo_invalido");
+        };
+    }
+
+    /**
+     * Registra la decisión del Consejo de Facultad. Si no aprueba, la versión
+     * queda NO_APROBADO y el director puede radicar una nueva.
+     *
+     * @param decision decisión del Consejo con la ruta de la resolución
+     */
+    void registrarDecisionConsejo(Decision decision) {
+        Estado resultado = estadoTrasDecisionConsejo(decision);
+        this.decisionesConsejo.add(decision);
+        this.estado = resultado;
+    }
+
     private boolean puedeRadicar() {
-        return this.estado == null || this.estado == Estado.CON_CORRECCIONES;
+        return this.estado == null || this.estado == Estado.CON_CORRECCIONES || this.estado == Estado.NO_APROBADO;
     }
 
     /**
@@ -196,7 +243,8 @@ public class Anteproyecto {
     }
 
     /**
-     * @return true si ambos evaluadores aprobaron la versión actual
+     * @return true si la versión actual está aprobada (por los evaluadores y,
+     *         si ya decidió, por el Consejo de Facultad)
      */
     public boolean estaAprobado() {
         return this.estado == Estado.APROBADO;
@@ -249,6 +297,10 @@ public class Anteproyecto {
 
     public List<ConceptoEvaluacion> getConceptos() {
         return Collections.unmodifiableList(conceptos);
+    }
+
+    public List<Decision> getDecisionesConsejo() {
+        return Collections.unmodifiableList(decisionesConsejo);
     }
 
     public Estado getEstado() {

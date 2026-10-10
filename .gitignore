@@ -34,3 +34,6 @@ build/
 
 ### Variables de entorno locales ###
 .env
+
+### Archivos de los trabajos de grado (ejecución local) ###
+/archivos/

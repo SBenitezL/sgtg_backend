@@ -13,6 +13,12 @@ services:
       # Administrador inicial: se toma del archivo .env (ver .env.example)
       SGTG_ADMIN_EMAIL: ${SGTG_ADMIN_EMAIL:?Defina SGTG_ADMIN_EMAIL en el archivo .env (ver .env.example)}
       SGTG_ADMIN_PASSWORD: ${SGTG_ADMIN_PASSWORD:?Defina SGTG_ADMIN_PASSWORD en el archivo .env (ver .env.example)}
+      # Entorno de desarrollo: reloj ajustable para probar flujos que dependen del tiempo (Thunder Client)
+      SGTG_RELOJ_AJUSTABLE: ${SGTG_RELOJ_AJUSTABLE:-true}
+      # Archivos de los trabajos de grado (PDF), en un volumen para que no se pierdan al recrear el contenedor
+      SGTG_ARCHIVOS_DIRECTORIO: /app/archivos
+    volumes:
+      - archivos_data:/app/archivos
     depends_on:
       # Espera a que MySQL acepte conexiones, no solo a que el contenedor inicie
       mysql:
@@ -39,3 +45,4 @@ services:
 
 volumes:
   mysql_data:
+  archivos_data:

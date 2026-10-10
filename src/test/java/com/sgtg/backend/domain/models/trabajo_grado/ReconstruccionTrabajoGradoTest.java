@@ -3,7 +3,7 @@ package com.sgtg.backend.domain.models.trabajo_grado;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.LUNES;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.OBJETIVOS;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.SISTEMAS;
-import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.URL_PROPUESTA;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_PROPUESTA;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.asesorOrganizacion;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.cartaAceptacion;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.decisionComite;
@@ -27,7 +27,7 @@ import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 class ReconstruccionTrabajoGradoTest {
 
     private static DatosPropuesta propuestaRadicada() {
-        return new DatosPropuesta(List.of(Documento.inicial(TipoDocumento.PROPUESTA, URL_PROPUESTA, LUNES)),
+        return new DatosPropuesta(List.of(Documento.inicial(TipoDocumento.PROPUESTA, RUTA_PROPUESTA, LUNES)),
                 List.of(), Estado.RADICADO, LocalDate.of(2026, 3, 16));
     }
 
@@ -35,7 +35,7 @@ class ReconstruccionTrabajoGradoTest {
     void reconstruyeSegunLaModalidadConSuEstado() {
         DatosTrabajoGrado datos = new DatosTrabajoGrado(7L, Modalidad.PRACTICA_PROFESIONAL, "Título", OBJETIVOS,
                 List.of(estudiante(10L)), directorPlanta(1L), null, asesorOrganizacion(), cartaAceptacion(),
-                Proceso.PROPUESTA, propuestaRadicada(), null, List.of(), null);
+                Proceso.PROPUESTA, propuestaRadicada(), null, null, List.of(), null);
 
         TrabajoGrado trabajo = TrabajoGrado.reconstruir(datos);
 
@@ -51,7 +51,7 @@ class ReconstruccionTrabajoGradoTest {
         // Director de cátedra sin codirector: inválido al crear, pero se acepta al reconstruir
         DatosTrabajoGrado datos = new DatosTrabajoGrado(7L, Modalidad.TRABAJO_DE_INVESTIGACION, "Título", OBJETIVOS,
                 List.of(estudiante(10L)), director(1L, TipoVinculacion.CATEDRA, SISTEMAS), null, null, null,
-                Proceso.PROPUESTA, null, null, null, null);
+                Proceso.PROPUESTA, null, null, null, null, null);
 
         TrabajoGrado trabajo = TrabajoGrado.reconstruir(datos);
         assertEquals(TipoVinculacion.CATEDRA, trabajo.getDirector().getTipoVinculacion());
@@ -61,7 +61,7 @@ class ReconstruccionTrabajoGradoTest {
     void elTrabajoReconstruidoSigueOperando() {
         DatosTrabajoGrado datos = new DatosTrabajoGrado(7L, Modalidad.TRABAJO_DE_INVESTIGACION, "Título", OBJETIVOS,
                 List.of(estudiante(10L)), directorPlanta(1L), null, null, null, Proceso.PROPUESTA,
-                propuestaRadicada(), null, List.of(), null);
+                propuestaRadicada(), null, null, List.of(), null);
 
         TrabajoGrado trabajo = TrabajoGrado.reconstruir(datos);
         trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(3)), "C001",
@@ -75,8 +75,8 @@ class ReconstruccionTrabajoGradoTest {
     void exigeLosDatosMinimos() {
         assertThrows(ReglaNegocioException.class, () -> new DatosTrabajoGrado(null, Modalidad.PRACTICA_PROFESIONAL,
                 "Título", OBJETIVOS, List.of(), directorPlanta(1L), null, null, null, Proceso.PROPUESTA, null, null,
-                null, null));
+                null, null, null));
         assertThrows(ReglaNegocioException.class, () -> new DatosTrabajoGrado(7L, null, "Título", OBJETIVOS,
-                List.of(), directorPlanta(1L), null, null, null, Proceso.PROPUESTA, null, null, null, null));
+                List.of(), directorPlanta(1L), null, null, null, Proceso.PROPUESTA, null, null, null, null, null));
     }
 }

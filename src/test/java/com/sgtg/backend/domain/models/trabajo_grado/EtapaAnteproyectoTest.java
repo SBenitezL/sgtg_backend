@@ -2,9 +2,9 @@ package com.sgtg.backend.domain.models.trabajo_grado;
 
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.LUNES;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.OBJETIVOS;
-import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.URL_ANTEPROYECTO;
-import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.URL_FORMATO_B;
-import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.URL_PROPUESTA;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_ANTEPROYECTO;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_FORMATO_B;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_PROPUESTA;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.decisionComite;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.directorPlanta;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.estudiante;
@@ -59,7 +59,7 @@ class EtapaAnteproyectoTest {
 
     /** Lleva el trabajo hasta la etapa de anteproyecto con la propuesta aprobada. */
     private static TrabajoInvestigacion enAnteproyecto(TrabajoInvestigacion trabajo, CalendarioHabil calendario) {
-        trabajo.radicarPropuesta(URL_PROPUESTA, LUNES, calendario);
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(3)), "C001",
                 LUNES.plusDays(3).atTime(10, 0));
         return trabajo;
@@ -71,7 +71,7 @@ class EtapaAnteproyectoTest {
     }
 
     private void radicarYAsignar() {
-        trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
         trabajo.asignarEvaluadores(evaluador1, evaluador2, "J001", asignacion, calendario);
     }
 
@@ -83,7 +83,7 @@ class EtapaAnteproyectoTest {
 
     @Test
     void laPrimeraVersionQuedaEsperandoLosEvaluadores() {
-        trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
 
         Anteproyecto anteproyecto = trabajo.getAnteproyecto();
         assertEquals(Estado.RADICADO, anteproyecto.getEstado());
@@ -98,15 +98,15 @@ class EtapaAnteproyectoTest {
     void soloSeRadicaEnLaEtapaDeAnteproyecto() {
         TrabajoInvestigacion enPropuesta = DatosPrueba.investigacion();
         assertRegla("error.dominio.trabajo_grado.etapa_invalida",
-                () -> enPropuesta.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario));
+                () -> enPropuesta.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario));
     }
 
     @Test
     void noSeRadicaOtraVersionMientrasLaActualEstePendiente() {
-        trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
 
         assertRegla("error.dominio.anteproyecto.radicacion_no_permitida",
-                () -> trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario));
+                () -> trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario));
         assertEquals(1, trabajo.getAnteproyecto().getVersiones().size());
     }
 
@@ -139,7 +139,7 @@ class EtapaAnteproyectoTest {
 
     @Test
     void seExigenDosEvaluadoresDistintos() {
-        trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
 
         assertRegla("error.dominio.anteproyecto.evaluadores_obligatorios",
                 () -> trabajo.asignarEvaluadores(evaluador1, null, "J001", asignacion, calendario));
@@ -151,7 +151,7 @@ class EtapaAnteproyectoTest {
 
     @Test
     void laAsignacionNoPuedeSerAnteriorALaRadicacion() {
-        trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
 
         assertRegla("error.dominio.anteproyecto.fecha_invalida", () -> trabajo.asignarEvaluadores(evaluador1,
                 evaluador2, "J001", radicacion.minusDays(1), calendario));
@@ -165,7 +165,7 @@ class EtapaAnteproyectoTest {
                 "a3@unicauca.edu.co", null, false);
         TrabajoInvestigacion conTodos = enAnteproyecto(new TrabajoInvestigacion(null, "Sistema de gestión",
                 OBJETIVOS, List.of(estudiante(10L)), directorPlanta(1L), directorPlanta(2L), asesor), calendario);
-        conTodos.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario);
+        conTodos.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
 
         assertRegla("error.dominio.anteproyecto.evaluador_con_conflicto", () -> conTodos
                 .asignarEvaluadores(evaluador1, evaluador(usuarioId), "J001", asignacion, calendario));
@@ -179,14 +179,14 @@ class EtapaAnteproyectoTest {
     void elPrimerConceptoNoCambiaLaEtapa() {
         radicarYAsignar();
         trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, asignacion.toLocalDate()),
-                URL_FORMATO_B, dia(asignacion.toLocalDate()), calendario);
+                RUTA_FORMATO_B, dia(asignacion.toLocalDate()), calendario);
 
         assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
         assertEquals(Estado.EN_REVISION, trabajo.getAnteproyecto().getEstado());
         ConceptoEvaluacion registrado = trabajo.getAnteproyecto().getConceptos().get(0);
         assertEquals(1, registrado.version());
         assertEquals(TipoDocumento.EVALUACION_ANTEPROYECTO, registrado.formato().tipo());
-        assertEquals(URL_FORMATO_B, registrado.formato().url());
+        assertEquals(RUTA_FORMATO_B, registrado.formato().ruta());
         assertTrue(registrado.emitidoPor(20L));
     }
 
@@ -196,7 +196,7 @@ class EtapaAnteproyectoTest {
         LocalDate fecha = asignacion.toLocalDate().plusDays(2);
         trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null,
                 dia(fecha), calendario);
-        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), URL_FORMATO_B,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
 
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
@@ -226,7 +226,7 @@ class EtapaAnteproyectoTest {
 
         // Lunes 23-mar-2026: el director radica la versión corregida
         LocalDate reenvio = LocalDate.of(2026, 3, 23);
-        trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", dia(reenvio), calendario);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", dia(reenvio), calendario);
 
         assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
         assertEquals(Estado.EN_REVISION, anteproyecto.getEstado());
@@ -286,21 +286,21 @@ class EtapaAnteproyectoTest {
     }
 
     @Test
-    void unFormatoConUrlInvalidaNoModificaElAnteproyecto() {
+    void unFormatoConRutaInvalidaNoModificaElAnteproyecto() {
         radicarYAsignar();
         LocalDate fecha = asignacion.toLocalDate();
         trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null,
                 dia(fecha), calendario);
 
-        assertRegla("error.dominio.documento.url_invalida", () -> trabajo.registrarConceptoEvaluador(
-                concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), "no-es-una-url", dia(fecha), calendario));
+        assertRegla("error.dominio.documento.ruta_invalida", () -> trabajo.registrarConceptoEvaluador(
+                concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), "../fuera.pdf", dia(fecha), calendario));
         assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
         assertEquals(1, trabajo.getAnteproyecto().getConceptos().size());
     }
 
     @Test
     void noSeEmiteConceptoFueraDeLaEtapaDeEvaluacion() {
-        trabajo.radicarAnteproyecto(URL_ANTEPROYECTO, "D1", radicacion, calendario);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
         LocalDate fecha = asignacion.toLocalDate();
 
         assertRegla("error.dominio.trabajo_grado.etapa_invalida", () -> trabajo.registrarConceptoEvaluador(
@@ -335,14 +335,14 @@ class EtapaAnteproyectoTest {
 
     @Test
     void elAnteproyectoReconstruidoSigueOperando() {
-        Documento version = Documento.inicial(TipoDocumento.ANTEPROYECTO, URL_ANTEPROYECTO, radicacion.toLocalDate());
+        Documento version = Documento.inicial(TipoDocumento.ANTEPROYECTO, RUTA_ANTEPROYECTO, radicacion.toLocalDate());
         LocalDate fecha = asignacion.toLocalDate();
         DatosAnteproyecto anteproyecto = new DatosAnteproyecto(List.of(version), List.of(evaluador1, evaluador2),
                 List.of(new ConceptoEvaluacion(1, concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null)),
-                Estado.EN_REVISION, LocalDate.of(2026, 3, 24), null);
+                List.of(), Estado.EN_REVISION, LocalDate.of(2026, 3, 24), null);
         TrabajoGrado reconstruido = TrabajoGrado.reconstruir(new DatosTrabajoGrado(7L,
                 Modalidad.TRABAJO_DE_INVESTIGACION, "Título", OBJETIVOS, List.of(estudiante(10L)), directorPlanta(1L),
-                null, null, null, Proceso.EVALUACION, null, anteproyecto, List.of(), null));
+                null, null, null, Proceso.EVALUACION, null, anteproyecto, null, List.of(), null));
 
         assertTrue(reconstruido.esEvaluador(21L));
         reconstruido.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), null,

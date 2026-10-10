@@ -2,8 +2,10 @@ package com.sgtg.backend.infraestructure.input.usuario.dto.input;
 
 import java.util.List;
 
+import com.sgtg.backend.application.input.usuario.DatosPerfil;
 import com.sgtg.backend.application.input.usuario.NuevoUsuario;
 import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
+import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,13 +14,18 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 /**
- * Datos de un usuario nuevo, creado por el administrador con sus roles.
+ * Datos de un usuario nuevo, creado por el administrador con sus roles y,
+ * opcionalmente, su perfil académico.
  *
  * @param tipoDocumento   CC, CE o PASAPORTE
  * @param numeroDocumento solo dígitos
+ * @param password        al menos 8 caracteres
  * @param segundoNombre   opcional
  * @param segundoApellido opcional
- * @param roles           nombres de los roles (ej. ESTUDIANTE, DOCENTE, COMITE)
+ * @param tipoVinculacion vinculación del docente (PLANTA, OCASIONAL, CATEDRA, ESTUDIANTE_POSGRADO); con el
+ *                        departamento forma el perfil docente
+ * @param departamentoId  departamento del docente
+ * @param programaId      programa del estudiante (perfil de estudiante)
  */
 public record CrearUsuarioDTORequest(
         @NotBlank(message = "El código es obligatorio") String codigo,
@@ -31,10 +38,13 @@ public record CrearUsuarioDTORequest(
         String segundoNombre,
         @NotBlank(message = "El primer apellido es obligatorio") String primerApellido,
         String segundoApellido,
-        @NotEmpty(message = "Se debe indicar al menos un rol") List<String> roles) {
+        @NotEmpty(message = "Se debe indicar al menos un rol") List<String> roles,
+        TipoVinculacion tipoVinculacion,
+        Long departamentoId,
+        Long programaId) {
 
     public NuevoUsuario toNuevoUsuario() {
         return new NuevoUsuario(codigo, tipoDocumento, numeroDocumento, email, password, primerNombre, segundoNombre,
-                primerApellido, segundoApellido, roles);
+                primerApellido, segundoApellido, roles, new DatosPerfil(tipoVinculacion, departamentoId, programaId));
     }
 }

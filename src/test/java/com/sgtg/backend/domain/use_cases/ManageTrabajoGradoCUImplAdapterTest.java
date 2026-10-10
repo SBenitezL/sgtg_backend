@@ -6,11 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -19,8 +21,10 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 import com.sgtg.backend.application.input.trabajo_grado.DatosAsesor;
 import com.sgtg.backend.application.input.trabajo_grado.NuevoTrabajoGrado;
+import com.sgtg.backend.application.output.ManageArchivoGatewayIntPort;
 import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
 import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
@@ -35,7 +39,15 @@ import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
 import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
+import com.sgtg.backend.domain.models.comun.NombrePersona;
+import com.sgtg.backend.domain.models.participantes.Director;
+import com.sgtg.backend.domain.models.participantes.Estudiante;
+import com.sgtg.backend.domain.models.trabajo_grado.Calificacion;
+import com.sgtg.backend.domain.models.trabajo_grado.DatosEjecucion;
+import com.sgtg.backend.domain.models.trabajo_grado.EstadoSustentacion;
+import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
+import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
@@ -47,7 +59,7 @@ import com.sgtg.backend.infraestructure.output.exception.own.EntityNotFoundExcep
 import com.sgtg.backend.infraestructure.output.exception.own.NoAccessException;
 import com.sgtg.backend.infraestructure.output.formatter.ExceptionFormatterImplAdapter;
 
-/** Casos de uso de las Fases 1 y 2 con los gateways simulados. */
+/** Casos de uso de las Fases 1 a 8 con los gateways simulados. */
 class ManageTrabajoGradoCUImplAdapterTest {
 
     private static final Departamento SISTEMAS = new Departamento(1L, "Sistemas");
@@ -60,6 +72,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     private ManageTrabajoGradoGatewayIntPort trabajoGateway;
     private ManageUserGatewayIntPort userGateway;
     private ManagePerfilGatewayIntPort perfilGateway;
+    private ManageArchivoGatewayIntPort archivoGateway;
     private ManageTrabajoGradoCUImplAdapter casoDeUso;
 
     private static Usuario usuario(long id, RoleAdmited... roles) {
@@ -73,7 +86,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoGateway = mock(ManageTrabajoGradoGatewayIntPort.class);
         userGateway = mock(ManageUserGatewayIntPort.class);
         perfilGateway = mock(ManagePerfilGatewayIntPort.class);
-        casoDeUso = new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway,
+        archivoGateway = mock(ManageArchivoGatewayIntPort.class);
+        casoDeUso = new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
                 new CalendarioHabilFalso(), RELOJ, new ExceptionFormatterImplAdapter());
 
         // Director (1), estudiante (10), miembro del comité (50) y usuario sin relación (99)
@@ -90,8 +104,18 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 .thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, SISTEMAS));
         when(userGateway.findById(20L)).thenReturn(usuario(20L, RoleAdmited.DOCENTE));
         when(userGateway.findById(21L)).thenReturn(usuario(21L, RoleAdmited.EVALUADOR));
+        // Miembro del Consejo de Facultad (70)
+        when(userGateway.findById(70L)).thenReturn(usuario(70L, RoleAdmited.CONSEJO));
         // El gateway devuelve el mismo trabajo que recibe
         when(trabajoGateway.guardar(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
+        // El almacenamiento devuelve <trabajo>/<carpeta>/v1/<nombre>
+        when(archivoGateway.guardar(any(), any(), any())).thenAnswer(invocacion -> invocacion.getArgument(0) + "/"
+                + invocacion.getArgument(1) + "/v1/" + ((ArchivoAdjunto) invocacion.getArgument(2)).nombre());
+    }
+
+    /** Archivo PDF de prueba con el nombre dado. */
+    private static ArchivoAdjunto pdf(String nombre) {
+        return new ArchivoAdjunto(nombre, "application/pdf", "%PDF-1.4 prueba".getBytes(StandardCharsets.US_ASCII));
     }
 
     private NuevoTrabajoGrado investigacion() {
@@ -123,11 +147,28 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 List.of("Objetivo"), List.of(10L), null,
                 new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
                         true),
-                "https://archivos.unicauca.edu.co/carta.pdf");
+                pdf("carta.pdf"));
+        // La carta se guarda en una ubicación temporal y se mueve a la carpeta del trabajo ya guardado
+        when(archivoGateway.guardarTemporal(any())).thenReturn("temporal/abc/carta.pdf");
+        when(archivoGateway.reubicar(eq("temporal/abc/carta.pdf"), any(), eq("CARTA_ACEPTACION")))
+                .thenReturn("9/CARTA_ACEPTACION/v1/carta.pdf");
 
         PracticaProfesional practica = assertInstanceOf(PracticaProfesional.class, casoDeUso.crear(1L, datos));
         assertEquals("Empresa", practica.getAsesor().getOrganizacion());
         assertEquals(LocalDate.of(2026, 3, 2), practica.getCartaAceptacion().fechaCarga());
+        assertEquals("9/CARTA_ACEPTACION/v1/carta.pdf", practica.getCartaAceptacion().ruta());
+    }
+
+    @Test
+    void siLaPracticaNoSeCreaSeEliminaLaCartaTemporal() {
+        // Sin asesor de la organización el dominio rechaza la práctica
+        NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
+                List.of("Objetivo"), List.of(10L), null, null, pdf("carta.pdf"));
+        when(archivoGateway.guardarTemporal(any())).thenReturn("temporal/abc/carta.pdf");
+
+        assertThrows(ReglaNegocioException.class, () -> casoDeUso.crear(1L, datos));
+        verify(archivoGateway).eliminar("temporal/abc/carta.pdf");
+        verify(trabajoGateway, never()).guardar(any());
     }
 
     @Test
@@ -162,9 +203,9 @@ class ManageTrabajoGradoCUImplAdapterTest {
     void soloElDirectorRadicaLaPropuesta() {
         trabajoGuardado();
         assertThrows(NoAccessException.class,
-                () -> casoDeUso.radicarPropuesta(7L, 10L, "https://archivos.unicauca.edu.co/p.pdf"));
+                () -> casoDeUso.radicarPropuesta(7L, 10L, pdf("p.pdf")));
 
-        TrabajoGrado radicado = casoDeUso.radicarPropuesta(7L, 1L, "https://archivos.unicauca.edu.co/p.pdf");
+        TrabajoGrado radicado = casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
         assertEquals(Estado.RADICADO, radicado.getPropuesta().getEstado());
         // 10 días hábiles desde el lunes 2-mar-2026 según el reloj fijo
         assertEquals(LocalDate.of(2026, 3, 16), radicado.getPropuesta().getFechaLimiteConcepto());
@@ -173,21 +214,21 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void laDecisionDelComiteRegistraAlResponsableYAvanza() {
         trabajoGuardado();
-        casoDeUso.radicarPropuesta(7L, 1L, "https://archivos.unicauca.edu.co/p.pdf");
+        casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
 
         TrabajoGrado trabajo = casoDeUso.registrarDecisionComite(7L, 50L, ResultadoConcepto.APROBADO, "Acta 1",
-                "actas/acta-1.pdf", null, null);
+                pdf("acta-1.pdf"), null, null);
 
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
         assertEquals("U50", trabajo.getHistorial().get(0).responsable());
         assertEquals(LocalDate.of(2026, 3, 2), trabajo.getPropuesta().getDecisiones().get(0).fecha());
-        assertEquals("actas/acta-1.pdf", trabajo.getPropuesta().getDecisiones().get(0).rutaArchivo());
+        assertEquals("7/ACTA_COMITE/v1/acta-1.pdf", trabajo.getPropuesta().getDecisiones().get(0).rutaArchivo());
     }
 
     /** Trabajo guardado con la propuesta aprobada, en la etapa de anteproyecto. */
     private TrabajoGrado trabajoEnAnteproyecto() {
         trabajoGuardado();
-        casoDeUso.radicarPropuesta(7L, 1L, "https://archivos.unicauca.edu.co/p.pdf");
+        casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
         return casoDeUso.registrarDecisionComite(7L, 50L, ResultadoConcepto.APROBADO, "Acta 1", null, null, null);
     }
 
@@ -195,9 +236,9 @@ class ManageTrabajoGradoCUImplAdapterTest {
     void soloElDirectorRadicaElAnteproyecto() {
         trabajoEnAnteproyecto();
         assertThrows(NoAccessException.class,
-                () -> casoDeUso.radicarAnteproyecto(7L, 10L, "https://archivos.unicauca.edu.co/a.pdf"));
+                () -> casoDeUso.radicarAnteproyecto(7L, 10L, pdf("a.pdf")));
 
-        TrabajoGrado trabajo = casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        TrabajoGrado trabajo = casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
         assertEquals(Estado.RADICADO, trabajo.getAnteproyecto().getEstado());
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
     }
@@ -205,7 +246,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void elJefeDelDepartamentoDelDirectorAsignaLosEvaluadores() {
         trabajoEnAnteproyecto();
-        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
 
         TrabajoGrado trabajo = casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
 
@@ -220,7 +261,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void unJefeDeOtroDepartamentoNoAsignaEvaluadores() {
         trabajoEnAnteproyecto();
-        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
         when(perfilGateway.buscarPerfilDocente(60L))
                 .thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, new Departamento(2L, "Telemática")));
 
@@ -232,7 +273,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void elJefeDebeTenerPerfilDocente() {
         trabajoEnAnteproyecto();
-        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
         when(perfilGateway.buscarPerfilDocente(60L)).thenReturn(null);
 
         BusinessRuleException error = assertThrows(BusinessRuleException.class,
@@ -243,7 +284,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void elEvaluadorDebeTenerUnRolQueLePermitaEvaluar() {
         trabajoEnAnteproyecto();
-        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
 
         // El usuario 50 solo tiene rol COMITE
         ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
@@ -254,19 +295,237 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void soloLosEvaluadoresAsignadosEmitenConcepto() {
         trabajoEnAnteproyecto();
-        casoDeUso.radicarAnteproyecto(7L, 1L, "https://archivos.unicauca.edu.co/a.pdf");
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
         casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
 
         assertThrows(NoAccessException.class,
                 () -> casoDeUso.registrarConceptoEvaluador(7L, 99L, ResultadoConcepto.APROBADO, null, null));
 
         casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null,
-                "https://archivos.unicauca.edu.co/b1.pdf");
+                pdf("b1.pdf"));
         TrabajoGrado trabajo = casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null, null);
 
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
         assertEquals(LocalDate.of(2026, 3, 2), trabajo.getAnteproyecto().getConceptos().get(0).concepto().fecha());
         assertTrue(trabajo.participa(21L));
+    }
+
+    /** Trabajo con el anteproyecto aprobado por ambos evaluadores. */
+    private void trabajoEnAprobacionConsejo() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
+        casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
+        casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null, null);
+        casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null, null);
+    }
+
+    @Test
+    void elConsejoApruebaConLaFechaActualComoNotificacion() {
+        trabajoEnAprobacionConsejo();
+
+        TrabajoGrado trabajo = casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO,
+                pdf("res-100.pdf"), null);
+
+        assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
+        // Reloj fijo: lunes 2-mar-2026; investigación dura 9 meses
+        assertEquals(LocalDate.of(2026, 3, 2), trabajo.getEjecucion().getFechaNotificacion());
+        assertEquals(LocalDate.of(2026, 12, 2), trabajo.getEjecucion().getFechaFin());
+        assertEquals("7/RESOLUCION/v1/res-100.pdf",
+                trabajo.getAnteproyecto().getDecisionesConsejo().get(0).rutaArchivo());
+        assertEquals("U70", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+    }
+
+    @Test
+    void siElConsejoNoApruebaVuelveAAnteproyectoSinComentarioObligatorio() {
+        trabajoEnAprobacionConsejo();
+
+        TrabajoGrado trabajo = casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.NO_APROBADO,
+                pdf("res-101.pdf"), null);
+
+        assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
+        assertEquals(Estado.NO_APROBADO, trabajo.getAnteproyecto().getEstado());
+        assertEquals(Proceso.EVALUACION,
+                casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a2.pdf")).getEtapa());
+    }
+
+    /** Trabajo aprobado por el Consejo (en curso desde el 2-mar-2026). */
+    private void trabajoEnCurso() {
+        trabajoEnAprobacionConsejo();
+        casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-100.pdf"), null);
+    }
+
+    @Test
+    void elDirectorSolicitaElCambioDeObjetivosYElConsejoLoDecide() {
+        trabajoEnCurso();
+        assertThrows(NoAccessException.class, () -> casoDeUso.solicitarCambioObjetivos(7L, 10L, "Nuevo título",
+                List.of("Nuevo objetivo"), "Justificación"));
+
+        casoDeUso.solicitarCambioObjetivos(7L, 1L, "Nuevo título", List.of("Nuevo objetivo"), "Justificación");
+        TrabajoGrado trabajo = casoDeUso.resolverCambioObjetivos(7L, 70L, ResultadoConcepto.APROBADO,
+                pdf("res-200.pdf"), null);
+
+        assertEquals("Nuevo título", trabajo.getTitulo());
+        assertEquals(LocalDate.of(2026, 3, 2),
+                trabajo.getEjecucion().getCambiosObjetivos().get(0).decision().fecha());
+    }
+
+    @Test
+    void soloElDirectorRadicaInformesYSoloEnPractica() {
+        trabajoEnCurso();
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.registrarInformeMensual(7L, 10L, pdf("abril.pdf")));
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.registrarInformeMensual(7L, 1L, pdf("abril.pdf")));
+        assertEquals("error.dominio.informe_mensual.solo_practica", error.getMessage());
+    }
+
+    @Test
+    void elDirectorSolicitaLaProrrogaYElConsejoLaAprueba() {
+        trabajoEnCurso();
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.solicitarProrroga(7L, 10L, 2, pdf("prorroga.pdf")));
+
+        casoDeUso.solicitarProrroga(7L, 1L, 2, pdf("prorroga.pdf"));
+        TrabajoGrado trabajo = casoDeUso.resolverProrroga(7L, 70L, ResultadoConcepto.APROBADO,
+                pdf("res-300.pdf"), null);
+
+        assertEquals(Proceso.PRORROGA, trabajo.getEtapa());
+        // 9 meses desde el 2-mar-2026 más 2 de prórroga
+        assertEquals(LocalDate.of(2027, 2, 2), trabajo.getEjecucion().getFechaFin());
+        assertEquals("U70", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+        assertEquals(LocalDate.of(2026, 3, 2), trabajo.getEjecucion().getProrroga().fechaSolicitud());
+    }
+
+    @Test
+    void elDirectorSolicitaYReanudaLaSuspensionQueApruebaElConsejo() {
+        trabajoEnCurso();
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.solicitarSuspension(7L, 10L, pdf("suspension.pdf")));
+
+        casoDeUso.solicitarSuspension(7L, 1L, pdf("suspension.pdf"));
+        TrabajoGrado trabajo = casoDeUso.resolverSuspension(7L, 70L, ResultadoConcepto.APROBADO,
+                pdf("res-400.pdf"), null);
+
+        assertEquals(Proceso.SUSPENDIDO, trabajo.getEtapa());
+        // Aprobada el 2-mar-2026 (período 2026-1): se reanuda a más tardar el 1-ene-2027
+        assertEquals(LocalDate.of(2027, 1, 1),
+                trabajo.getEjecucion().suspensionActiva().get().fechaMaximaReanudacion());
+        assertThrows(NoAccessException.class, () -> casoDeUso.reanudar(7L, 10L, pdf("reanudacion.pdf")));
+
+        trabajo = casoDeUso.reanudar(7L, 1L, pdf("reanudacion.pdf"));
+        assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
+        assertEquals("U1", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+        assertEquals(LocalDate.of(2026, 12, 2), trabajo.getEjecucion().getFechaFin());
+    }
+
+    @Test
+    void laVerificacionDiariaReanudaLasSuspensionesVencidas() {
+        trabajoEnCurso();
+        casoDeUso.solicitarSuspension(7L, 1L, pdf("suspension.pdf"));
+        TrabajoGrado suspendido = casoDeUso.resolverSuspension(7L, 70L, ResultadoConcepto.APROBADO,
+                pdf("res-400.pdf"), null);
+        when(trabajoGateway.listarPorEtapa(Proceso.SUSPENDIDO)).thenReturn(List.of(suspendido));
+        ManageTrabajoGradoCUImplAdapter enEnero = new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway,
+                perfilGateway, archivoGateway, new CalendarioHabilFalso(),
+                Clock.fixed(LocalDate.of(2027, 1, 1).atTime(0, 5).atZone(ZoneId.of("America/Bogota")).toInstant(),
+                        ZoneId.of("America/Bogota")),
+                new ExceptionFormatterImplAdapter());
+
+        assertEquals(1, enEnero.verificarVencimientos());
+        assertEquals(Proceso.EN_CURSO, suspendido.getEtapa());
+    }
+
+    /** Caso de uso con el reloj en la fecha dada (10:00, hora de Bogotá). */
+    private ManageTrabajoGradoCUImplAdapter casoDeUsoEn(LocalDate fecha) {
+        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
+                new CalendarioHabilFalso(), Clock.fixed(fecha.atTime(10, 0).atZone(ZoneId.of("America/Bogota"))
+                        .toInstant(), ZoneId.of("America/Bogota")),
+                new ExceptionFormatterImplAdapter());
+    }
+
+    @Test
+    void laSustentacionSeSolicitaProgramaCalificaYFinaliza() {
+        trabajoEnCurso();
+        // En curso desde el 2-mar-2026: antes de los 3 meses no se puede solicitar
+        ReglaNegocioException temprano = assertThrows(ReglaNegocioException.class, () -> casoDeUso
+                .solicitarSustentacion(7L, 1L, pdf("tg.pdf"), pdf("tg.pdf"), null));
+        assertEquals("error.dominio.sustentacion.antes_de_tiempo", temprano.getMessage());
+
+        ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
+        assertThrows(NoAccessException.class,
+                () -> enJulio.solicitarSustentacion(7L, 10L, pdf("tg.pdf"), pdf("tg.pdf"), null));
+        enJulio.solicitarSustentacion(7L, 1L, pdf("tg.pdf"), pdf("tg.pdf"), null);
+        // El Consejo programa a los jurados 20 (DOCENTE) y 21 (EVALUADOR), que fueron evaluadores
+        TrabajoGrado trabajo = enJulio.programarSustentacion(7L, 70L, 20L, 21L,
+                LocalDate.of(2026, 7, 6).atTime(15, 0), "Salón 301");
+        assertEquals(EstadoSustentacion.PROGRAMADA, trabajo.getSustentacion().getEstado());
+
+        assertThrows(NoAccessException.class,
+                () -> enJulio.calificarSustentacion(7L, 1L, Calificacion.APROBADO, null, null));
+        enJulio.calificarSustentacion(7L, 20L, Calificacion.APROBADO, null, pdf("acta-sustentacion.pdf"));
+        trabajo = enJulio.calificarSustentacion(7L, 21L, Calificacion.APROBADO, null, null);
+        assertEquals(EstadoSustentacion.APROBADA, trabajo.getSustentacion().getEstado());
+
+        trabajo = enJulio.cargarVersionDefinitiva(7L, 21L, pdf("tg.pdf"));
+        assertEquals(Proceso.FINALIZADO, trabajo.getEtapa());
+        assertEquals("U21", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+    }
+
+    @Test
+    void elJuradoDebeTenerUnRolQueLePermitaSerlo() {
+        trabajoEnCurso();
+        ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
+        enJulio.solicitarSustentacion(7L, 1L, pdf("tg.pdf"), pdf("tg.pdf"), null);
+
+        // El usuario 50 solo tiene rol COMITE
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> enJulio
+                .programarSustentacion(7L, 70L, 20L, 50L, LocalDate.of(2026, 7, 10).atTime(15, 0), "Salón 301"));
+        assertEquals("error.dominio.participante.rol_no_permitido", error.getMessage());
+    }
+
+    @Test
+    void elDirectorSolicitaLaCancelacionYElConsejoLaAprueba() {
+        trabajoGuardado();
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.solicitarCancelacion(7L, 10L, pdf("cancelacion.pdf")));
+
+        casoDeUso.solicitarCancelacion(7L, 1L, pdf("cancelacion.pdf"));
+        TrabajoGrado trabajo = casoDeUso.resolverCancelacion(7L, 70L, ResultadoConcepto.APROBADO,
+                pdf("res-500.pdf"), null);
+
+        assertEquals(Proceso.CANCELADO, trabajo.getEtapa());
+        assertEquals(MotivoCierre.CANCELACION_DIRECTOR, trabajo.getMotivoCierre());
+        assertEquals("U70", trabajo.getHistorial().get(0).responsable());
+        assertEquals(LocalDate.of(2026, 3, 2), trabajo.getCancelaciones().get(0).decision().fecha());
+    }
+
+    @Test
+    void laVerificacionDiariaCierraLosTrabajosVencidos() {
+        Director director = new Director(1L, "D1", new NombrePersona("Docente", null, "Prueba", null),
+                "d1@unicauca.edu.co", TipoVinculacion.PLANTA, SISTEMAS);
+        Estudiante estudiante = new Estudiante(10L, "E10", new NombrePersona("Estudiante", null, "Prueba", null),
+                "e10@unicauca.edu.co", ING_SISTEMAS);
+        // Vencido el 1-oct-2025 y vigente hasta el 1-dic-2026; el reloj está en el 2-mar-2026
+        TrabajoGrado vencido = TrabajoGrado.reconstruir(new DatosTrabajoGrado(7L,
+                Modalidad.TRABAJO_DE_INVESTIGACION, "Vencido", List.of("Objetivo"), List.of(estudiante), director,
+                null, null, null, Proceso.EN_CURSO, null, null,
+                new DatosEjecucion(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 10, 1), LocalDate.of(2025, 4, 1)),
+                List.of(), null));
+        TrabajoGrado vigente = TrabajoGrado.reconstruir(new DatosTrabajoGrado(8L,
+                Modalidad.TRABAJO_DE_INVESTIGACION, "Vigente", List.of("Objetivo"), List.of(estudiante), director,
+                null, null, null, Proceso.EN_CURSO, null, null,
+                new DatosEjecucion(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 1), LocalDate.of(2026, 6, 1)),
+                List.of(), null));
+        when(trabajoGateway.listarPorEtapa(Proceso.EN_CURSO)).thenReturn(List.of(vencido, vigente));
+        when(trabajoGateway.listarPorEtapa(Proceso.PRORROGA)).thenReturn(List.of());
+
+        assertEquals(1, casoDeUso.verificarVencimientos());
+
+        assertEquals(Proceso.NO_APROBADO, vencido.getEtapa());
+        assertEquals(MotivoCierre.VENCIMIENTO_PLAZO, vencido.getMotivoCierre());
+        assertEquals(Proceso.EN_CURSO, vigente.getEtapa());
+        verify(trabajoGateway).guardar(vencido);
+        verify(trabajoGateway, never()).guardar(vigente);
     }
 
     @Test
@@ -282,6 +541,79 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertSame(trabajo, casoDeUso.consultar(7L, 10L));
         assertSame(trabajo, casoDeUso.consultar(7L, 50L));
         assertThrows(NoAccessException.class, () -> casoDeUso.consultar(7L, 99L));
+    }
+
+    // ----- Archivos -----
+
+    @Test
+    void elArchivoSeGuardaEnLaCarpetaDelTipoYElDominioSoloGuardaLaRuta() {
+        trabajoGuardado();
+        TrabajoGrado trabajo = casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
+
+        verify(archivoGateway).guardar(eq(7L), eq("TI-A"), any());
+        assertEquals("7/TI-A/v1/p.pdf", trabajo.getPropuesta().getVersiones().get(0).ruta());
+    }
+
+    @Test
+    void soloSeAceptanArchivosPdf() {
+        trabajoGuardado();
+        BusinessRuleException porExtension = assertThrows(BusinessRuleException.class, () -> casoDeUso
+                .radicarPropuesta(7L, 1L, new ArchivoAdjunto("p.docx", "application/msword", pdf("x").contenido())));
+        assertEquals("error.archivo.formato_invalido", porExtension.getBusinessRule());
+        BusinessRuleException porContenido = assertThrows(BusinessRuleException.class, () -> casoDeUso
+                .radicarPropuesta(7L, 1L, new ArchivoAdjunto("p.pdf", "application/pdf", new byte[] { 1, 2, 3 })));
+        assertEquals("error.archivo.formato_invalido", porContenido.getBusinessRule());
+        verify(archivoGateway, never()).guardar(any(), any(), any());
+    }
+
+    @Test
+    void siElDominioRechazaLaOperacionSeEliminaElArchivo() {
+        // En propuesta todavía no se puede radicar el anteproyecto
+        trabajoGuardado();
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf")));
+        assertEquals("error.dominio.trabajo_grado.etapa_invalida", error.getMessage());
+        verify(archivoGateway).eliminar("7/ANTEPROYECTO/v1/a.pdf");
+    }
+
+    @Test
+    void sinArchivoElDominioExigeElDocumento() {
+        trabajoEnCurso();
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.solicitarSuspension(7L, 1L, null));
+        assertEquals("error.dominio.suspension.documento_obligatorio", error.getMessage());
+    }
+
+    @Test
+    void sinPermisoElDirectorNoAlmacenaArchivos() {
+        trabajoGuardado();
+        assertThrows(NoAccessException.class, () -> casoDeUso.radicarPropuesta(7L, 10L, pdf("p.pdf")));
+        verify(archivoGateway, never()).guardar(any(), any(), any());
+    }
+
+    @Test
+    void losArchivosLosDescarganQuienesPuedenConsultarElTrabajo() {
+        trabajoGuardado();
+        ArchivoAdjunto propuesta = pdf("p.pdf");
+        when(archivoGateway.obtener("7/TI-A/v1/p.pdf")).thenReturn(propuesta);
+
+        // Participante (estudiante) y rol de consulta general (comité)
+        assertSame(propuesta, casoDeUso.obtenerArchivo(7L, 10L, "7/TI-A/v1/p.pdf"));
+        assertSame(propuesta, casoDeUso.obtenerArchivo(7L, 50L, "7/TI-A/v1/p.pdf"));
+        // Sin relación con el trabajo
+        NoAccessException sinAcceso = assertThrows(NoAccessException.class,
+                () -> casoDeUso.obtenerArchivo(7L, 99L, "7/TI-A/v1/p.pdf"));
+        assertEquals("error.archivo.sin_acceso", sinAcceso.getMessage());
+    }
+
+    @Test
+    void soloSeEntreganArchivosDeLaCarpetaDelTrabajo() {
+        trabajoGuardado();
+        assertThrows(EntityNotFoundException.class, () -> casoDeUso.obtenerArchivo(7L, 1L, "8/TI-A/v1/p.pdf"));
+        assertThrows(EntityNotFoundException.class, () -> casoDeUso.obtenerArchivo(7L, 1L, "7/../8/TI-A/v1/p.pdf"));
+        // Ruta del trabajo que no existe en el almacenamiento
+        assertThrows(EntityNotFoundException.class, () -> casoDeUso.obtenerArchivo(7L, 1L, "7/TI-A/v9/p.pdf"));
+        verify(archivoGateway, never()).obtener("8/TI-A/v1/p.pdf");
     }
 
     @Test

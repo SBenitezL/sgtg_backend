@@ -18,7 +18,14 @@ public enum TipoDocumento {
     ACTA_SUSTENTACION("G", false),
     VERSION_DEFINITIVA("H", false),
     CARTA_ACEPTACION(null, true),
-    RESOLUCION(null, false);
+    RESOLUCION(null, false),
+    ACTA_COMITE(null, false),
+    SOLICITUD_PRORROGA(null, false),
+    SOLICITUD_SUSPENSION(null, false),
+    REANUDACION(null, false),
+    CONCEPTO_ASESOR(null, true),
+    AJUSTES_SUSTENTACION(null, false),
+    SOLICITUD_CANCELACION(null, false);
 
     /** Letra del formato en el reglamento, null si no corresponde a un formato */
     private final String letraFormato;
@@ -47,5 +54,15 @@ public enum TipoDocumento {
         if (this.letraFormato == null || !this.aplicaA(modalidad))
             return Optional.empty();
         return Optional.of(modalidad.getPrefijoFormato() + "-" + this.letraFormato);
+    }
+
+    /**
+     * @param modalidad modalidad del trabajo de grado
+     * @return nombre con el que se agrupan los archivos de este tipo: el código
+     *         del formato (ej. "PP-A") o, si no corresponde a un formato, el
+     *         nombre del tipo (ej. "ANTEPROYECTO")
+     */
+    public String carpeta(Modalidad modalidad) {
+        return formato(modalidad).orElse(this.name());
     }
 }

@@ -145,7 +145,7 @@ class CreacionTrabajoGradoTest {
                 () -> new PracticaProfesional(null, "Título", OBJETIVOS, estudiante(10L), directorPlanta(1L), null,
                         asesorOrganizacion(), null));
         Documento otroDocumento = Documento.inicial(TipoDocumento.PROPUESTA,
-                "https://archivos.unicauca.edu.co/tg/propuesta.pdf", DatosPrueba.LUNES);
+                "1/tg/propuesta.pdf", DatosPrueba.LUNES);
         assertRegla("error.dominio.practica.carta_aceptacion_obligatoria",
                 () -> new PracticaProfesional(null, "Título", OBJETIVOS, estudiante(10L), directorPlanta(1L), null,
                         asesorOrganizacion(), otroDocumento));

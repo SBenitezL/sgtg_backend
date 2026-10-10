@@ -5,6 +5,7 @@ import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
 import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.utils.CheckString;
 
 public class ManageAuthCUImplAdapter implements ManageAuthCUIntPort {
 
@@ -19,15 +20,20 @@ public class ManageAuthCUImplAdapter implements ManageAuthCUIntPort {
         this.exceptionFormatter = exceptionFormatter;
     }
 
+    /**
+     * Correo inexistente o contraseña incorrecta responden igual, para no revelar
+     * qué correos están registrados. El estado del usuario se revisa solo después
+     * de validar la contraseña: así solo su dueño sabe que la cuenta está inactiva.
+     */
     @Override
     public String login(String email, String password) {
-        Usuario user = persistenceAuthService.findByEmail(email);
-        if (user == null)
-            this.exceptionFormatter.returnNoData("error.auth.user_not_found");
-        String token = this.authServiceGateway.login(user.getEmail(), password);
-        if (token == null)
+        if (CheckString.isBlank(email) || CheckString.isBlank(password)
+                || !this.authServiceGateway.verificarCredenciales(email, password))
             this.exceptionFormatter.returnResponseBadCredentials("error.auth.invalid_credentials");
-        return token;
+        Usuario user = persistenceAuthService.findByEmail(email);
+        if (!user.isActivo())
+            this.exceptionFormatter.returnResponseBadCredentials("error.auth.usuario_inactivo");
+        return this.authServiceGateway.generarToken(user.getEmail());
     }
 
 }
