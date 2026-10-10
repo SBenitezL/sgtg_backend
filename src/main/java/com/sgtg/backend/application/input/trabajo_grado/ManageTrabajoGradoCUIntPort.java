@@ -56,6 +56,15 @@ public interface ManageTrabajoGradoCUIntPort {
     public List<TrabajoGrado> listarPorEtapa(Proceso etapa);
 
     /**
+     * Lista todos los trabajos de grado, en cualquier etapa. Para los roles de
+     * consulta general (el controlador restringe el acceso): pantallas de
+     * seguimiento, historial y estadísticas.
+     *
+     * @return todos los trabajos, del más reciente al más antiguo
+     */
+    public List<TrabajoGrado> listarTodos();
+
+    /**
      * Radica una versión de la propuesta. Solo el director del trabajo.
      *
      * @param documento archivo de la propuesta (formato A)

@@ -51,4 +51,9 @@ public class ManageTrabajoGradoGatewayImplAdapter implements ManageTrabajoGradoG
         return trabajoGradoRepository.findByEtapaOrderByIdDesc(etapa).stream().map(MapperTrabajoGrado::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<TrabajoGrado> listarTodos() {
+        return trabajoGradoRepository.findAllByOrderByIdDesc().stream().map(MapperTrabajoGrado::toDomain).toList();
+    }
 }

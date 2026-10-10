@@ -529,6 +529,12 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
+    void listarTodosDelegaAlGateway() {
+        casoDeUso.listarTodos();
+        verify(trabajoGateway).listarTodos();
+    }
+
+    @Test
     void listarPorEtapaExigeLaEtapa() {
         assertThrows(BusinessRuleException.class, () -> casoDeUso.listarPorEtapa(null));
         casoDeUso.listarPorEtapa(Proceso.ANTEPROYECTO);

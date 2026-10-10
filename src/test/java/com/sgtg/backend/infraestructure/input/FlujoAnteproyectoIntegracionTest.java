@@ -497,7 +497,9 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(status().isForbidden());
         enviar(get(API + "/trabajos-grado").param("etapa", "NO_EXISTE"), jefe, null)
                 .andExpect(status().isBadRequest());
+        // Sin etapa lista todos los trabajos
         enviar(get(API + "/trabajos-grado"), jefe, null)
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem((int) trabajoId)));
     }
 }

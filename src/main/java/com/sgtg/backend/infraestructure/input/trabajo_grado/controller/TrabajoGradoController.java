@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntPort;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
+import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AsignarEvaluadoresDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.CalificacionSustentacionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ConceptoEvaluadorDTORequest;
@@ -91,12 +92,16 @@ public class TrabajoGradoController {
                 .map(TrabajoGradoDTOResponse::desde).toList());
     }
 
-    /** Trabajos en una etapa (ej. ANTEPROYECTO para asignar evaluadores). */
+    /**
+     * Trabajos en una etapa (ej. ANTEPROYECTO para asignar evaluadores) o, sin
+     * etapa, todos los trabajos. Solo para los roles de consulta general.
+     */
     @GetMapping
     @PreAuthorize("hasAnyAuthority('COMITE', 'JEFE_DEP', 'CONSEJO', 'ADMINISTRADOR')")
-    public ResponseEntity<List<TrabajoGradoDTOResponse>> listarPorEtapa(@RequestParam Proceso etapa) {
-        return ResponseEntity.ok(manageTrabajoGrado.listarPorEtapa(etapa).stream()
-                .map(TrabajoGradoDTOResponse::desde).toList());
+    public ResponseEntity<List<TrabajoGradoDTOResponse>> listar(@RequestParam(required = false) Proceso etapa) {
+        List<TrabajoGrado> trabajos = etapa == null ? manageTrabajoGrado.listarTodos()
+                : manageTrabajoGrado.listarPorEtapa(etapa);
+        return ResponseEntity.ok(trabajos.stream().map(TrabajoGradoDTOResponse::desde).toList());
     }
 
     @GetMapping("/{trabajoId}")

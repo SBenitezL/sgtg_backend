@@ -29,4 +29,6 @@ public interface TrabajoGradoRepository extends JpaRepository<TrabajoGradoEntity
 
     /** Trabajos en la etapa indicada, del más reciente al más antiguo. */
     List<TrabajoGradoEntity> findByEtapaOrderByIdDesc(Proceso etapa);
+
+    List<TrabajoGradoEntity> findAllByOrderByIdDesc();
 }

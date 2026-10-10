@@ -23,4 +23,7 @@ public interface ManageTrabajoGradoGatewayIntPort {
 
     /** @return los trabajos que se encuentran en la etapa indicada */
     public List<TrabajoGrado> listarPorEtapa(Proceso etapa);
+
+    /** @return todos los trabajos de grado, del más reciente al más antiguo */
+    public List<TrabajoGrado> listarTodos();
 }

@@ -154,6 +154,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
+    public List<TrabajoGrado> listarTodos() {
+        return this.trabajoGateway.listarTodos();
+    }
+
+    @Override
     public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
