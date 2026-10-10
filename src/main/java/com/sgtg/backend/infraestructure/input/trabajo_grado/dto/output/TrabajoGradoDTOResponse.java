@@ -39,7 +39,7 @@ import com.sgtg.backend.infraestructure.input.catalogo.dto.output.CatalogoDTORes
 
 /** Vista completa de un trabajo de grado. */
 public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titulo, List<String> objetivos,
-        Proceso etapa, MotivoCierre motivoCierre, List<EstudianteDTO> estudiantes, DirectorDTO director,
+        String descripcion, String lineaInvestigacion, Proceso etapa, MotivoCierre motivoCierre, List<EstudianteDTO> estudiantes, DirectorDTO director,
         DirectorDTO codirector, AsesorDTO asesor, DocumentoDTO cartaAceptacion, PropuestaDTO propuesta,
         AnteproyectoDTO anteproyecto, EjecucionDTO ejecucion, SustentacionDTO sustentacion,
         List<CancelacionDTO> cancelaciones, List<CambioEtapaDTO> historial) {
@@ -162,7 +162,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 ? documento(practica.getCartaAceptacion(), modalidad)
                 : null;
         return new TrabajoGradoDTOResponse(trabajo.getId(), modalidad, trabajo.getTitulo(), trabajo.getObjetivos(),
-                trabajo.getEtapa(), trabajo.getMotivoCierre(),
+                trabajo.getDescripcion(), trabajo.getLineaInvestigacion(), trabajo.getEtapa(), trabajo.getMotivoCierre(),
                 trabajo.getEstudiantes().stream().map(TrabajoGradoDTOResponse::estudiante).toList(),
                 director(trabajo.getDirector()), director(trabajo.getCodirector()), asesor(trabajo.getAsesor()), carta,
                 new PropuestaDTO(propuesta.getEstado(), propuesta.getFechaLimiteConcepto(),

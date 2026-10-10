@@ -50,6 +50,12 @@ public class TrabajoGradoEntity {
     @Column(nullable = false, length = 500)
     private String titulo;
 
+    @Column(length = 4000)
+    private String descripcion;
+
+    @Column(length = 300)
+    private String lineaInvestigacion;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Proceso etapa;

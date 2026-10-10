@@ -139,6 +139,25 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals(ING_SISTEMAS, trabajo.getEstudiantes().get(0).getPrograma());
         assertEquals(Proceso.PROPUESTA, trabajo.getEtapa());
         verify(trabajoGateway).guardar(trabajo);
+        // El director gana el rol DIRECTOR (rol de contexto)
+        verify(userGateway).agregarRol(1L, "DIRECTOR");
+    }
+
+    @Test
+    void creaElTrabajoConDescripcionYLineaDeInvestigacion() {
+        TrabajoGrado trabajo = casoDeUso.crear(1L, new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION,
+                "Título", List.of("Objetivo"), List.of(10L), null, null, null, "Descripción", "Ingeniería de software"));
+        assertEquals("Descripción", trabajo.getDescripcion());
+        assertEquals("Ingeniería de software", trabajo.getLineaInvestigacion());
+    }
+
+    @Test
+    void soloElDirectorCorrigeLaPropuesta() {
+        trabajoGuardado();
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.actualizarPropuesta(7L, 10L, "T", List.of("O"), null, null));
+        TrabajoGrado trabajo = casoDeUso.actualizarPropuesta(7L, 1L, "Nuevo", List.of("O"), "D", null);
+        assertEquals("Nuevo", trabajo.getTitulo());
     }
 
     @Test

@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,6 +27,7 @@ import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntPort;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ActualizarPropuestaDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AsignarEvaluadoresDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.CalificacionSustentacionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ConceptoEvaluadorDTORequest;
@@ -135,6 +137,18 @@ public class TrabajoGradoController {
             @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse
                 .desde(manageTrabajoGrado.radicarPropuesta(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+    }
+
+    /**
+     * Corrige título, objetivos, descripción y línea de investigación. Solo el
+     * director, antes de la primera radicación o después de un NO APROBADO.
+     */
+    @PutMapping("/{trabajoId}/propuesta")
+    public ResponseEntity<TrabajoGradoDTOResponse> actualizarPropuesta(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long trabajoId, @Valid @RequestBody ActualizarPropuestaDTORequest request) {
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.actualizarPropuesta(trabajoId,
+                usuario.getCusuari(), request.titulo(), request.objetivos(), request.descripcion(),
+                request.lineaInvestigacion())));
     }
 
     /** Registra el concepto del Comité de Programa sobre la propuesta, con el acta opcional. */

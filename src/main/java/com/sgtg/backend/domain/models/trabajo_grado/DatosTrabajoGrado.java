@@ -21,13 +21,15 @@ import com.sgtg.backend.domain.models.participantes.Estudiante;
  * @param sustentacion    null mientras no se haya solicitado
  * @param cancelaciones   solicitudes de cancelación, en orden
  * @param motivoCierre    null si el trabajo sigue activo
+ * @param descripcion        descripción general de la propuesta, null si no tiene
+ * @param lineaInvestigacion línea de investigación, null si no tiene
  */
 public record DatosTrabajoGrado(Long id, Modalidad modalidad, String titulo, List<String> objetivos,
         List<Estudiante> estudiantes, Director director, Director codirector, Asesor asesor,
         Documento cartaAceptacion, Proceso etapa, DatosPropuesta propuesta, DatosAnteproyecto anteproyecto,
         DatosEjecucion ejecucion, DatosSustentacion sustentacion, List<Cancelacion> cancelaciones,
         List<CambioEtapa> historial,
-        MotivoCierre motivoCierre) {
+        MotivoCierre motivoCierre, String descripcion, String lineaInvestigacion) {
 
     public DatosTrabajoGrado {
         if (id == null || modalidad == null || etapa == null || director == null)
@@ -38,6 +40,16 @@ public record DatosTrabajoGrado(Long id, Modalidad modalidad, String titulo, Lis
         cancelaciones = cancelaciones == null ? List.of() : List.copyOf(cancelaciones);
         propuesta = propuesta == null ? DatosPropuesta.vacia() : propuesta;
         anteproyecto = anteproyecto == null ? DatosAnteproyecto.vacio() : anteproyecto;
+    }
+
+    /** Estado de un trabajo sin descripción ni línea de investigación. */
+    public DatosTrabajoGrado(Long id, Modalidad modalidad, String titulo, List<String> objetivos,
+            List<Estudiante> estudiantes, Director director, Director codirector, Asesor asesor,
+            Documento cartaAceptacion, Proceso etapa, DatosPropuesta propuesta, DatosAnteproyecto anteproyecto,
+            DatosEjecucion ejecucion, DatosSustentacion sustentacion, List<Cancelacion> cancelaciones,
+            List<CambioEtapa> historial, MotivoCierre motivoCierre) {
+        this(id, modalidad, titulo, objetivos, estudiantes, director, codirector, asesor, cartaAceptacion, etapa,
+                propuesta, anteproyecto, ejecucion, sustentacion, cancelaciones, historial, motivoCierre, null, null);
     }
 
     /** Estado de un trabajo que aún no ha solicitado la sustentación ni la cancelación. */

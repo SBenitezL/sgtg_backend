@@ -206,6 +206,10 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.historial[0].destino").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.historial[0].responsable").value("C" + sufijo));
 
+        // El director ganó el rol DIRECTOR al crear el trabajo
+        enviar(get(API + "/usuarios/me"), docente, null)
+                .andExpect(jsonPath("$.roles", org.hamcrest.Matchers.hasItem("DIRECTOR")));
+
         // El estudiante consulta su trabajo
         String estudiante = login(correo("E"), CLAVE);
         enviar(get(API + "/trabajos-grado/" + trabajoId), estudiante, null)

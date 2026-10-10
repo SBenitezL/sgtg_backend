@@ -12,7 +12,10 @@ import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
 import com.sgtg.backend.domain.models.Usuario;
 import com.sgtg.backend.infraestructure.mapper.MapperRoleAuth;
 import com.sgtg.backend.infraestructure.mapper.MapperUsuarioAuth;
+import com.sgtg.backend.infraestructure.output.percistence.entities.RoleEntity;
+import com.sgtg.backend.infraestructure.output.percistence.entities.RoleEntity.RoleType;
 import com.sgtg.backend.infraestructure.output.percistence.entities.UserEntity;
+import com.sgtg.backend.infraestructure.output.percistence.repositories.RoleRepository;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class ManageUserGatewayImplAdapter implements ManageUserGatewayIntPort {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public Usuario findByEmail(String email) {
@@ -41,6 +45,19 @@ public class ManageUserGatewayImplAdapter implements ManageUserGatewayIntPort {
         UserEntity entity = userRepository.findById(usuario.getCusuari()).orElseThrow();
         // Lista modificable: Hibernate la vacía y la vuelve a llenar al guardar
         entity.setRole(new ArrayList<>(usuario.getRole().stream().map(MapperRoleAuth::toEntity).toList()));
+        userRepository.save(entity);
+    }
+
+    @Override
+    @Transactional
+    public void agregarRol(Long usuarioId, String rol) {
+        UserEntity entity = userRepository.findById(usuarioId).orElseThrow();
+        RoleType tipo = RoleType.valueOf(rol);
+        if (entity.getRole().stream().anyMatch(actual -> actual.getTrole() == tipo))
+            return;
+        List<RoleEntity> roles = new ArrayList<>(entity.getRole());
+        roles.add(roleRepository.findByTrole(tipo).orElseThrow());
+        entity.setRole(roles);
         userRepository.save(entity);
     }
 

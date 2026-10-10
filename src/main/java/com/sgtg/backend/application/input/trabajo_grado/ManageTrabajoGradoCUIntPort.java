@@ -72,6 +72,13 @@ public interface ManageTrabajoGradoCUIntPort {
     public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
 
     /**
+     * Corrige título, objetivos, descripción y línea de investigación de la
+     * propuesta, mientras se puede radicar una versión. Solo el director.
+     */
+    public TrabajoGrado actualizarPropuesta(Long trabajoId, Long usuarioId, String titulo, List<String> objetivos,
+            String descripcion, String lineaInvestigacion);
+
+    /**
      * Registra el concepto del Comité de Programa sobre la propuesta.
      *
      * @param usuarioId usuario del comité que registra la decisión

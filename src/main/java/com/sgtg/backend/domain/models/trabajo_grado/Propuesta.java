@@ -94,7 +94,7 @@ public class Propuesta {
      * Una propuesta no aprobada es una entrega cerrada; la nueva versión inicia
      * una entrega nueva (regla del negocio: se presenta una nueva propuesta).
      */
-    private boolean puedeRadicar() {
+    boolean puedeRadicar() {
         return this.estado == null || this.estado == Estado.NO_APROBADO;
     }
 

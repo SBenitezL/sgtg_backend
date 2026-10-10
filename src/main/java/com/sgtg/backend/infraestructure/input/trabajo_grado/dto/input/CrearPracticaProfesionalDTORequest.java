@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * Nueva práctica profesional (individual). El director es el docente
@@ -21,13 +22,15 @@ public record CrearPracticaProfesionalDTORequest(
         @NotEmpty(message = "Se debe indicar al menos un objetivo") List<String> objetivos,
         @NotNull(message = "El estudiante es obligatorio") Long estudianteId,
         Long codirectorId,
-        @NotNull(message = "El asesor de la organización es obligatorio") @Valid AsesorDTORequest asesor) {
+        @NotNull(message = "El asesor de la organización es obligatorio") @Valid AsesorDTORequest asesor,
+        @Size(max = 4000, message = "La descripción admite máximo 4000 caracteres") String descripcion,
+        @Size(max = 300, message = "La línea de investigación admite máximo 300 caracteres") String lineaInvestigacion) {
 
     /**
      * @param cartaAceptacion archivo de la carta de aceptación
      */
     public NuevoTrabajoGrado toNuevoTrabajo(ArchivoAdjunto cartaAceptacion) {
         return new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, titulo, objetivos, List.of(estudianteId),
-                codirectorId, asesor.toDatos(), cartaAceptacion);
+                codirectorId, asesor.toDatos(), cartaAceptacion, descripcion, lineaInvestigacion);
     }
 }

@@ -42,6 +42,33 @@ class EtapaPropuestaTest {
     }
 
     @Test
+    void laDescripcionYLaLineaSonOpcionales() {
+        trabajo.describir("  Plataforma web  ", " ");
+        assertEquals("Plataforma web", trabajo.getDescripcion());
+        assertEquals(null, trabajo.getLineaInvestigacion());
+    }
+
+    @Test
+    void laPropuestaSeCorrigeAntesDeRadicarYTrasUnNoAprobado() {
+        trabajo.actualizarPropuesta("Nuevo título", java.util.List.of("Nuevo objetivo"), "Descripción", "IA");
+        assertEquals("Nuevo título", trabajo.getTitulo());
+        assertEquals("IA", trabajo.getLineaInvestigacion());
+
+        // Mientras el Comité la revisa no se corrige
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
+        assertRegla("error.dominio.propuesta.edicion_no_permitida", () -> trabajo.actualizarPropuesta("Otro",
+                java.util.List.of("O"), null, null));
+
+        // Después de un NO APROBADO sí
+        trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.NO_APROBADO, LUNES.plusDays(3)), "C001",
+                LUNES.plusDays(3).atTime(9, 0));
+        trabajo.actualizarPropuesta("Corregido", java.util.List.of("Objetivo"), null, null);
+        assertEquals("Corregido", trabajo.getTitulo());
+        assertRegla("error.dominio.trabajo_grado.titulo_obligatorio",
+                () -> trabajo.actualizarPropuesta(" ", java.util.List.of("O"), null, null));
+    }
+
+    @Test
     void radicarCreaLaPrimeraVersionYCalculaElPlazoDelComite() {
         trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
 

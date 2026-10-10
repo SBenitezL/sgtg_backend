@@ -91,9 +91,12 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<Estudiante> estudiantes = cargarEstudiantes(datos.estudiantesIds());
         Asesor asesor = crearAsesor(datos.asesor());
 
-        if (datos.modalidad() == Modalidad.TRABAJO_DE_INVESTIGACION)
-            return this.trabajoGateway.guardar(new TrabajoInvestigacion(null, datos.titulo(), datos.objetivos(),
-                    estudiantes, director, codirector, asesor));
+        if (datos.modalidad() == Modalidad.TRABAJO_DE_INVESTIGACION) {
+            TrabajoGrado investigacion = new TrabajoInvestigacion(null, datos.titulo(), datos.objetivos(),
+                    estudiantes, director, codirector, asesor);
+            investigacion.describir(datos.descripcion(), datos.lineaInvestigacion());
+            return asignarRolesDeDireccion(this.trabajoGateway.guardar(investigacion));
+        }
 
         if (estudiantes.size() > 1)
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.practica_individual");
@@ -108,15 +111,40 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         }
         Documento carta = rutaTemporal == null ? null
                 : Documento.inicial(TipoDocumento.CARTA_ACEPTACION, rutaTemporal, hoy());
-        TrabajoGrado guardado = conArchivos(rutas, () -> this.trabajoGateway.guardar(new PracticaProfesional(null,
-                datos.titulo(), datos.objetivos(), estudiantes.isEmpty() ? null : estudiantes.get(0), director,
-                codirector, asesor, carta)));
+        TrabajoGrado guardado = conArchivos(rutas, () -> {
+            PracticaProfesional nueva = new PracticaProfesional(null, datos.titulo(), datos.objetivos(),
+                    estudiantes.isEmpty() ? null : estudiantes.get(0), director, codirector, asesor, carta);
+            nueva.describir(datos.descripcion(), datos.lineaInvestigacion());
+            return this.trabajoGateway.guardar(nueva);
+        });
         if (!(guardado instanceof PracticaProfesional practica))
-            return guardado;
+            return asignarRolesDeDireccion(guardado);
         String rutaDefinitiva = this.archivoGateway.reubicar(rutaTemporal, practica.getId(),
                 TipoDocumento.CARTA_ACEPTACION.carpeta(Modalidad.PRACTICA_PROFESIONAL));
         practica.reubicarCartaAceptacion(rutaDefinitiva);
-        return this.trabajoGateway.guardar(practica);
+        return asignarRolesDeDireccion(this.trabajoGateway.guardar(practica));
+    }
+
+    /**
+     * Los participantes ganan el rol de su papel en el trabajo (el front muestra
+     * sus pantallas según los roles): DIRECTOR, CODIRECTOR y, si tiene usuario,
+     * ASESOR.
+     */
+    private TrabajoGrado asignarRolesDeDireccion(TrabajoGrado trabajo) {
+        this.userGateway.agregarRol(trabajo.getDirector().getUsuarioId(), RoleAdmited.DIRECTOR.name());
+        if (trabajo.getCodirector() != null)
+            this.userGateway.agregarRol(trabajo.getCodirector().getUsuarioId(), RoleAdmited.CODIRECTOR.name());
+        if (trabajo.getAsesor() != null && trabajo.getAsesor().getUsuarioId() != null)
+            this.userGateway.agregarRol(trabajo.getAsesor().getUsuarioId(), RoleAdmited.ASESOR.name());
+        return trabajo;
+    }
+
+    @Override
+    public TrabajoGrado actualizarPropuesta(Long trabajoId, Long usuarioId, String titulo, List<String> objetivos,
+            String descripcion, String lineaInvestigacion) {
+        TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        trabajo.actualizarPropuesta(titulo, objetivos, descripcion, lineaInvestigacion);
+        return this.trabajoGateway.guardar(trabajo);
     }
 
     @Override

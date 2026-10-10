@@ -34,6 +34,10 @@ public abstract class TrabajoGrado {
     private String titulo;
     /** Objetivos del trabajo de grado */
     private List<String> objetivos;
+    /** Descripción general de la propuesta, null si no tiene */
+    private String descripcion;
+    /** Línea de investigación, null si no tiene */
+    private String lineaInvestigacion;
     /** Estudiantes que realizan el trabajo */
     private List<Estudiante> estudiantes;
     /** Director del trabajo */
@@ -97,6 +101,8 @@ public abstract class TrabajoGrado {
         this.id = datos.id();
         this.titulo = datos.titulo();
         this.objetivos = new ArrayList<>(datos.objetivos());
+        this.descripcion = datos.descripcion();
+        this.lineaInvestigacion = datos.lineaInvestigacion();
         this.estudiantes = new ArrayList<>(datos.estudiantes());
         this.director = datos.director();
         this.codirector = datos.codirector();
@@ -168,6 +174,32 @@ public abstract class TrabajoGrado {
     public abstract Modalidad getModalidad();
 
     // ----- Fase 1: propuesta -----
+
+    /**
+     * Registra la descripción general y la línea de investigación del trabajo
+     * (ambas opcionales).
+     */
+    public void describir(String descripcion, String lineaInvestigacion) {
+        this.descripcion = CheckString.isBlank(descripcion) ? null : descripcion.trim();
+        this.lineaInvestigacion = CheckString.isBlank(lineaInvestigacion) ? null : lineaInvestigacion.trim();
+    }
+
+    /**
+     * Corrige el título, los objetivos, la descripción y la línea de
+     * investigación de la propuesta. Solo mientras se puede radicar una versión:
+     * antes de la primera radicación o después de que el Comité no la apruebe.
+     * Los participantes no cambian.
+     */
+    public void actualizarPropuesta(String titulo, List<String> objetivos, String descripcion,
+            String lineaInvestigacion) {
+        validarEtapa(Proceso.PROPUESTA);
+        if (!this.propuesta.puedeRadicar())
+            throw new ReglaNegocioException("error.dominio.propuesta.edicion_no_permitida");
+        validarDescripcion(titulo, objetivos);
+        this.titulo = titulo;
+        this.objetivos = new ArrayList<>(objetivos);
+        describir(descripcion, lineaInvestigacion);
+    }
 
     /**
      * Radica una versión de la propuesta (formato A) ante el Comité de Programa.
@@ -864,6 +896,14 @@ public abstract class TrabajoGrado {
 
     public List<String> getObjetivos() {
         return Collections.unmodifiableList(objetivos);
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public String getLineaInvestigacion() {
+        return lineaInvestigacion;
     }
 
     public List<Estudiante> getEstudiantes() {

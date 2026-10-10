@@ -36,6 +36,15 @@ public interface ManageUserGatewayIntPort {
      */
     public void actualizarEstado(Usuario usuario);
 
+    /**
+     * Agrega un rol al usuario si no lo tiene (roles de contexto que se ganan
+     * al participar en un trabajo: director, codirector, asesor, evaluador, jurado).
+     *
+     * @param usuarioId usuario al que se agrega
+     * @param rol       nombre del rol (ej. EVALUADOR)
+     */
+    public void agregarRol(Long usuarioId, String rol);
+
     /** @return todos los usuarios, en orden de creación */
     public List<Usuario> listar();
 
