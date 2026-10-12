@@ -15,7 +15,7 @@ Artículos de la Resolución 231 de 2020 que cubre: **12, 13, 37 y 38**.
 ```
             radicar (1.ª vez)           asignarEvaluadores              2 conceptos APROBADO
 ANTEPROYECTO ──────────────► ANTEPROYECTO ──────────────► EVALUACION ─────────────────────► APROBACION_CONSEJO
- (sin radicar)                 (RADICADO)                 (EN_REVISION)
+ (sin estado)                 (EN_REVISION)               (EN_REVISION)
                                                             │     ▲
                               algún CON_CORRECCIONES        │     │ radicar versión corregida
                                                             ▼     │ (mismos evaluadores)
@@ -55,7 +55,7 @@ Guarda las versiones radicadas, los evaluadores, sus conceptos y los plazos. Las
 | `versiones` | `Documento` de tipo `ANTEPROYECTO`, numerados desde 1 |
 | `evaluadores` | Los 2 `Evaluador` asignados; vacío hasta la asignación |
 | `conceptos` | `ConceptoEvaluacion` de todas las versiones, en orden |
-| `estado` | `Estado` de la versión actual: `RADICADO`, `EN_REVISION`, `CON_CORRECCIONES` o `APROBADO`; `null` sin radicar |
+| `estado` | `Estado` de la versión enviada a revisión: `EN_REVISION`, `CON_CORRECCIONES`, `APROBADO` o `NO_APROBADO`; `null` sin radicar |
 | `fechaLimiteEvaluacion` | Radicación o asignación + 10 días hábiles |
 | `fechaLimiteCorrecciones` | Fecha del concepto que cerró la ronda + 10 días hábiles; `null` cuando no hay correcciones pendientes |
 
@@ -85,11 +85,11 @@ Las tres reciben `responsable` (o lo toman del emisor del concepto) y `ahora`, p
 ### `radicarAnteproyecto(url, responsable, ahora, calendario)`
 - Solo en la etapa `ANTEPROYECTO`.
 - Se permite la primera vez o con el estado en `CON_CORRECCIONES`. No se permite si la versión actual sigue pendiente (`radicacion_no_permitida`).
-- **Primera versión:** queda `RADICADO` y espera los evaluadores. No cambia de etapa.
+- **Primera versión:** queda `EN_REVISION` y espera los evaluadores; el plazo de evaluación empieza al asignarlos. No cambia de etapa.
 - **Versión corregida:** como ya hay evaluadores, queda `EN_REVISION`, se calcula un plazo nuevo para ellos y el trabajo pasa a `EVALUACION`.
 
 ### `asignarEvaluadores(evaluador1, evaluador2, responsable, ahora, calendario)`
-- Solo en `ANTEPROYECTO`, con la primera versión `RADICADO` y sin evaluadores previos (`asignacion_no_permitida`).
+- Solo en `ANTEPROYECTO`, con la primera versión `EN_REVISION` y sin evaluadores previos (`asignacion_no_permitida`). No cambia el estado de la versión, solo calcula el plazo de los evaluadores.
 - Exige exactamente dos evaluadores (`evaluadores_obligatorios`), que sean personas distintas (`evaluadores_repetidos`).
 - Ninguno puede ser director, codirector, asesor ni estudiante del trabajo (`evaluador_con_conflicto`).
 - La fecha no puede ser anterior a la radicación (`fecha_invalida`).
@@ -161,7 +161,8 @@ Al leer, `MapperTrabajoGrado` resuelve el emisor de cada concepto contra los eva
 ### `EtapaAnteproyectoTest` (23 pruebas, dominio)
 | Prueba | Qué verifica |
 |---|---|
-| `laPrimeraVersionQuedaEsperandoLosEvaluadores` | `RADICADO`, versión 1 de tipo `ANTEPROYECTO`, sin plazo ni cambio de etapa |
+| `laPrimeraVersionQuedaEnRevisionEsperandoLosEvaluadores` | `EN_REVISION`, versión 1 de tipo `ANTEPROYECTO`, sin plazo (no vence) ni cambio de etapa |
+| `noSeEmiteConceptoMientrasNoHayEvaluadoresAsignados` | En revisión pero sin evaluadores: el concepto se rechaza por etapa |
 | `soloSeRadicaEnLaEtapaDeAnteproyecto` | En `PROPUESTA` responde `etapa_invalida` |
 | `noSeRadicaOtraVersionMientrasLaActualEstePendiente` | `radicacion_no_permitida` |
 | `asignarEvaluadoresPasaAEvaluacionYCalculaElPlazo` | `EVALUACION`, `EN_REVISION`, plazo de 10 días hábiles, historial, evaluadores como participantes |

@@ -8,12 +8,11 @@ import com.sgtg.backend.domain.models.comun.Decision;
 /**
  * Estado persistido de la etapa de propuesta, usado para reconstruirla.
  *
- * @param versiones           versiones radicadas, en orden
+ * @param versiones           versiones radicadas, en orden, cada una con su estado
  * @param decisiones          decisiones del Comité, en orden
- * @param estado              estado de la versión actual, null si no se ha radicado
  * @param fechaLimiteConcepto fecha límite del concepto de la versión actual
  */
-public record DatosPropuesta(List<Documento> versiones, List<Decision> decisiones, Estado estado,
+public record DatosPropuesta(List<VersionPropuesta> versiones, List<Decision> decisiones,
         LocalDate fechaLimiteConcepto) {
 
     public DatosPropuesta {
@@ -23,6 +22,6 @@ public record DatosPropuesta(List<Documento> versiones, List<Decision> decisione
 
     /** Propuesta sin radicar. */
     public static DatosPropuesta vacia() {
-        return new DatosPropuesta(List.of(), List.of(), null, null);
+        return new DatosPropuesta(List.of(), List.of(), null);
     }
 }

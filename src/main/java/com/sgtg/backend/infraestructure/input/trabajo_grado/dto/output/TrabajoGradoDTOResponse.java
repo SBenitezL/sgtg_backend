@@ -34,6 +34,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.Propuesta;
+import com.sgtg.backend.domain.models.trabajo_grado.VersionPropuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.input.catalogo.dto.output.CatalogoDTOResponse;
 
@@ -69,7 +70,18 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             LocalDate fecha) {
     }
 
-    public record PropuestaDTO(Estado estado, LocalDate fechaLimiteConcepto, List<DocumentoDTO> versiones,
+    /**
+     * Versión de la propuesta con el estado de su revisión: EN_REVISION al
+     * radicarla, APROBADO o NO_APROBADO según el concepto del Comité.
+     */
+    public record VersionPropuestaDTO(String tipo, String formato, String ruta, int version, LocalDate fechaCarga,
+            Estado estado) {
+    }
+
+    /**
+     * @param versiones versiones radicadas; el estado de la propuesta es el de la última
+     */
+    public record PropuestaDTO(LocalDate fechaLimiteConcepto, List<VersionPropuestaDTO> versiones,
             List<DecisionDTO> decisiones) {
     }
 
@@ -165,8 +177,8 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 trabajo.getDescripcion(), trabajo.getLineaInvestigacion(), trabajo.getEtapa(), trabajo.getMotivoCierre(),
                 trabajo.getEstudiantes().stream().map(TrabajoGradoDTOResponse::estudiante).toList(),
                 director(trabajo.getDirector()), director(trabajo.getCodirector()), asesor(trabajo.getAsesor()), carta,
-                new PropuestaDTO(propuesta.getEstado(), propuesta.getFechaLimiteConcepto(),
-                        propuesta.getVersiones().stream().map(v -> documento(v, modalidad)).toList(),
+                new PropuestaDTO(propuesta.getFechaLimiteConcepto(),
+                        propuesta.getVersiones().stream().map(v -> versionPropuesta(v, modalidad)).toList(),
                         propuesta.getDecisiones().stream().map(TrabajoGradoDTOResponse::decision).toList()),
                 anteproyecto(trabajo.getAnteproyecto(), modalidad), ejecucion(trabajo.getEjecucion()),
                 sustentacion(trabajo.getSustentacion()),
@@ -191,6 +203,12 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             return null;
         return new AsesorDTO(a.getUsuarioId(), a.getCodigo(), a.getNombreCompleto(), a.getEmail(),
                 a.getOrganizacion(), a.isExterno());
+    }
+
+    private static VersionPropuestaDTO versionPropuesta(VersionPropuesta v, Modalidad modalidad) {
+        Documento d = v.documento();
+        return new VersionPropuestaDTO(d.tipo().name(), d.tipo().formato(modalidad).orElse(null), d.ruta(),
+                d.version(), d.fechaCarga(), v.estado());
     }
 
     private static DocumentoDTO documento(Documento d, Modalidad modalidad) {

@@ -17,6 +17,10 @@ import com.sgtg.backend.domain.services.CalendarioHabil;
  * hábiles para emitir su concepto: APROBADO o NO_APROBADO. Si no es aprobada se
  * radica una nueva versión hasta que lo sea.
  *
+ * El estado se asigna solo y pertenece a cada versión ({@link VersionPropuesta}):
+ * EN_REVISION al radicarla y APROBADO o NO_APROBADO según el concepto del
+ * Comité. Antes de radicar la primera versión no hay estado.
+ *
  * Sus operaciones que modifican el estado solo son accesibles desde el
  * paquete, para que únicamente {@link TrabajoGrado} las invoque.
  */
@@ -24,12 +28,10 @@ public class Propuesta {
     /** Días hábiles que tiene el Comité de Programa para emitir concepto (Art. 11) */
     public static final int DIAS_HABILES_CONCEPTO_COMITE = 10;
 
-    /** Versiones radicadas del documento de propuesta (formato A) */
-    private final List<Documento> versiones;
+    /** Versiones radicadas del documento de propuesta (formato A), cada una con su estado */
+    private final List<VersionPropuesta> versiones;
     /** Decisiones del Comité de Programa sobre cada versión */
     private final List<Decision> decisiones;
-    /** Estado de la versión actual, null mientras no se haya radicado */
-    private Estado estado;
     /** Fecha límite para que el Comité emita concepto sobre la versión actual */
     private LocalDate fechaLimiteConcepto;
 
@@ -42,13 +44,12 @@ public class Propuesta {
     Propuesta(DatosPropuesta datos) {
         this.versiones = new ArrayList<>(datos.versiones());
         this.decisiones = new ArrayList<>(datos.decisiones());
-        this.estado = datos.estado();
         this.fechaLimiteConcepto = datos.fechaLimiteConcepto();
     }
 
     /**
-     * Radica una nueva versión de la propuesta. Se permite la primera vez o
-     * después de que el Comité no la apruebe.
+     * Radica una nueva versión de la propuesta, que queda EN_REVISION ante el
+     * Comité. Se permite la primera vez o después de que el Comité no la apruebe.
      *
      * @param ruta       ruta del documento en el almacenamiento de archivos
      * @param hoy        fecha de radicación
@@ -59,16 +60,16 @@ public class Propuesta {
             throw new ReglaNegocioException("error.dominio.propuesta.datos_incompletos");
         if (!puedeRadicar())
             throw new ReglaNegocioException("error.dominio.propuesta.radicacion_no_permitida");
-        Documento documento = this.versiones.isEmpty()
-                ? Documento.inicial(TipoDocumento.PROPUESTA, ruta, hoy)
-                : this.versiones.get(this.versiones.size() - 1).nuevaVersion(ruta, hoy);
-        this.versiones.add(documento);
-        this.estado = Estado.RADICADO;
+        Documento documento = versionActual()
+                .map(anterior -> anterior.nuevaVersion(ruta, hoy))
+                .orElseGet(() -> Documento.inicial(TipoDocumento.PROPUESTA, ruta, hoy));
+        this.versiones.add(VersionPropuesta.enRevision(documento));
         this.fechaLimiteConcepto = calendario.sumarDiasHabiles(hoy, DIAS_HABILES_CONCEPTO_COMITE);
     }
 
     /**
-     * Registra el concepto del Comité de Programa sobre la versión actual.
+     * Registra el concepto del Comité de Programa sobre la versión en revisión:
+     * la propuesta pasa a APROBADO o NO_APROBADO según el resultado.
      *
      * @param decision decisión del Comité: APROBADO o NO_APROBADO
      */
@@ -77,7 +78,7 @@ public class Propuesta {
             throw new ReglaNegocioException("error.dominio.propuesta.datos_incompletos");
         if (!decision.emitidaPor(Organo.COMITE_PROGRAMA))
             throw new ReglaNegocioException("error.dominio.propuesta.organo_invalido");
-        if (this.estado != Estado.RADICADO && this.estado != Estado.EN_REVISION)
+        if (getEstado() != Estado.EN_REVISION)
             throw new ReglaNegocioException("error.dominio.propuesta.decision_no_permitida");
         if (decision.fecha().isBefore(this.versionActual().get().fechaCarga()))
             throw new ReglaNegocioException("error.dominio.propuesta.fecha_decision_invalida");
@@ -87,7 +88,8 @@ public class Propuesta {
             default -> throw new ReglaNegocioException("error.dominio.propuesta.resultado_invalido");
         };
         this.decisiones.add(decision);
-        this.estado = resultado;
+        int ultima = this.versiones.size() - 1;
+        this.versiones.set(ultima, this.versiones.get(ultima).conEstado(resultado));
     }
 
     /**
@@ -95,14 +97,14 @@ public class Propuesta {
      * una entrega nueva (regla del negocio: se presenta una nueva propuesta).
      */
     boolean puedeRadicar() {
-        return this.estado == null || this.estado == Estado.NO_APROBADO;
+        return this.versiones.isEmpty() || getEstado() == Estado.NO_APROBADO;
     }
 
     /**
      * @return true si el Comité aprobó la versión actual
      */
     public boolean estaAprobada() {
-        return this.estado == Estado.APROBADO;
+        return getEstado() == Estado.APROBADO;
     }
 
     /**
@@ -110,20 +112,26 @@ public class Propuesta {
      * (alertas): el vencimiento no cambia la etapa del trabajo.
      */
     public boolean conceptoVencido(LocalDate hoy) {
-        boolean pendiente = this.estado == Estado.RADICADO || this.estado == Estado.EN_REVISION;
-        return pendiente && hoy.isAfter(this.fechaLimiteConcepto);
+        return getEstado() == Estado.EN_REVISION && hoy.isAfter(this.fechaLimiteConcepto);
     }
 
     /**
      * @return la última versión radicada, vacía si no se ha radicado ninguna
      */
     public Optional<Documento> versionActual() {
+        return ultimaVersion().map(VersionPropuesta::documento);
+    }
+
+    private Optional<VersionPropuesta> ultimaVersion() {
         if (this.versiones.isEmpty())
             return Optional.empty();
         return Optional.of(this.versiones.get(this.versiones.size() - 1));
     }
 
-    public List<Documento> getVersiones() {
+    /**
+     * @return las versiones radicadas con el estado de la revisión de cada una
+     */
+    public List<VersionPropuesta> getVersiones() {
         return Collections.unmodifiableList(versiones);
     }
 
@@ -131,8 +139,11 @@ public class Propuesta {
         return Collections.unmodifiableList(decisiones);
     }
 
+    /**
+     * @return el estado de la versión actual, null mientras no se haya radicado
+     */
     public Estado getEstado() {
-        return estado;
+        return ultimaVersion().map(VersionPropuesta::estado).orElse(null);
     }
 
     public LocalDate getFechaLimiteConcepto() {

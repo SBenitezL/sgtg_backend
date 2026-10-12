@@ -1,0 +1,1 @@
+Este archivo no es un PDF: el backend debe rechazarlo.

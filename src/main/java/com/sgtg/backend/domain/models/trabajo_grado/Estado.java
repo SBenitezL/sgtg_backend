@@ -1,15 +1,14 @@
 package com.sgtg.backend.domain.models.trabajo_grado;
 
 /**
- * Estado de una entrega dentro de una etapa (propuesta, anteproyecto, etc.).
- * Es independiente de la etapa en la que se encuentra el trabajo de grado.
+ * Estado de una entrega enviada a revisión (propuesta, anteproyecto). Se
+ * asigna al enviarla: antes de eso la entrega no tiene estado. Es
+ * independiente de la etapa en la que se encuentra el trabajo de grado.
  */
 public enum Estado {
-    /** La entrega fue radicada y está pendiente de revisión. */
-    RADICADO,
-    /** La entrega está siendo revisada. */
+    /** La entrega fue enviada y está en revisión. */
     EN_REVISION,
-    /** La revisión solicitó correcciones; se espera una nueva radicación. */
+    /** La revisión solicitó correcciones; se espera una nueva versión. */
     CON_CORRECCIONES,
     /** La entrega fue aprobada. */
     APROBADO,
@@ -28,10 +27,9 @@ public enum Estado {
         if (destino == null)
             return false;
         return switch (this) {
-            case RADICADO -> destino == EN_REVISION;
             case EN_REVISION -> destino == CON_CORRECCIONES || destino == APROBADO || destino == RECHAZADO
                     || destino == NO_APROBADO;
-            case CON_CORRECCIONES -> destino == RADICADO;
+            case CON_CORRECCIONES -> destino == EN_REVISION;
             case APROBADO, RECHAZADO, NO_APROBADO -> false;
         };
     }

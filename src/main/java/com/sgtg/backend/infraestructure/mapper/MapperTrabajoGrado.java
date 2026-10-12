@@ -32,6 +32,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.SesionSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
+import com.sgtg.backend.domain.models.trabajo_grado.VersionPropuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.Propuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.AsesorEmbeddable;
@@ -44,6 +45,7 @@ import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grad
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DirectorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DirectorTrabajoEmbeddable.RolDireccion;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DocumentoEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.VersionPropuestaEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EstudianteTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EvaluadorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.InformeMensualEmbeddable;
@@ -81,7 +83,6 @@ public abstract class MapperTrabajoGrado {
             entity.setCartaAceptacion(toEmbeddable(practica.getCartaAceptacion()));
 
         Propuesta propuesta = trabajo.getPropuesta();
-        entity.setPropuestaEstado(propuesta.getEstado());
         entity.setPropuestaFechaLimiteConcepto(propuesta.getFechaLimiteConcepto());
         propuesta.getVersiones().forEach(v -> entity.getPropuestaVersiones().add(toEmbeddable(v)));
         propuesta.getDecisiones().forEach(d -> entity.getPropuestaDecisiones().add(toEmbeddable(d)));
@@ -213,6 +214,11 @@ public abstract class MapperTrabajoGrado {
         return new InformeMensualEmbeddable(i.numero(), i.rutaArchivo(), i.fecha());
     }
 
+    private static VersionPropuestaEmbeddable toEmbeddable(VersionPropuesta v) {
+        Documento d = v.documento();
+        return new VersionPropuestaEmbeddable(d.tipo(), d.ruta(), d.version(), d.fechaCarga(), v.estado());
+    }
+
     private static DocumentoEmbeddable toEmbeddable(Documento d) {
         if (d == null)
             return null;
@@ -238,7 +244,7 @@ public abstract class MapperTrabajoGrado {
         DatosPropuesta propuesta = new DatosPropuesta(
                 entity.getPropuestaVersiones().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 entity.getPropuestaDecisiones().stream().map(MapperTrabajoGrado::toDomain).toList(),
-                entity.getPropuestaEstado(), entity.getPropuestaFechaLimiteConcepto());
+                entity.getPropuestaFechaLimiteConcepto());
         return TrabajoGrado.reconstruir(new DatosTrabajoGrado(
                 entity.getId(), entity.getModalidad(), entity.getTitulo(), List.copyOf(entity.getObjetivos()),
                 entity.getEstudiantes().stream().map(MapperTrabajoGrado::toDomain).toList(),
@@ -382,6 +388,11 @@ public abstract class MapperTrabajoGrado {
                 new NombrePersona(a.getPrimerNombre(), a.getSegundoNombre(), a.getPrimerApellido(),
                         a.getSegundoApellido()),
                 a.getEmail(), a.getOrganizacion(), Boolean.TRUE.equals(a.getExterno()));
+    }
+
+    private static VersionPropuesta toDomain(VersionPropuestaEmbeddable v) {
+        return new VersionPropuesta(new Documento(v.getTipo(), v.getUrl(), v.getVersion(), v.getFechaCarga()),
+                v.getEstado());
     }
 
     private static Documento toDomain(DocumentoEmbeddable d) {

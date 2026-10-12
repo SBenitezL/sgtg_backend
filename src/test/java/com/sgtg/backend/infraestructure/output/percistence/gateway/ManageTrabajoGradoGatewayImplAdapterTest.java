@@ -40,6 +40,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
+import com.sgtg.backend.domain.models.trabajo_grado.VersionPropuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoInvestigacion;
 import com.sgtg.backend.domain.services.CalendarioHabilFalso;
@@ -95,7 +96,11 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         assertEquals(2L, leido.getCodirector().getUsuarioId());
         assertNull(leido.getAsesor());
         assertEquals(Estado.APROBADO, leido.getPropuesta().getEstado());
-        assertEquals(List.of(1, 2), leido.getPropuesta().getVersiones().stream().map(Documento::version).toList());
+        assertEquals(List.of(1, 2),
+                leido.getPropuesta().getVersiones().stream().map(v -> v.documento().version()).toList());
+        // Cada versión conserva el resultado de su revisión
+        assertEquals(List.of(Estado.NO_APROBADO, Estado.APROBADO),
+                leido.getPropuesta().getVersiones().stream().map(VersionPropuesta::estado).toList());
         assertEquals(2, leido.getPropuesta().getDecisiones().size());
         assertEquals(ResultadoConcepto.NO_APROBADO, leido.getPropuesta().getDecisiones().get(0).resultado());
         assertEquals("actas/2026/acta-01.pdf", leido.getPropuesta().getDecisiones().get(0).rutaArchivo());

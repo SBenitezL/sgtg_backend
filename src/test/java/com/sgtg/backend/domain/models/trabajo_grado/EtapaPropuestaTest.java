@@ -73,7 +73,7 @@ class EtapaPropuestaTest {
         trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
 
         Propuesta propuesta = trabajo.getPropuesta();
-        assertEquals(Estado.RADICADO, propuesta.getEstado());
+        assertEquals(Estado.EN_REVISION, propuesta.getEstado());
         assertEquals(1, propuesta.versionActual().get().version());
         assertEquals(TipoDocumento.PROPUESTA, propuesta.versionActual().get().tipo());
         // 10 días hábiles desde el lunes 2-mar-2026 (sin fines de semana)
@@ -88,6 +88,7 @@ class EtapaPropuestaTest {
 
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
         assertTrue(trabajo.getPropuesta().estaAprobada());
+        assertEquals(Estado.APROBADO, trabajo.getPropuesta().getEstado());
         assertEquals(1, trabajo.getHistorial().size());
         CambioEtapa cambio = trabajo.getHistorial().get(0);
         assertEquals(Proceso.PROPUESTA, cambio.origen());
@@ -109,12 +110,28 @@ class EtapaPropuestaTest {
         trabajo.radicarPropuesta("1/tg/propuesta_v2.pdf", LUNES.plusDays(7),
                 calendario);
         assertEquals(2, trabajo.getPropuesta().versionActual().get().version());
-        assertEquals(Estado.RADICADO, trabajo.getPropuesta().getEstado());
+        assertEquals(Estado.EN_REVISION, trabajo.getPropuesta().getEstado());
 
         trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(10)), "C001",
                 ahora);
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
         assertEquals(2, trabajo.getPropuesta().getDecisiones().size());
+        // Cada versión conserva el estado de su revisión
+        assertEquals(java.util.List.of(Estado.NO_APROBADO, Estado.APROBADO),
+                trabajo.getPropuesta().getVersiones().stream().map(VersionPropuesta::estado).toList());
+    }
+
+    @Test
+    void laPropuestaNoAprobadaNoRecibeOtroConceptoSinUnaNuevaVersion() {
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
+        trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.NO_APROBADO, LUNES.plusDays(3)),
+                "C001", ahora);
+
+        // Solo la versión EN_REVISION recibe concepto del Comité
+        assertRegla("error.dominio.propuesta.decision_no_permitida", () -> trabajo
+                .registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(4)), "C001", ahora));
+        assertEquals(Estado.NO_APROBADO, trabajo.getPropuesta().getEstado());
+        assertEquals(1, trabajo.getPropuesta().getDecisiones().size());
     }
 
     @ParameterizedTest
@@ -124,7 +141,7 @@ class EtapaPropuestaTest {
         trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         assertRegla("error.dominio.propuesta.resultado_invalido", () -> trabajo
                 .registrarDecisionComite(decisionComite(resultado, LUNES.plusDays(1)), "C001", ahora));
-        assertEquals(Estado.RADICADO, trabajo.getPropuesta().getEstado());
+        assertEquals(Estado.EN_REVISION, trabajo.getPropuesta().getEstado());
         assertTrue(trabajo.getPropuesta().getDecisiones().isEmpty());
     }
 
@@ -173,7 +190,7 @@ class EtapaPropuestaTest {
                 .registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(1)), " ", ahora));
 
         assertEquals(Proceso.PROPUESTA, trabajo.getEtapa());
-        assertEquals(Estado.RADICADO, trabajo.getPropuesta().getEstado());
+        assertEquals(Estado.EN_REVISION, trabajo.getPropuesta().getEstado());
         assertTrue(trabajo.getPropuesta().getDecisiones().isEmpty());
     }
 

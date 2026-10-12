@@ -27,6 +27,12 @@ import com.sgtg.backend.domain.utils.CheckString;
  * (Art. 14) con la resolución adjunta: APROBADO o NO_APROBADO. Si no lo
  * aprueba, el director radica una nueva versión que vuelve a los evaluadores.
  *
+ * El estado es el de la versión enviada a revisión y se asigna solo: queda
+ * EN_REVISION al radicarla (aunque los evaluadores aún no estén asignados),
+ * CON_CORRECCIONES o APROBADO según los conceptos de los evaluadores, y
+ * APROBADO o NO_APROBADO según la decisión del Consejo. Antes de radicar no
+ * tiene estado.
+ *
  * Sus operaciones que modifican el estado solo son accesibles desde el
  * paquete, para que únicamente {@link TrabajoGrado} las invoque.
  */
@@ -72,8 +78,9 @@ public class Anteproyecto {
     /**
      * Radica una versión del anteproyecto. Se permite la primera vez, después
      * de que algún evaluador solicite correcciones o después de que el Consejo
-     * de Facultad no lo apruebe. Si los evaluadores ya
-     * fueron asignados, la nueva versión queda de inmediato en revisión.
+     * de Facultad no lo apruebe. La versión queda EN_REVISION; el plazo de los
+     * evaluadores corre desde la radicación si ya están asignados, o desde su
+     * asignación.
      *
      * @param ruta       ruta del documento en el almacenamiento de archivos
      * @param hoy        fecha de radicación
@@ -89,12 +96,10 @@ public class Anteproyecto {
                 : this.versiones.get(this.versiones.size() - 1).nuevaVersion(ruta, hoy);
         this.versiones.add(documento);
         this.fechaLimiteCorrecciones = null;
-        if (tieneEvaluadores()) {
-            this.estado = Estado.EN_REVISION;
-            this.fechaLimiteEvaluacion = calendario.sumarDiasHabiles(hoy, DIAS_HABILES_EVALUACION);
-        } else {
-            this.estado = Estado.RADICADO;
-        }
+        this.estado = Estado.EN_REVISION;
+        this.fechaLimiteEvaluacion = tieneEvaluadores()
+                ? calendario.sumarDiasHabiles(hoy, DIAS_HABILES_EVALUACION)
+                : null;
     }
 
     /**
@@ -109,7 +114,6 @@ public class Anteproyecto {
     void asignarEvaluadores(List<Evaluador> evaluadores, LocalDate hoy, CalendarioHabil calendario) {
         validarAsignacion(evaluadores, hoy, calendario);
         this.evaluadores.addAll(evaluadores);
-        this.estado = Estado.EN_REVISION;
         this.fechaLimiteEvaluacion = calendario.sumarDiasHabiles(hoy, DIAS_HABILES_EVALUACION);
     }
 
@@ -119,7 +123,7 @@ public class Anteproyecto {
     void validarAsignacion(List<Evaluador> evaluadores, LocalDate hoy, CalendarioHabil calendario) {
         if (hoy == null || calendario == null)
             throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
-        if (this.estado != Estado.RADICADO || tieneEvaluadores())
+        if (this.estado != Estado.EN_REVISION || tieneEvaluadores())
             throw new ReglaNegocioException("error.dominio.anteproyecto.asignacion_no_permitida");
         if (evaluadores == null || evaluadores.size() != CANTIDAD_EVALUADORES
                 || evaluadores.stream().anyMatch(evaluador -> evaluador == null))
@@ -266,7 +270,8 @@ public class Anteproyecto {
      * informativo (alertas): el vencimiento no cambia la etapa del trabajo.
      */
     public boolean evaluacionVencida(LocalDate hoy) {
-        return this.estado == Estado.EN_REVISION && hoy.isAfter(this.fechaLimiteEvaluacion);
+        return this.estado == Estado.EN_REVISION && this.fechaLimiteEvaluacion != null
+                && hoy.isAfter(this.fechaLimiteEvaluacion);
     }
 
     /**

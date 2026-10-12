@@ -10,12 +10,11 @@ class EstadoTest {
 
     @ParameterizedTest
     @CsvSource({
-            "RADICADO, EN_REVISION",
             "EN_REVISION, CON_CORRECCIONES",
             "EN_REVISION, APROBADO",
             "EN_REVISION, RECHAZADO",
             "EN_REVISION, NO_APROBADO",
-            "CON_CORRECCIONES, RADICADO"
+            "CON_CORRECCIONES, EN_REVISION"
     })
     void permiteCambiosValidos(Estado origen, Estado destino) {
         assertTrue(origen.puedeCambiarA(destino));
@@ -23,12 +22,12 @@ class EstadoTest {
 
     @ParameterizedTest
     @CsvSource({
-            "RADICADO, APROBADO",
             "CON_CORRECCIONES, APROBADO",
+            "CON_CORRECCIONES, NO_APROBADO",
             "APROBADO, EN_REVISION",
-            "RECHAZADO, RADICADO",
-            "NO_APROBADO, RADICADO",
-            "RADICADO, NO_APROBADO"
+            "RECHAZADO, EN_REVISION",
+            "NO_APROBADO, EN_REVISION",
+            "EN_REVISION, EN_REVISION"
     })
     void rechazaCambiosInvalidos(Estado origen, Estado destino) {
         assertFalse(origen.puedeCambiarA(destino));

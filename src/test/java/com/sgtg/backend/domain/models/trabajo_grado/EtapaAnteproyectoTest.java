@@ -82,16 +82,29 @@ class EtapaAnteproyectoTest {
     // ----- Radicación -----
 
     @Test
-    void laPrimeraVersionQuedaEsperandoLosEvaluadores() {
+    void laPrimeraVersionQuedaEnRevisionEsperandoLosEvaluadores() {
         trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
 
         Anteproyecto anteproyecto = trabajo.getAnteproyecto();
-        assertEquals(Estado.RADICADO, anteproyecto.getEstado());
+        assertEquals(Estado.EN_REVISION, anteproyecto.getEstado());
         assertEquals(1, anteproyecto.versionActual().get().version());
         assertEquals(TipoDocumento.ANTEPROYECTO, anteproyecto.versionActual().get().tipo());
         assertNull(anteproyecto.getFechaLimiteEvaluacion());
+        // Sin evaluadores el plazo aún no corre, así que no puede vencer
+        assertFalse(anteproyecto.evaluacionVencida(radicacion.toLocalDate().plusYears(1)));
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
         assertEquals(1, trabajo.getHistorial().size());
+    }
+
+    @Test
+    void noSeEmiteConceptoMientrasNoHayEvaluadoresAsignados() {
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
+
+        assertRegla("error.dominio.trabajo_grado.etapa_invalida", () -> trabajo.registrarConceptoEvaluador(
+                concepto(evaluador1, ResultadoConcepto.APROBADO, radicacion.toLocalDate()), null, radicacion,
+                calendario));
+        assertEquals(Estado.EN_REVISION, trabajo.getAnteproyecto().getEstado());
+        assertTrue(trabajo.getAnteproyecto().getConceptos().isEmpty());
     }
 
     @Test
@@ -146,7 +159,7 @@ class EtapaAnteproyectoTest {
         assertRegla("error.dominio.anteproyecto.evaluadores_repetidos",
                 () -> trabajo.asignarEvaluadores(evaluador1, evaluador(20L), "J001", asignacion, calendario));
         assertFalse(trabajo.getAnteproyecto().tieneEvaluadores());
-        assertEquals(Estado.RADICADO, trabajo.getAnteproyecto().getEstado());
+        assertEquals(Estado.EN_REVISION, trabajo.getAnteproyecto().getEstado());
     }
 
     @Test

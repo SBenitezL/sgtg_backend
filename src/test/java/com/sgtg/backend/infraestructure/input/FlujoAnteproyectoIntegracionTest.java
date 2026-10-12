@@ -194,11 +194,11 @@ class FlujoAnteproyectoIntegracionTest {
         String docente = login("D");
         String jefe = login("J");
 
-        // El director radica el anteproyecto: queda esperando evaluadores
+        // El director radica el anteproyecto: queda en revisión esperando evaluadores
         subir(TRABAJOS + trabajoId + "/anteproyecto", docente, null, archivo("anteproyecto.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
-                .andExpect(jsonPath("$.anteproyecto.estado").value("RADICADO"))
+                .andExpect(jsonPath("$.anteproyecto.estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].tipo").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].ruta")
                         .value(trabajoId + "/ANTEPROYECTO/v1/anteproyecto.pdf"));

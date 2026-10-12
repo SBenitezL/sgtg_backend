@@ -225,7 +225,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 () -> casoDeUso.radicarPropuesta(7L, 10L, pdf("p.pdf")));
 
         TrabajoGrado radicado = casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
-        assertEquals(Estado.RADICADO, radicado.getPropuesta().getEstado());
+        assertEquals(Estado.EN_REVISION, radicado.getPropuesta().getEstado());
         // 10 días hábiles desde el lunes 2-mar-2026 según el reloj fijo
         assertEquals(LocalDate.of(2026, 3, 16), radicado.getPropuesta().getFechaLimiteConcepto());
     }
@@ -258,7 +258,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 () -> casoDeUso.radicarAnteproyecto(7L, 10L, pdf("a.pdf")));
 
         TrabajoGrado trabajo = casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
-        assertEquals(Estado.RADICADO, trabajo.getAnteproyecto().getEstado());
+        assertEquals(Estado.EN_REVISION, trabajo.getAnteproyecto().getEstado());
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
     }
 
@@ -576,7 +576,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         TrabajoGrado trabajo = casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
 
         verify(archivoGateway).guardar(eq(7L), eq("TI-A"), any());
-        assertEquals("7/TI-A/v1/p.pdf", trabajo.getPropuesta().getVersiones().get(0).ruta());
+        assertEquals("7/TI-A/v1/p.pdf", trabajo.getPropuesta().getVersiones().get(0).documento().ruta());
     }
 
     @Test

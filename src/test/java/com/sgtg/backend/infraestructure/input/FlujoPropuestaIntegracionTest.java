@@ -179,7 +179,9 @@ class FlujoPropuestaIntegracionTest {
         // Radica la propuesta: se guarda en la carpeta del formato y la respuesta solo trae la ruta
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.propuesta.estado").value("RADICADO"))
+                // El estado es de la versión: queda en revisión del Comité
+                .andExpect(jsonPath("$.propuesta.estado").doesNotExist())
+                .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].formato").value("TI-A"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/propuesta.pdf"));
 
@@ -190,11 +192,13 @@ class FlujoPropuestaIntegracionTest {
                 archivo("acta-01.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("PROPUESTA"))
-                .andExpect(jsonPath("$.propuesta.estado").value("NO_APROBADO"))
+                .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
                 .andExpect(jsonPath("$.propuesta.decisiones[0].rutaArchivo")
                         .value(trabajoId + "/ACTA_COMITE/v1/acta-01.pdf"));
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta_v2.pdf"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
+                .andExpect(jsonPath("$.propuesta.versiones[1].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.propuesta.versiones[1].version").value(2))
                 .andExpect(jsonPath("$.propuesta.versiones[1].ruta").value(trabajoId + "/TI-A/v2/propuesta_v2.pdf"));
 
@@ -203,6 +207,8 @@ class FlujoPropuestaIntegracionTest {
                 Map.of("resultado", "APROBADO", "acta", "Acta 02"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
+                .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
+                .andExpect(jsonPath("$.propuesta.versiones[1].estado").value("APROBADO"))
                 .andExpect(jsonPath("$.historial[0].destino").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.historial[0].responsable").value("C" + sufijo));
 

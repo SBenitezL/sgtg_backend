@@ -27,8 +27,9 @@ import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 class ReconstruccionTrabajoGradoTest {
 
     private static DatosPropuesta propuestaRadicada() {
-        return new DatosPropuesta(List.of(Documento.inicial(TipoDocumento.PROPUESTA, RUTA_PROPUESTA, LUNES)),
-                List.of(), Estado.RADICADO, LocalDate.of(2026, 3, 16));
+        return new DatosPropuesta(List.of(new VersionPropuesta(
+                Documento.inicial(TipoDocumento.PROPUESTA, RUTA_PROPUESTA, LUNES), Estado.EN_REVISION)),
+                List.of(), LocalDate.of(2026, 3, 16));
     }
 
     @Test
@@ -42,7 +43,7 @@ class ReconstruccionTrabajoGradoTest {
         PracticaProfesional practica = assertInstanceOf(PracticaProfesional.class, trabajo);
         assertEquals(7L, practica.getId());
         assertEquals(Proceso.PROPUESTA, practica.getEtapa());
-        assertEquals(Estado.RADICADO, practica.getPropuesta().getEstado());
+        assertEquals(Estado.EN_REVISION, practica.getPropuesta().getEstado());
         assertEquals(TipoDocumento.CARTA_ACEPTACION, practica.getCartaAceptacion().tipo());
     }
 

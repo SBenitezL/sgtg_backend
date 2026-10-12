@@ -93,15 +93,12 @@ public class TrabajoGradoEntity {
 
     // ----- Propuesta -----
 
-    @Enumerated(EnumType.STRING)
-    private Estado propuestaEstado;
-
     private LocalDate propuestaFechaLimiteConcepto;
 
     @ElementCollection
     @CollectionTable(name = "propuesta_versiones", joinColumns = @JoinColumn(name = "trabajo_id"))
     @OrderColumn(name = "orden")
-    private List<DocumentoEmbeddable> propuestaVersiones = new ArrayList<>();
+    private List<VersionPropuestaEmbeddable> propuestaVersiones = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "propuesta_decisiones", joinColumns = @JoinColumn(name = "trabajo_id"))

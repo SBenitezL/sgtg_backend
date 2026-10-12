@@ -104,10 +104,13 @@ Registra el concepto del Comité de Programa sobre la versión actual.
 Indica si el Comité superó su plazo de 10 días hábiles mientras la versión sigue pendiente. **Es informativo**, para alertas: el reglamento no establece una consecuencia, así que no cambia la etapa.
 
 ### Flujo de estados de la propuesta
+El estado pertenece a **cada versión** (`VersionPropuesta`: documento + estado) y se asigna automáticamente: al radicar (enviar) la versión queda **`EN_REVISION`** ante el Comité, y su concepto la deja **`APROBADO`** o **`NO_APROBADO`**. Cada versión conserva el resultado de su revisión (por ejemplo, v1 `NO_APROBADO` y v2 `APROBADO`). Solo la versión `EN_REVISION` recibe concepto; tras un `NO_APROBADO` se radica una versión nueva. `Propuesta.getEstado()` devuelve el estado de la versión actual (`null` si no se ha radicado ninguna).
+
+En el API el estado va en `propuesta.versiones[i].estado`; la propuesta no tiene un `estado` propio.
 
 ```
             radicar                          decisión del Comité
-(sin radicar) ──────► RADICADO ─────────────────────────────────┬──► APROBADO ──► trabajo pasa a ANTEPROYECTO
+(sin radicar) ──────► EN_REVISION ──────────────────────────────┬──► APROBADO ──► trabajo pasa a ANTEPROYECTO
                          ▲                                      └──► NO_APROBADO ──────┐
                          │            radicar nueva versión                            │
                          └─────────────────────────────────────────────────────────────┘
@@ -121,7 +124,7 @@ Indica si el Comité superó su plazo de 10 días hábiles mientras la versión 
 - **El historial solo registra transiciones válidas.** `CambioEtapa` rechaza saltos que `Proceso` no permite, y `aplicarCambio` verifica además que el origen coincida con la etapa actual.
 - **Las etapas solo se modifican desde el agregado.** Los métodos que cambian `Propuesta` son de paquete, y las listas que expone el agregado (`getEstudiantes()`, `getObjetivos()`, `getHistorial()`, `getVersiones()`…) no se pueden modificar desde fuera.
 - **No aprobada como entrega nueva.** En `Estado`, `NO_APROBADO` es final para *esa entrega*. La siguiente radicación inicia una entrega nueva, como versión siguiente del mismo documento. Así se cumple la regla de presentar una nueva propuesta sin forzar la máquina de estados.
-- **`EN_REVISION`** no tiene todavía una operación propia: al registrar una decisión se acepta que la versión esté `RADICADO` o `EN_REVISION`. Si más adelante el Comité necesita marcar que inició la revisión, se agrega la operación.
+- **Sin estado `RADICADO`.** Radicar la deja directamente `EN_REVISION` (2026-10-11): el Comité la revisa desde que se envía. El anteproyecto sigue la misma regla y `RADICADO` se retiró de `Estado`.
 
 ### Reconstrucción del agregado
 Para guardar y recuperar un `TrabajoGrado` de la base de datos, los mappers lo reconstruyen con su etapa, historial y etapas ya cargadas **sin repetir las reglas de creación**. Por ejemplo, no se exige de nuevo un codirector si el docente ya cambió a planta.
@@ -168,7 +171,7 @@ Cada fase que agregue estado al agregado debe ampliar estos records, la entidad 
 
 | Prueba | Qué verifica |
 |---|---|
-| `radicarCreaLaPrimeraVersionYCalculaElPlazoDelComite` | Versión 1, tipo `PROPUESTA`, estado `RADICADO`, fecha límite del 16-mar-2026 (10 días hábiles desde el lunes 2-mar) |
+| `radicarCreaLaPrimeraVersionYCalculaElPlazoDelComite` | Versión 1, tipo `PROPUESTA`, estado `EN_REVISION`, fecha límite del 16-mar-2026 (10 días hábiles desde el lunes 2-mar) |
 | `propuestaAprobadaAvanzaAAnteproyectoYQuedaEnElHistorial` | Etapa `ANTEPROYECTO` y `CambioEtapa` con origen, destino, responsable y fecha |
 | `noAprobadaSeRadicaUnaNuevaVersionHastaSerAprobada` | Ciclo completo con 2 versiones y 2 decisiones; el historial solo registra el avance final |
 | `elComiteSoloApruebaONoAprueba` | Cada resultado distinto de `APROBADO`/`NO_APROBADO` se rechaza y la propuesta queda sin cambios |

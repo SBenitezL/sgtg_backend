@@ -136,7 +136,7 @@ Una versión de un archivo cargado al servidor de archivos. **El dominio solo gu
 ### `Estado` (enum)
 Estado de **una entrega dentro de una etapa**. Es independiente de la etapa del trabajo: por ejemplo, el trabajo puede estar en `PROPUESTA` con la propuesta `NO_APROBADO`.
 
-`RADICADO → EN_REVISION → CON_CORRECCIONES | APROBADO | RECHAZADO | NO_APROBADO`, y `CON_CORRECCIONES → RADICADO` al radicar una nueva versión.
+`EN_REVISION → CON_CORRECCIONES | APROBADO | RECHAZADO | NO_APROBADO`, y `CON_CORRECCIONES → EN_REVISION` al radicar una nueva versión. La entrega no tiene estado antes de enviarse; al enviarla queda `EN_REVISION` (desde 2026-10-11 ya no existe `RADICADO`).
 
 **Funcionalidades:** `puedeCambiarA(destino)` y `esFinal()` (`APROBADO`, `RECHAZADO` y `NO_APROBADO`).
 

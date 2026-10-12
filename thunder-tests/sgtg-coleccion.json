@@ -2,7 +2,7 @@
   "clientName": "Thunder Client",
   "collectionName": "SGTG - Pruebas de integración (Fases 0 a 8)",
   "collectionId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
-  "dateExported": "2026-10-06T02:28:11.000Z",
+  "dateExported": "2026-10-10T00:00:00.000Z",
   "version": "1.2",
   "folders": [
     {
@@ -758,6 +758,224 @@
       }
     },
     {
+      "_id": "2ce3cce8-ce59-43f3-8ab1-d232b9256be7",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear docente sin relación (con perfil)",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 125000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoVinculacion",
+          "action": "equal",
+          "value": "PLANTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.departamento.id",
+          "action": "equal",
+          "value": "{{departamentoId}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.activo",
+          "action": "equal",
+          "value": "true"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{otroId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{otroEmail}}"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"O-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"o.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Ajeno\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"DOCENTE\"\n  ],\n  \"tipoVinculacion\": \"PLANTA\",\n  \"departamentoId\": \"{{departamentoId}}\"\n}",
+        "form": []
+      },
+      "docs": "El perfil docente (vinculación y departamento) se registra en la misma creación del usuario."
+    },
+    {
+      "_id": "87ff5a07-c9a1-4f4c-88df-efb7fdf77e9e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear usuario para desactivar",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 126000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.programa.id",
+          "action": "equal",
+          "value": "{{programaId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{inactivoId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{inactivoEmail}}"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"I-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"i.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Inactivo\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ],\n  \"programaId\": \"{{programaId}}\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "bed0c0ca-b070-4306-a0c0-dd2e157a804d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Administrador desactiva el usuario",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/{{inactivoId}}/estado",
+      "method": "PUT",
+      "sortNum": 127000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.activo",
+          "action": "equal",
+          "value": "false"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"activo\": false\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "85f0e2af-97a5-435c-8bac-341c6017a3b8",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Usuario inactivo no inicia sesión (401)",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 128000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{inactivoEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "379fdbf5-f7bd-42d9-92be-4cec1cbfc75b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Contraseña incorrecta (401)",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 129000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{otroEmail}}\",\n  \"password\": \"Incorrecta1*\"\n}",
+        "form": []
+      },
+      "docs": "Credenciales inválidas y usuario inexistente responden igual (401)."
+    },
+    {
+      "_id": "3685bc80-55f7-42fc-b77a-452955a07908",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Correo inexistente (401)",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 129500,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"nadie.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
       "_id": "02bcc5f8-79e0-4356-b9c8-410488f3360f",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
@@ -858,6 +1076,218 @@
       }
     },
     {
+      "_id": "f2b9de43-d3c8-4db7-89af-84e7bf0b1b16",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Login docente sin relación",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 152000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{otroToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{otroEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "e72d0b49-9ed6-4929-be78-ddd06bdafbce",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Docente cambia su contraseña",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me/password",
+      "method": "PUT",
+      "sortNum": 153000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "204"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"passwordActual\": \"Clave123*\",\n  \"passwordNueva\": \"Clave456*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "9c983da1-9c3d-4608-9d9c-931dec3dfd26",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Cambio de contraseña con la actual incorrecta (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me/password",
+      "method": "PUT",
+      "sortNum": 154000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"passwordActual\": \"Clave123*\",\n  \"passwordNueva\": \"Clave789*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "0b03c2ae-38d7-49f9-8228-62df4ce1b9f0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "La contraseña anterior ya no sirve (401)",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 155000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{otroEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "c936858c-9891-4197-9e47-09ff41bf2b72",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Login con la contraseña nueva",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 156000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{otroToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{otroEmail}}\",\n  \"password\": \"Clave456*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "74dd6809-2219-4adb-9235-924da14890a5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Docente consulta su usuario",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me",
+      "method": "GET",
+      "sortNum": 157000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.email",
+          "action": "equal",
+          "value": "{{otroEmail}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles",
+          "action": "contains",
+          "value": "DOCENTE"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroToken}}"
+      }
+    },
+    {
+      "_id": "4cb8143f-26a6-46a0-86f4-22643787f9de",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Docente lista usuarios sin número de documento",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "GET",
+      "sortNum": 158000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].numeroDocumento",
+          "action": "equal",
+          "value": "null"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroToken}}"
+      },
+      "docs": "Los usuarios que no son administradores no reciben el número de documento."
+    },
+    {
       "_id": "68abc84e-c300-42f4-ad70-9894bde6d9d9",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
@@ -929,11 +1359,23 @@
           "custom": "json.id",
           "action": "setto",
           "value": "{{trabajoId}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.descripcion",
+          "action": "equal",
+          "value": "Plataforma para gestionar el proceso de trabajo de grado del programa."
+        },
+        {
+          "type": "json-query",
+          "custom": "json.lineaInvestigacion",
+          "action": "equal",
+          "value": "Ingeniería de software"
         }
       ],
       "body": {
         "type": "json",
-        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado\",\n  \"objetivos\": [\n    \"Diseñar un sistema para gestionar el proceso de trabajo de grado\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado\",\n  \"objetivos\": [\n    \"Diseñar un sistema para gestionar el proceso de trabajo de grado\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ],\n  \"descripcion\": \"Plataforma para gestionar el proceso de trabajo de grado del programa.\",\n  \"lineaInvestigacion\": \"Ingeniería de software\"\n}",
         "form": []
       },
       "auth": {
@@ -941,6 +1383,72 @@
         "bearer": "{{docenteToken}}"
       },
       "docs": "El docente autenticado queda como director (Art. 10)."
+    },
+    {
+      "_id": "f261059a-cfe6-4dd2-b60c-1760ae16e6d8",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "El docente recibe el rol DIRECTOR",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me",
+      "method": "GET",
+      "sortNum": 171000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles",
+          "action": "contains",
+          "value": "DIRECTOR"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "El backend asigna el rol de contexto DIRECTOR al crear el trabajo."
+    },
+    {
+      "_id": "57d4c8f4-7f49-468a-9859-318ccfba1ed0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Corregir la propuesta antes de radicarla",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "PUT",
+      "sortNum": 172000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.descripcion",
+          "action": "equal",
+          "value": "Descripción corregida antes de radicar."
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado\",\n  \"objetivos\": [\n    \"Diseñar un sistema para gestionar el proceso de trabajo de grado\"\n  ],\n  \"descripcion\": \"Descripción corregida antes de radicar.\",\n  \"lineaInvestigacion\": \"Ingeniería de software\"\n}",
+        "form": []
+      }
     },
     {
       "_id": "123e73a7-c566-4aca-a282-fb01e8718d3a",
@@ -962,9 +1470,9 @@
         },
         {
           "type": "json-query",
-          "custom": "json.propuesta.estado",
+          "custom": "json.propuesta.versiones[0].estado",
           "action": "equal",
-          "value": "RADICADO"
+          "value": "EN_REVISION"
         },
         {
           "type": "json-query",
@@ -977,13 +1485,157 @@
           "custom": "json.propuesta.versiones[0].formato",
           "action": "equal",
           "value": "TI-A"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].ruta",
+          "action": "regex",
+          "value": "^{{trabajoId}}/TI-A/v\\d+/formato-a\\.pdf$"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.propuesta.versiones[0].ruta",
+          "action": "setto",
+          "value": "{{rutaPropuesta}}"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/propuesta_v1.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-a.pdf"
+          }
+        ]
       },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "42e4e1e7-069d-4cfa-ac69-c378fcb5ca87",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "No se corrige una propuesta radicada (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "PUT",
+      "sortNum": 181000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "La propuesta solo se puede corregir antes de radicarla"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado\",\n  \"objetivos\": [\n    \"Diseñar un sistema para gestionar el proceso de trabajo de grado\"\n  ],\n  \"descripcion\": null,\n  \"lineaInvestigacion\": null\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "a6e2e6ef-b8f0-4854-81ec-e157931f997a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Director descarga el formato A",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/archivos?ruta={{rutaPropuesta}}",
+      "method": "GET",
+      "sortNum": 182000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-header",
+          "custom": "content-type",
+          "action": "contains",
+          "value": "application/pdf"
+        },
+        {
+          "type": "res-header",
+          "custom": "content-disposition",
+          "action": "contains",
+          "value": "formato-a.pdf"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "fe279f59-956f-44c0-9d52-30073f2e94aa",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Docente sin relación no descarga (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/archivos?ruta={{rutaPropuesta}}",
+      "method": "GET",
+      "sortNum": 183000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "No tiene acceso"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroToken}}"
+      },
+      "docs": "Solo los participantes y los roles de consulta (Comité, Jefe, Consejo, Administrador) descargan."
+    },
+    {
+      "_id": "15393af3-0667-4ed0-9edf-5d3e2501f736",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Ruta que no es del trabajo (404)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/archivos?ruta=otro/TI-A/v1/formato-a.pdf",
+      "method": "GET",
+      "sortNum": 184000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "404"
+        }
+      ],
       "auth": {
         "type": "bearer",
         "bearer": "{{docenteToken}}"
@@ -1046,27 +1698,120 @@
         },
         {
           "type": "json-query",
-          "custom": "json.propuesta.estado",
+          "custom": "json.propuesta.versiones[0].estado",
           "action": "equal",
           "value": "NO_APROBADO"
         },
         {
           "type": "json-query",
           "custom": "json.propuesta.decisiones[0].rutaArchivo",
-          "action": "equal",
-          "value": "actas/2026/acta-01.pdf"
+          "action": "regex",
+          "value": "^{{trabajoId}}/ACTA_COMITE/v\\d+/acta-comite\\.pdf$"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.propuesta.decisiones[0].rutaArchivo",
+          "action": "setto",
+          "value": "{{rutaActaComite}}"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"acta\": \"Acta 01\",\n  \"rutaArchivo\": \"actas/2026/acta-01.pdf\",\n  \"observaciones\": \"Precisar los objetivos\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"acta\": \"Acta 01\",\n  \"observaciones\": \"Precisar los objetivos\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-comite.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{comiteToken}}"
       },
       "docs": "Si no se aprueba, el trabajo sigue en PROPUESTA y espera una nueva versión. La decisión guarda la ruta del archivo de soporte."
+    },
+    {
+      "_id": "ce853ede-a067-494d-8671-437d9080f9e5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Solo se radican documentos PDF (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "POST",
+      "sortNum": 201000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "Solo se permiten documentos en formato PDF."
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/documento.txt"
+          }
+        ]
+      }
+    },
+    {
+      "_id": "3b745543-423b-40c6-b013-ca41dadd01c9",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Corregir la propuesta tras el NO APROBADO",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta",
+      "method": "PUT",
+      "sortNum": 202000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.descripcion",
+          "action": "equal",
+          "value": "Descripción con los objetivos precisados."
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Sistema de gestión de trabajos de grado\",\n  \"objetivos\": [\n    \"Diseñar un sistema para gestionar el proceso de trabajo de grado\"\n  ],\n  \"descripcion\": \"Descripción con los objetivos precisados.\",\n  \"lineaInvestigacion\": \"Ingeniería de software\"\n}",
+        "form": []
+      }
     },
     {
       "_id": "47210142-a391-4da9-81c1-531231059874",
@@ -1088,21 +1833,33 @@
         },
         {
           "type": "json-query",
-          "custom": "json.propuesta.estado",
+          "custom": "json.propuesta.versiones[1].estado",
           "action": "equal",
-          "value": "RADICADO"
+          "value": "EN_REVISION"
         },
         {
           "type": "json-query",
           "custom": "json.propuesta.versiones[1].version",
           "action": "equal",
           "value": "2"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].estado",
+          "action": "equal",
+          "value": "NO_APROBADO"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/propuesta_v2.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-a.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -1126,6 +1883,18 @@
           "custom": "",
           "action": "equal",
           "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].estado",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[1].estado",
+          "action": "equal",
+          "value": "APROBADO"
         },
         {
           "type": "json-query",
@@ -1153,9 +1922,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 02\",\n  \"rutaArchivo\": \"actas/2026/acta-02.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 02\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-comite.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -1237,6 +2017,36 @@
       }
     },
     {
+      "_id": "1a1c6058-7cd6-44fd-a5cf-1033e7ecd974",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Estudiante descarga el acta del Comité",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/archivos?ruta={{rutaActaComite}}",
+      "method": "GET",
+      "sortNum": 245000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-header",
+          "custom": "content-type",
+          "action": "contains",
+          "value": "application/pdf"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
       "_id": "a65b51d0-3020-4a2f-856c-fd0c971b7576",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
@@ -1294,7 +2104,7 @@
           "type": "json-query",
           "custom": "json.anteproyecto.estado",
           "action": "equal",
-          "value": "RADICADO"
+          "value": "EN_REVISION"
         },
         {
           "type": "json-query",
@@ -1304,9 +2114,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/anteproyecto_v1.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/anteproyecto.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -1364,10 +2180,10 @@
           "value": "200"
         },
         {
-          "type": "json-query",
-          "custom": "json[0].id",
-          "action": "equal",
-          "value": "{{trabajoId}}"
+          "type": "res-body",
+          "custom": "",
+          "action": "contains",
+          "value": "{\"id\":{{trabajoId}},\"modalidad\""
         }
       ],
       "auth": {
@@ -1524,9 +2340,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"urlFormato\": \"https://archivos.unicauca.edu.co/tg/formato_b_v1.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -1566,9 +2393,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"CON_CORRECCIONES\",\n  \"observaciones\": \"Ajustar el cronograma\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"CON_CORRECCIONES\",\n  \"observaciones\": \"Ajustar el cronograma\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -1608,9 +2441,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/anteproyecto_v2.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/anteproyecto.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -1644,9 +2483,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -1691,9 +2536,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -1733,6 +2584,48 @@
       }
     },
     {
+      "_id": "de195392-7988-475a-aec1-84e7a44614b6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "La resolución es obligatoria (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 375000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "El documento de la resolución del Consejo de Facultad es obligatorio."
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "Con el trabajo en APROBACION_CONSEJO: la decisión sin el documento de la resolución se rechaza."
+    },
+    {
       "_id": "4e9416ce-5892-4280-abd3-4743732f2e18",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
@@ -1765,14 +2658,25 @@
         {
           "type": "json-query",
           "custom": "json.anteproyecto.decisionesConsejo[0].rutaArchivo",
-          "action": "equal",
-          "value": "resoluciones/2026/res-correcciones.pdf"
+          "action": "regex",
+          "value": "^{{trabajoId}}/RESOLUCION/v\\d+/resolucion\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-correcciones.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"NO_APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -1812,9 +2716,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/anteproyecto_v3.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/anteproyecto.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -1848,9 +2758,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -1883,9 +2799,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -1930,9 +2852,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-aprobacion.pdf\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2044,9 +2977,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cambio-negado.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"NO_APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2127,9 +3071,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cambio.pdf\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2168,9 +3123,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"titulo\": \"Práctica en desarrollo de software\",\n  \"objetivos\": [\n    \"Apoyar el desarrollo de un sistema de información\"\n  ],\n  \"estudianteId\": \"{{estudianteId}}\",\n  \"asesor\": {\n    \"codigo\": \"{{#number}}\",\n    \"primerNombre\": \"Asesor\",\n    \"primerApellido\": \"Empresa\",\n    \"email\": \"asesor.{{#guid}}@empresa.com\",\n    \"organizacion\": \"Empresa S.A.S.\",\n    \"externo\": true\n  },\n  \"urlCartaAceptacion\": \"https://archivos.unicauca.edu.co/tg/carta.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"titulo\": \"Práctica en desarrollo de software\",\n  \"objetivos\": [\n    \"Apoyar el desarrollo de un sistema de información\"\n  ],\n  \"estudianteId\": \"{{estudianteId}}\",\n  \"asesor\": {\n    \"codigo\": \"{{#number}}\",\n    \"primerNombre\": \"Asesor\",\n    \"primerApellido\": \"Empresa\",\n    \"email\": \"asesor.{{#guid}}@empresa.com\",\n    \"organizacion\": \"Empresa S.A.S.\",\n    \"externo\": true\n  }\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/carta-aceptacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2201,12 +3167,24 @@
           "custom": "json.propuesta.versiones[0].formato",
           "action": "equal",
           "value": "PP-A"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].estado",
+          "action": "equal",
+          "value": "EN_REVISION"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/pp_propuesta.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-a.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2236,12 +3214,24 @@
           "custom": "json.etapa",
           "action": "equal",
           "value": "ANTEPROYECTO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].estado",
+          "action": "equal",
+          "value": "APROBADO"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 03\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 03\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -2268,9 +3258,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/pp_anteproyecto.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/anteproyecto.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2332,9 +3328,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -2367,9 +3369,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -2402,9 +3410,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2439,14 +3458,20 @@
         {
           "type": "json-query",
           "custom": "json.ejecucion.informesMensuales[0].rutaArchivo",
-          "action": "equal",
-          "value": "informes/2026/pp_informe_1.pdf"
+          "action": "regex",
+          "value": "^{{practicaId}}/PP-D/v\\d+/informe-mensual\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_1.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/informe-mensual.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2480,9 +3505,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_2.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/informe-mensual.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2522,14 +3553,25 @@
         {
           "type": "json-query",
           "custom": "json.ejecucion.prorroga.rutaSolicitud",
-          "action": "equal",
-          "value": "solicitudes/2026/pp_prorroga.pdf"
+          "action": "regex",
+          "value": "^{{practicaId}}/SOLICITUD_PRORROGA/v\\d+/solicitud-prorroga\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"meses\": 3,\n  \"rutaSolicitud\": \"solicitudes/2026/pp_prorroga.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"meses\": 3\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-prorroga.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2569,9 +3611,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp-prorroga.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2611,9 +3664,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_3.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/informe-mensual.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2647,14 +3706,20 @@
         {
           "type": "json-query",
           "custom": "json.ejecucion.suspensiones[0].rutaSolicitud",
-          "action": "equal",
-          "value": "solicitudes/2026/pp_suspension_1.pdf"
+          "action": "regex",
+          "value": "^{{practicaId}}/SOLICITUD_SUSPENSION/v\\d+/solicitud-suspension\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/pp_suspension_1.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-suspension.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2694,9 +3759,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp-susp-negada.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"NO_APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2725,14 +3801,20 @@
         {
           "type": "json-query",
           "custom": "json.ejecucion.suspensiones[1].rutaSolicitud",
-          "action": "equal",
-          "value": "solicitudes/2026/pp_suspension_2.pdf"
+          "action": "regex",
+          "value": "^{{practicaId}}/SOLICITUD_SUSPENSION/v\\d+/solicitud-suspension\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/pp_suspension_2.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-suspension.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2771,9 +3853,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-pp-suspension.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2807,9 +3900,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"informes/2026/pp_informe_x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/informe-mensual.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2843,8 +3942,8 @@
         {
           "type": "json-query",
           "custom": "json.ejecucion.suspensiones[1].rutaReanudacion",
-          "action": "equal",
-          "value": "solicitudes/2026/pp_reanudacion.pdf"
+          "action": "regex",
+          "value": "^{{practicaId}}/REANUDACION/v\\d+/reanudacion\\.pdf$"
         },
         {
           "type": "json-query",
@@ -2854,9 +3953,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/pp_reanudacion.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/reanudacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2968,9 +4073,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/otra.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-a.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3009,9 +4120,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/otra.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-a.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3074,9 +4191,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -3109,9 +4232,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -3139,48 +4268,24 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{docenteToken}}"
-      }
-    },
-    {
-      "_id": "de195392-7988-475a-aec1-84e7a44614b6",
-      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
-      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
-      "name": "La ruta de la resolución es obligatoria (400)",
-      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
-      "method": "POST",
-      "sortNum": 760000,
-      "created": "2026-10-06T02:28:11.000Z",
-      "modified": "2026-10-06T02:28:11.000Z",
-      "headers": [],
-      "tests": [
-        {
-          "type": "res-code",
-          "custom": "",
-          "action": "equal",
-          "value": "400"
-        },
-        {
-          "type": "json-query",
-          "custom": "json.rutaResolucion",
-          "action": "equal",
-          "value": "La ruta del documento de la resolución es obligatoria"
-        }
-      ],
-      "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
-      },
-      "auth": {
-        "type": "bearer",
-        "bearer": "{{consejoToken}}"
       }
     },
     {
@@ -3209,9 +4314,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3274,9 +4390,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3344,9 +4471,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"informes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/informe-mensual.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3373,15 +4506,16 @@
         },
         {
           "type": "json-query",
-          "custom": "json.rutaDocumento",
-          "action": "equal",
-          "value": "La ruta del documento del informe es obligatoria"
+          "custom": "json.message",
+          "action": "contains",
+          "value": "El documento del informe mensual es obligatorio."
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -3414,9 +4548,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"meses\": 4,\n  \"rutaSolicitud\": \"solicitudes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"meses\": 4\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-prorroga.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3449,9 +4594,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"meses\": 1,\n  \"rutaSolicitud\": \"solicitudes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"meses\": 1\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-prorroga.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3478,9 +4634,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3513,9 +4680,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3548,9 +4726,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"meses\": 1,\n  \"rutaSolicitud\": \"solicitudes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"meses\": 1\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-prorroga.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3583,9 +4772,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-suspension.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3612,15 +4807,16 @@
         },
         {
           "type": "json-query",
-          "custom": "json.rutaDocumento",
-          "action": "equal",
-          "value": "La ruta del documento es obligatoria"
+          "custom": "json.message",
+          "action": "contains",
+          "value": "El documento de la solicitud de suspensión es obligatorio."
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -3647,9 +4843,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3682,9 +4889,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-suspension.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3717,9 +4930,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/reanudacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3736,6 +4955,66 @@
       "sortNum": 930000,
       "created": "2026-10-06T02:28:11.000Z",
       "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "43ced806-b587-4cb0-8dac-9850e6371b26",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Consejo lista todos los trabajos",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado",
+      "method": "GET",
+      "sortNum": 935000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-body",
+          "custom": "",
+          "action": "contains",
+          "value": "{\"id\":{{trabajoId}},\"modalidad\""
+        },
+        {
+          "type": "res-body",
+          "custom": "",
+          "action": "contains",
+          "value": "{\"id\":{{practicaId}},\"modalidad\""
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      }
+    },
+    {
+      "_id": "2e2f95b1-1d77-40be-84d7-398f2658f4a1",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Estudiante no lista todos los trabajos (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado",
+      "method": "GET",
+      "sortNum": 936000,
+      "created": "2026-10-10T00:00:00.000Z",
+      "modified": "2026-10-10T00:00:00.000Z",
       "headers": [],
       "tests": [
         {
@@ -3996,50 +5275,25 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/tg.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/tg.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "documentoFinal",
+            "value": "archivos/documento-final.pdf"
+          },
+          {
+            "name": "pazYSalvo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{docenteToken}}"
       },
       "docs": "Investigación: desde el tercer mes tras la notificación; práctica: desde el sexto. El flujo completo de sustentación se prueba con las pruebas automáticas (reloj ajustable)."
-    },
-    {
-      "_id": "e7b64747-fb27-407a-9b95-6e7f62ecbae0",
-      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
-      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "Sustentación sin paz y salvo (400)",
-      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion",
-      "method": "POST",
-      "sortNum": 1020000,
-      "created": "2026-10-06T02:28:11.000Z",
-      "modified": "2026-10-06T02:28:11.000Z",
-      "headers": [],
-      "tests": [
-        {
-          "type": "res-code",
-          "custom": "",
-          "action": "equal",
-          "value": "400"
-        },
-        {
-          "type": "json-query",
-          "custom": "json.rutaPazYSalvo",
-          "action": "equal",
-          "value": "La ruta del paz y salvo es obligatoria"
-        }
-      ],
-      "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/tg.pdf\"\n}",
-        "form": []
-      },
-      "auth": {
-        "type": "bearer",
-        "bearer": "{{docenteToken}}"
-      }
     },
     {
       "_id": "d104194a-74c3-4709-8ac3-8f5bab079f0d",
@@ -4067,9 +5321,19 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/tg.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/tg.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "documentoFinal",
+            "value": "archivos/documento-final.pdf"
+          },
+          {
+            "name": "pazYSalvo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4166,9 +5430,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"calificacion\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -4288,12 +5558,24 @@
           "custom": "",
           "action": "equal",
           "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].estado",
+          "action": "equal",
+          "value": "EN_REVISION"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/a_propuesta.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-a.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4323,12 +5605,24 @@
           "custom": "json.etapa",
           "action": "equal",
           "value": "ANTEPROYECTO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.versiones[0].estado",
+          "action": "equal",
+          "value": "APROBADO"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -4355,9 +5649,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/a_anteproyecto.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/anteproyecto.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4413,9 +5713,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -4448,9 +5754,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -4483,9 +5795,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/a_aprobacion.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4529,6 +5852,48 @@
       "docs": "En investigación la sustentación se solicita desde el tercer mes tras la notificación. Guarda la fecha simulada en {{hoy}}."
     },
     {
+      "_id": "e7b64747-fb27-407a-9b95-6e7f62ecbae0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Sustentación sin paz y salvo (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1175000,
+      "created": "2026-10-06T02:28:11.000Z",
+      "modified": "2026-10-06T02:28:11.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "El paz y salvo es obligatorio."
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "documentoFinal",
+            "value": "archivos/documento-final.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Ya cumplidos los meses mínimos: la solicitud sin el paz y salvo (Formato F) se rechaza."
+    },
+    {
       "_id": "8e5a7107-d725-424b-978e-74627d2edf2d",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
@@ -4560,9 +5925,19 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/a_documento_final.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/a.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "documentoFinal",
+            "value": "archivos/documento-final.pdf"
+          },
+          {
+            "name": "pazYSalvo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4645,14 +6020,25 @@
         {
           "type": "json-query",
           "custom": "json.sustentacion.calificaciones[0].rutaActa",
-          "action": "equal",
-          "value": "actas/a_sesion_1.pdf"
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/TI-G/v\\d+/acta-sustentacion\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"calificacion\": \"APROBADO\",\n  \"rutaActa\": \"actas/a_sesion_1.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-sustentacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4685,9 +6071,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"calificacion\": \"APROBADO_CON_OBSERVACIONES\",\n  \"observaciones\": \"Ajustar las conclusiones\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APROBADO_CON_OBSERVACIONES\",\n  \"observaciones\": \"Ajustar las conclusiones\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -4756,9 +6148,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"ajustes/a_ajustes.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/ajustes.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4861,9 +6259,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"definitivas/a.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/version-definitiva.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -4903,14 +6307,20 @@
         {
           "type": "json-query",
           "custom": "json.sustentacion.rutaVersionDefinitiva",
-          "action": "equal",
-          "value": "definitivas/a_version_definitiva.pdf"
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/TI-H/v\\d+/version-definitiva\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"definitivas/a_version_definitiva.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/version-definitiva.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5005,13 +6415,23 @@
           "type": "json-query",
           "custom": "json.message",
           "action": "equal",
-          "value": "En práctica profesional la ruta del concepto favorable del asesor es obligatoria."
+          "value": "En práctica profesional el concepto favorable del asesor es obligatorio."
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/b.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/b.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "documentoFinal",
+            "value": "archivos/documento-final.pdf"
+          },
+          {
+            "name": "pazYSalvo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5045,14 +6465,28 @@
         {
           "type": "json-query",
           "custom": "json.sustentacion.rutaConceptoAsesor",
-          "action": "equal",
-          "value": "conceptos/b_asesor.pdf"
+          "action": "regex",
+          "value": "^{{practicaId}}/CONCEPTO_ASESOR/v\\d+/concepto-asesor\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumentoFinal\": \"finales/b.pdf\",\n  \"rutaPazYSalvo\": \"paz-y-salvo/b.pdf\",\n  \"rutaConceptoAsesor\": \"conceptos/b_asesor.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "documentoFinal",
+            "value": "archivos/documento-final.pdf"
+          },
+          {
+            "name": "pazYSalvo",
+            "value": "archivos/paz-y-salvo.pdf"
+          },
+          {
+            "name": "conceptoAsesor",
+            "value": "archivos/concepto-asesor.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5115,9 +6549,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"calificacion\": \"APLAZADO\",\n  \"observaciones\": \"Repetir la presentación\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APLAZADO\",\n  \"observaciones\": \"Repetir la presentación\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -5156,9 +6596,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"calificacion\": \"APROBADO\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -5443,9 +6889,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/cancelacion.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-cancelacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5472,15 +6924,16 @@
         },
         {
           "type": "json-query",
-          "custom": "json.rutaDocumento",
-          "action": "equal",
-          "value": "La ruta del documento es obligatoria"
+          "custom": "json.message",
+          "action": "contains",
+          "value": "El formato de solicitud de cancelación es obligatorio."
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": []
       },
       "auth": {
         "type": "bearer",
@@ -5520,14 +6973,20 @@
         {
           "type": "json-query",
           "custom": "json.cancelaciones[0].rutaSolicitud",
-          "action": "equal",
-          "value": "solicitudes/2026/cancelacion_1.pdf"
+          "action": "regex",
+          "value": "^{{trabajo3Id}}/SOLICITUD_CANCELACION/v\\d+/solicitud-cancelacion\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/cancelacion_1.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-cancelacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5561,9 +7020,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/otra.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-cancelacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5590,15 +7055,21 @@
         },
         {
           "type": "json-query",
-          "custom": "json.propuesta.estado",
+          "custom": "json.propuesta.versiones[0].estado",
           "action": "equal",
-          "value": "RADICADO"
+          "value": "EN_REVISION"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"url\": \"https://archivos.unicauca.edu.co/tg/c_propuesta.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-a.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5626,9 +7097,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5667,9 +7149,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cancelacion-negada.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"NO_APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5698,14 +7191,20 @@
         {
           "type": "json-query",
           "custom": "json.cancelaciones[1].rutaSolicitud",
-          "action": "equal",
-          "value": "solicitudes/2026/cancelacion_2.pdf"
+          "action": "regex",
+          "value": "^{{trabajo3Id}}/SOLICITUD_CANCELACION/v\\d+/solicitud-cancelacion\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/2026/cancelacion_2.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-cancelacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5750,9 +7249,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"resultado\": \"APROBADO\",\n  \"rutaResolucion\": \"resoluciones/2026/res-cancelacion.pdf\",\n  \"observaciones\": \"Cancelación aprobada en sesión ordinaria\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"Cancelación aprobada en sesión ordinaria\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5785,9 +7295,15 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"rutaDocumento\": \"solicitudes/x.pdf\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-cancelacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
