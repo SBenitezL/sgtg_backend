@@ -2,7 +2,7 @@
   "clientName": "Thunder Client",
   "collectionName": "SGTG - Pruebas de integración (Fases 0 a 8)",
   "collectionId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
-  "dateExported": "2026-10-10T00:00:00.000Z",
+  "dateExported": "2026-10-12T00:00:00.000Z",
   "version": "1.2",
   "folders": [
     {
@@ -2102,7 +2102,7 @@
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.estado",
+          "custom": "json.anteproyecto.versiones[0].estado",
           "action": "equal",
           "value": "EN_REVISION"
         },
@@ -2218,7 +2218,7 @@
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.estado",
+          "custom": "json.anteproyecto.versiones[0].estado",
           "action": "equal",
           "value": "EN_REVISION"
         },
@@ -2309,6 +2309,37 @@
       }
     },
     {
+      "_id": "9c1e8dae-a3d3-40e7-8a69-5a4613fac36a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "El evaluador recibe el rol EVALUADOR",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me",
+      "method": "GET",
+      "sortNum": 315000,
+      "created": "2026-10-11T00:00:00.000Z",
+      "modified": "2026-10-11T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{evaluador2Token}}"
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles",
+          "action": "contains",
+          "value": "EVALUADOR"
+        }
+      ],
+      "docs": "El backend asigna el rol de contexto EVALUADOR al asignar los evaluadores (el evaluador 2 se creó solo como DOCENTE)."
+    },
+    {
       "_id": "4c40e995-5972-404f-b1e4-7a31caafe1c3",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
@@ -2387,9 +2418,15 @@
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.estado",
+          "custom": "json.anteproyecto.versiones[0].estado",
           "action": "equal",
           "value": "CON_CORRECCIONES"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.conceptos[1].anotaciones.ruta",
+          "action": "regex",
+          "value": "^{{trabajoId}}/ANOTACIONES_EVALUACION/v\\d+/anotaciones\\.pdf$"
         }
       ],
       "body": {
@@ -2401,7 +2438,16 @@
             "value": "{\n  \"resultado\": \"CON_CORRECCIONES\",\n  \"observaciones\": \"Ajustar el cronograma\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          },
+          {
+            "name": "anotaciones",
+            "value": "archivos/anotaciones.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2438,6 +2484,18 @@
           "custom": "json.anteproyecto.versiones[1].version",
           "action": "equal",
           "value": "2"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.versiones[0].estado",
+          "action": "equal",
+          "value": "CON_CORRECCIONES"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.versiones[1].estado",
+          "action": "equal",
+          "value": "EN_REVISION"
         }
       ],
       "body": {
@@ -2491,7 +2549,12 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2520,19 +2583,13 @@
           "type": "json-query",
           "custom": "json.etapa",
           "action": "equal",
-          "value": "APROBACION_CONSEJO"
+          "value": "EVALUACION"
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.estado",
+          "custom": "json.anteproyecto.versiones[1].estado",
           "action": "equal",
           "value": "APROBADO"
-        },
-        {
-          "type": "json-query",
-          "custom": "json.historial[4].destino",
-          "action": "equal",
-          "value": "APROBACION_CONSEJO"
         }
       ],
       "body": {
@@ -2544,13 +2601,156 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{evaluador2Token}}"
       },
       "docs": "Con ambos conceptos aprobados, el trabajo pasa a la aprobación del Consejo de Facultad."
+    },
+    {
+      "_id": "43c3516d-6aba-4eb0-9247-9ba2560076e3",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Docente no remite al Consejo (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/remision",
+      "method": "POST",
+      "sortNum": 361000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-c.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "docs": "Solo el Jefe de departamento remite el anteproyecto al Consejo."
+    },
+    {
+      "_id": "55d3eae4-f910-4d9d-8827-3eeab90fcfe4",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "La remisión exige el formato C (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/remision",
+      "method": "POST",
+      "sortNum": 362000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jefeToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "La remisión al Consejo de Facultad requiere el formato C."
+        }
+      ]
+    },
+    {
+      "_id": "3bfce45e-7ba6-4127-a2cb-d706269ad25e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Jefe remite al Consejo con el formato C",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/remision",
+      "method": "POST",
+      "sortNum": 363000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jefeToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-c.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.remisiones[0].ruta",
+          "action": "regex",
+          "value": "^{{trabajoId}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.remisiones[0].formato",
+          "action": "equal",
+          "value": "TI-C"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[4].destino",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[4].responsable",
+          "action": "equal",
+          "value": "{{jefeCodigo}}"
+        }
+      ],
+      "docs": "Aprobado por ambos evaluadores, el Jefe de departamento lo remite al Consejo (paso obligatorio)."
     },
     {
       "_id": "7edd33da-4359-474e-8ec2-53fa5537f79b",
@@ -2651,7 +2851,7 @@
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.estado",
+          "custom": "json.anteproyecto.versiones[1].estado",
           "action": "equal",
           "value": "NO_APROBADO"
         },
@@ -2713,6 +2913,18 @@
           "custom": "json.anteproyecto.versiones[2].version",
           "action": "equal",
           "value": "3"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.versiones[1].estado",
+          "action": "equal",
+          "value": "NO_APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.versiones[2].estado",
+          "action": "equal",
+          "value": "EN_REVISION"
         }
       ],
       "body": {
@@ -2766,7 +2978,12 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -2795,7 +3012,7 @@
           "type": "json-query",
           "custom": "json.etapa",
           "action": "equal",
-          "value": "APROBACION_CONSEJO"
+          "value": "EVALUACION"
         }
       ],
       "body": {
@@ -2807,12 +3024,64 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{evaluador2Token}}"
       }
+    },
+    {
+      "_id": "ab3da9e3-071c-4d04-b92a-d61d4687bb3e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "Jefe remite la versión 3 al Consejo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/remision",
+      "method": "POST",
+      "sortNum": 412000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jefeToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-c.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.remisiones[1].ruta",
+          "action": "regex",
+          "value": "^{{trabajoId}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+        }
+      ]
     },
     {
       "_id": "5eb1a62e-c140-43d8-a899-c4881a78e825",
@@ -2849,6 +3118,12 @@
           "custom": "json.historial[8].destino",
           "action": "equal",
           "value": "EN_CURSO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.versiones[2].estado",
+          "action": "equal",
+          "value": "APROBADO"
         }
       ],
       "body": {
@@ -3336,7 +3611,12 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -3365,7 +3645,7 @@
           "type": "json-query",
           "custom": "json.etapa",
           "action": "equal",
-          "value": "APROBACION_CONSEJO"
+          "value": "EVALUACION"
         }
       ],
       "body": {
@@ -3377,12 +3657,70 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{evaluador2Token}}"
       }
+    },
+    {
+      "_id": "52a67a55-d97e-4fe3-94a2-354ba3b8a33c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Práctica: jefe remite al Consejo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/anteproyecto/remision",
+      "method": "POST",
+      "sortNum": 545000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jefeToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-c.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.remisiones[0].ruta",
+          "action": "regex",
+          "value": "^{{practicaId}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.remisiones[0].formato",
+          "action": "equal",
+          "value": "PP-C"
+        }
+      ]
     },
     {
       "_id": "436fe7dd-386b-4e3c-ba3f-0013b7d833f9",
@@ -5721,7 +6059,12 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5750,7 +6093,7 @@
           "type": "json-query",
           "custom": "json.etapa",
           "action": "equal",
-          "value": "APROBACION_CONSEJO"
+          "value": "EVALUACION"
         }
       ],
       "body": {
@@ -5762,12 +6105,64 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-b.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{evaluador2Token}}"
       }
+    },
+    {
+      "_id": "69037ae0-9f11-420d-a00a-ea465a47f7d6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Jefe remite al Consejo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/anteproyecto/remision",
+      "method": "POST",
+      "sortNum": 1155000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jefeToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-c.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "APROBACION_CONSEJO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.remisiones[0].ruta",
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+        }
+      ]
     },
     {
       "_id": "701334c7-f3c9-45d0-9dc3-96134ef2e027",

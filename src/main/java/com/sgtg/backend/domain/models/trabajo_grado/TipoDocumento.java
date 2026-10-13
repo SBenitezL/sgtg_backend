@@ -24,6 +24,8 @@ public enum TipoDocumento {
     SOLICITUD_SUSPENSION(null, false),
     REANUDACION(null, false),
     CONCEPTO_ASESOR(null, true),
+    /** Documento con las anotaciones del evaluador sobre el anteproyecto (opcional, acompaña al formato B) */
+    ANOTACIONES_EVALUACION(null, false),
     AJUSTES_SUSTENTACION(null, false),
     SOLICITUD_CANCELACION(null, false);
 

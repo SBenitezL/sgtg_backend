@@ -4,6 +4,7 @@ import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.LUNES;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.OBJETIVOS;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_ANTEPROYECTO;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_FORMATO_B;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_FORMATO_C;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_PROPUESTA;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.decisionComite;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.directorPlanta;
@@ -101,7 +102,7 @@ class EtapaAnteproyectoTest {
         trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario);
 
         assertRegla("error.dominio.trabajo_grado.etapa_invalida", () -> trabajo.registrarConceptoEvaluador(
-                concepto(evaluador1, ResultadoConcepto.APROBADO, radicacion.toLocalDate()), null, radicacion,
+                concepto(evaluador1, ResultadoConcepto.APROBADO, radicacion.toLocalDate()), RUTA_FORMATO_B, radicacion,
                 calendario));
         assertEquals(Estado.EN_REVISION, trabajo.getAnteproyecto().getEstado());
         assertTrue(trabajo.getAnteproyecto().getConceptos().isEmpty());
@@ -204,21 +205,67 @@ class EtapaAnteproyectoTest {
     }
 
     @Test
-    void siAmbosApruebanPasaAAprobacionDelConsejo() {
+    void siAmbosApruebanQuedaEnElDepartamentoHastaQueElJefeLoRemitaConElFormatoC() {
         radicarYAsignar();
         LocalDate fecha = asignacion.toLocalDate().plusDays(2);
-        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
         trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
-                dia(fecha), calendario);
+                "1/tg/anotaciones.pdf", dia(fecha), calendario);
+
+        // Aprobado por los evaluadores: sigue en evaluación, pendiente de remisión
+        assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
+        assertTrue(trabajo.getAnteproyecto().estaAprobado());
+        assertFalse(trabajo.getAnteproyecto().remitidoAlConsejo());
+        assertEquals(TipoDocumento.EVALUACION_ANTEPROYECTO, trabajo.getAnteproyecto().getConceptos().get(0).formato().tipo());
+        assertNull(trabajo.getAnteproyecto().getConceptos().get(0).anotaciones());
+        assertEquals(TipoDocumento.ANOTACIONES_EVALUACION,
+                trabajo.getAnteproyecto().getConceptos().get(1).anotaciones().tipo());
+
+        trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J001", dia(fecha.plusDays(1)));
 
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
-        assertTrue(trabajo.getAnteproyecto().estaAprobado());
-        assertNull(trabajo.getAnteproyecto().getConceptos().get(0).formato());
+        assertTrue(trabajo.getAnteproyecto().remitidoAlConsejo());
+        Documento remision = trabajo.getAnteproyecto().getRemisiones().get(0);
+        assertEquals(TipoDocumento.REMISION_CONSEJO, remision.tipo());
+        assertEquals(1, remision.version());
         CambioEtapa cambio = trabajo.getHistorial().get(trabajo.getHistorial().size() - 1);
         assertEquals(Proceso.EVALUACION, cambio.origen());
         assertEquals(Proceso.APROBACION_CONSEJO, cambio.destino());
-        assertEquals("V21", cambio.responsable());
+        assertEquals("J001", cambio.responsable());
+    }
+
+    @Test
+    void elConceptoExigeElFormatoB() {
+        radicarYAsignar();
+        LocalDate fecha = asignacion.toLocalDate();
+        assertRegla("error.dominio.anteproyecto.formato_b_obligatorio", () -> trabajo.registrarConceptoEvaluador(
+                concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), " ", dia(fecha), calendario));
+        assertTrue(trabajo.getAnteproyecto().getConceptos().isEmpty());
+    }
+
+    @Test
+    void soloSeRemiteUnaVersionAprobadaYConFormatoC() {
+        radicarYAsignar();
+        LocalDate fecha = asignacion.toLocalDate();
+        // Sin la aprobación de ambos evaluadores no se remite
+        assertRegla("error.dominio.anteproyecto.remision_no_permitida",
+                () -> trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J001", dia(fecha)));
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
+                dia(fecha), calendario);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
+                dia(fecha), calendario);
+        // El formato C es obligatorio
+        assertRegla("error.dominio.anteproyecto.formato_c_obligatorio",
+                () -> trabajo.remitirAnteproyectoAlConsejo(null, "J001", dia(fecha)));
+        assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
+        assertTrue(trabajo.getAnteproyecto().getRemisiones().isEmpty());
+
+        trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J001", dia(fecha));
+        // Ya remitida: una segunda remisión no procede (la etapa ya es la del Consejo)
+        assertRegla("error.dominio.trabajo_grado.etapa_invalida",
+                () -> trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J001", dia(fecha)));
+        assertEquals(1, trabajo.getAnteproyecto().getRemisiones().size());
     }
 
     @Test
@@ -226,9 +273,9 @@ class EtapaAnteproyectoTest {
         radicarYAsignar();
         // Jueves 12-mar-2026: un evaluador aprueba y el otro pide correcciones
         LocalDate fecha = LocalDate.of(2026, 3, 12);
-        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
-        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.CON_CORRECCIONES, fecha), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.CON_CORRECCIONES, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
 
         Anteproyecto anteproyecto = trabajo.getAnteproyecto();
@@ -249,13 +296,17 @@ class EtapaAnteproyectoTest {
         assertEquals(LocalDate.of(2026, 4, 6), anteproyecto.getFechaLimiteEvaluacion());
 
         // Ambos evaluadores deben emitir de nuevo su concepto sobre la versión 2
-        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, reenvio), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, reenvio), RUTA_FORMATO_B,
                 dia(reenvio), calendario);
-        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, reenvio), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, reenvio), RUTA_FORMATO_B,
                 dia(reenvio), calendario);
+        trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J001", dia(reenvio));
 
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
         assertEquals(4, anteproyecto.getConceptos().size());
+        // Cada versión conserva el resultado de su revisión
+        assertEquals(List.of(Estado.CON_CORRECCIONES, Estado.APROBADO),
+                anteproyecto.getVersiones().stream().map(VersionDocumento::estado).toList());
         assertEquals(List.of(Proceso.ANTEPROYECTO, Proceso.EVALUACION, Proceso.ANTEPROYECTO, Proceso.EVALUACION,
                 Proceso.APROBACION_CONSEJO),
                 trabajo.getHistorial().stream().map(CambioEtapa::destino).toList());
@@ -267,12 +318,12 @@ class EtapaAnteproyectoTest {
         LocalDate fecha = asignacion.toLocalDate();
 
         assertRegla("error.dominio.anteproyecto.evaluador_no_asignado", () -> trabajo.registrarConceptoEvaluador(
-                concepto(evaluador(30L), ResultadoConcepto.APROBADO, fecha), null, dia(fecha), calendario));
+                concepto(evaluador(30L), ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B, dia(fecha), calendario));
 
-        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
         assertRegla("error.dominio.anteproyecto.concepto_repetido", () -> trabajo.registrarConceptoEvaluador(
-                concepto(evaluador1, ResultadoConcepto.CON_CORRECCIONES, fecha), null, dia(fecha), calendario));
+                concepto(evaluador1, ResultadoConcepto.CON_CORRECCIONES, fecha), RUTA_FORMATO_B, dia(fecha), calendario));
         assertEquals(1, trabajo.getAnteproyecto().getConceptos().size());
     }
 
@@ -285,7 +336,7 @@ class EtapaAnteproyectoTest {
         LocalDate fecha = asignacion.toLocalDate();
 
         assertRegla("error.dominio.anteproyecto.resultado_invalido", () -> trabajo.registrarConceptoEvaluador(
-                concepto(evaluador1, resultado, fecha), null, dia(fecha), calendario));
+                concepto(evaluador1, resultado, fecha), RUTA_FORMATO_B, dia(fecha), calendario));
         assertTrue(trabajo.getAnteproyecto().getConceptos().isEmpty());
     }
 
@@ -295,14 +346,14 @@ class EtapaAnteproyectoTest {
         LocalDate antes = radicacion.toLocalDate().minusDays(1);
 
         assertRegla("error.dominio.anteproyecto.fecha_invalida", () -> trabajo.registrarConceptoEvaluador(
-                concepto(evaluador1, ResultadoConcepto.APROBADO, antes), null, dia(antes), calendario));
+                concepto(evaluador1, ResultadoConcepto.APROBADO, antes), RUTA_FORMATO_B, dia(antes), calendario));
     }
 
     @Test
     void unFormatoConRutaInvalidaNoModificaElAnteproyecto() {
         radicarYAsignar();
         LocalDate fecha = asignacion.toLocalDate();
-        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
 
         assertRegla("error.dominio.documento.ruta_invalida", () -> trabajo.registrarConceptoEvaluador(
@@ -317,7 +368,7 @@ class EtapaAnteproyectoTest {
         LocalDate fecha = asignacion.toLocalDate();
 
         assertRegla("error.dominio.trabajo_grado.etapa_invalida", () -> trabajo.registrarConceptoEvaluador(
-                concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null, dia(fecha), calendario));
+                concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B, dia(fecha), calendario));
     }
 
     // ----- Plazos informativos -----
@@ -333,9 +384,9 @@ class EtapaAnteproyectoTest {
 
         // Un evaluador concede y el otro pide correcciones fuera de plazo
         LocalDate tarde = limite.plusDays(1);
-        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, tarde), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, tarde), RUTA_FORMATO_B,
                 dia(tarde), calendario);
-        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.CON_CORRECCIONES, tarde), null,
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.CON_CORRECCIONES, tarde), RUTA_FORMATO_B,
                 dia(tarde), calendario);
         LocalDate limiteCorrecciones = trabajo.getAnteproyecto().getFechaLimiteCorrecciones();
         assertFalse(trabajo.getAnteproyecto().correccionesVencidas(limiteCorrecciones));
@@ -350,16 +401,18 @@ class EtapaAnteproyectoTest {
     void elAnteproyectoReconstruidoSigueOperando() {
         Documento version = Documento.inicial(TipoDocumento.ANTEPROYECTO, RUTA_ANTEPROYECTO, radicacion.toLocalDate());
         LocalDate fecha = asignacion.toLocalDate();
-        DatosAnteproyecto anteproyecto = new DatosAnteproyecto(List.of(version), List.of(evaluador1, evaluador2),
+        DatosAnteproyecto anteproyecto = new DatosAnteproyecto(
+                List.of(new VersionDocumento(version, Estado.EN_REVISION)), List.of(evaluador1, evaluador2),
                 List.of(new ConceptoEvaluacion(1, concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), null)),
-                List.of(), Estado.EN_REVISION, LocalDate.of(2026, 3, 24), null);
+                List.of(), LocalDate.of(2026, 3, 24), null);
         TrabajoGrado reconstruido = TrabajoGrado.reconstruir(new DatosTrabajoGrado(7L,
                 Modalidad.TRABAJO_DE_INVESTIGACION, "Título", OBJETIVOS, List.of(estudiante(10L)), directorPlanta(1L),
                 null, null, null, Proceso.EVALUACION, null, anteproyecto, null, List.of(), null));
 
         assertTrue(reconstruido.esEvaluador(21L));
-        reconstruido.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), null,
+        reconstruido.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
-        assertEquals(Proceso.APROBACION_CONSEJO, reconstruido.getEtapa());
+        assertEquals(Proceso.EVALUACION, reconstruido.getEtapa());
+        assertEquals(Estado.APROBADO, reconstruido.getAnteproyecto().getVersiones().get(0).estado());
     }
 }

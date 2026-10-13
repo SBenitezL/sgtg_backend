@@ -34,4 +34,7 @@ public class ConceptoEvaluacionEmbeddable {
     /** URL del formato B, null si no se cargó */
     @Column(length = 1000)
     private String formatoUrl;
+    /** URL del documento de anotaciones del evaluador, null si no se adjuntó */
+    @Column(length = 1000)
+    private String anotacionesUrl;
 }

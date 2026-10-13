@@ -51,6 +51,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
+import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoInvestigacion;
 import com.sgtg.backend.domain.services.CalendarioHabilFalso;
@@ -275,6 +276,9 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals("U60", trabajo.getHistorial().get(1).responsable());
         // 10 días hábiles desde el lunes 2-mar-2026 según el reloj fijo
         assertEquals(LocalDate.of(2026, 3, 16), trabajo.getAnteproyecto().getFechaLimiteEvaluacion());
+        // Rol de contexto para que accedan a la evaluación
+        verify(userGateway).agregarRol(20L, "EVALUADOR");
+        verify(userGateway).agregarRol(21L, "EVALUADOR");
     }
 
     @Test
@@ -317,16 +321,64 @@ class ManageTrabajoGradoCUImplAdapterTest {
         casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
         casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
 
-        assertThrows(NoAccessException.class,
-                () -> casoDeUso.registrarConceptoEvaluador(7L, 99L, ResultadoConcepto.APROBADO, null, null));
+        assertThrows(NoAccessException.class, () -> casoDeUso.registrarConceptoEvaluador(7L, 99L,
+                ResultadoConcepto.APROBADO, null, pdf("b.pdf"), null));
 
-        casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null,
-                pdf("b1.pdf"));
-        TrabajoGrado trabajo = casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null, null);
+        casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null, pdf("b1.pdf"), null);
+        TrabajoGrado trabajo = casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null,
+                pdf("b2.pdf"), pdf("notas.pdf"));
+
+        // Aprobado por ambos: sigue en evaluación hasta que el jefe lo remita con el formato C
+        assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
+        assertEquals(LocalDate.of(2026, 3, 2), trabajo.getAnteproyecto().getConceptos().get(0).concepto().fecha());
+        assertEquals(TipoDocumento.ANOTACIONES_EVALUACION,
+                trabajo.getAnteproyecto().getConceptos().get(1).anotaciones().tipo());
+        assertTrue(trabajo.participa(21L));
+    }
+
+    @Test
+    void elConceptoExigeElFormatoB() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
+        casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
+
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null, null, null));
+        assertEquals("error.dominio.anteproyecto.formato_b_obligatorio", error.getMessage());
+    }
+
+    @Test
+    void elJefeDelDepartamentoRemiteAlConsejoConElFormatoC() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
+        casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
+        casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null, pdf("b1.pdf"), null);
+        casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null, pdf("b2.pdf"), null);
+
+        // Sin formato C no se remite
+        ReglaNegocioException sinFormato = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.remitirAnteproyectoAlConsejo(7L, 60L, null));
+        assertEquals("error.dominio.anteproyecto.formato_c_obligatorio", sinFormato.getMessage());
+
+        TrabajoGrado trabajo = casoDeUso.remitirAnteproyectoAlConsejo(7L, 60L, pdf("formato-c.pdf"));
 
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
-        assertEquals(LocalDate.of(2026, 3, 2), trabajo.getAnteproyecto().getConceptos().get(0).concepto().fecha());
-        assertTrue(trabajo.participa(21L));
+        verify(archivoGateway).guardar(eq(7L), eq("TI-C"), any());
+        assertEquals(1, trabajo.getAnteproyecto().getRemisiones().size());
+        assertEquals("U60", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+    }
+
+    @Test
+    void unJefeDeOtroDepartamentoNoRemite() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
+        casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
+        when(perfilGateway.buscarPerfilDocente(60L))
+                .thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, new Departamento(2L, "Telemática")));
+
+        NoAccessException error = assertThrows(NoAccessException.class,
+                () -> casoDeUso.remitirAnteproyectoAlConsejo(7L, 60L, pdf("formato-c.pdf")));
+        assertEquals("error.trabajo_grado.otro_departamento", error.getMessage());
     }
 
     /** Trabajo con el anteproyecto aprobado por ambos evaluadores. */
@@ -334,8 +386,9 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoEnAnteproyecto();
         casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
         casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
-        casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null, null);
-        casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null, null);
+        casoDeUso.registrarConceptoEvaluador(7L, 20L, ResultadoConcepto.APROBADO, null, pdf("b1.pdf"), null);
+        casoDeUso.registrarConceptoEvaluador(7L, 21L, ResultadoConcepto.APROBADO, null, pdf("b2.pdf"), null);
+        casoDeUso.remitirAnteproyectoAlConsejo(7L, 60L, pdf("formato-c.pdf"));
     }
 
     @Test

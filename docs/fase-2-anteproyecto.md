@@ -55,7 +55,8 @@ Guarda las versiones radicadas, los evaluadores, sus conceptos y los plazos. Las
 | `versiones` | `Documento` de tipo `ANTEPROYECTO`, numerados desde 1 |
 | `evaluadores` | Los 2 `Evaluador` asignados; vacío hasta la asignación |
 | `conceptos` | `ConceptoEvaluacion` de todas las versiones, en orden |
-| `estado` | `Estado` de la versión enviada a revisión: `EN_REVISION`, `CON_CORRECCIONES`, `APROBADO` o `NO_APROBADO`; `null` sin radicar |
+| `versiones` | Versiones radicadas (`VersionDocumento`: documento + estado). Cada una conserva el resultado de su revisión: `EN_REVISION`, `CON_CORRECCIONES`, `APROBADO` o `NO_APROBADO` (2026-10-11) |
+| `getEstado()` | Estado de la versión actual (derivado); `null` sin radicar |
 | `fechaLimiteEvaluacion` | Radicación o asignación + 10 días hábiles |
 | `fechaLimiteCorrecciones` | Fecha del concepto que cerró la ronda + 10 días hábiles; `null` cuando no hay correcciones pendientes |
 
@@ -90,21 +91,35 @@ Las tres reciben `responsable` (o lo toman del emisor del concepto) y `ahora`, p
 
 ### `asignarEvaluadores(evaluador1, evaluador2, responsable, ahora, calendario)`
 - Solo en `ANTEPROYECTO`, con la primera versión `EN_REVISION` y sin evaluadores previos (`asignacion_no_permitida`). No cambia el estado de la versión, solo calcula el plazo de los evaluadores.
+- El caso de uso agrega el rol de contexto `EVALUADOR` a los dos evaluadores (2026-10-11).
 - Exige exactamente dos evaluadores (`evaluadores_obligatorios`), que sean personas distintas (`evaluadores_repetidos`).
 - Ninguno puede ser director, codirector, asesor ni estudiante del trabajo (`evaluador_con_conflicto`).
 - La fecha no puede ser anterior a la radicación (`fecha_invalida`).
 - Resultado: `EN_REVISION`, plazo de 10 días hábiles, y el trabajo pasa a `EVALUACION`.
 
-### `registrarConceptoEvaluador(concepto, urlFormato, ahora, calendario)`
+### `registrarConceptoEvaluador(concepto, rutaFormato, rutaAnotaciones, ahora, calendario)`
 - Solo en `EVALUACION`.
+- El **formato B es obligatorio** (`formato_b_obligatorio`); el documento con las anotaciones del evaluador
+  es opcional (tipo `ANOTACIONES_EVALUACION`, parte multipart `anotaciones`). (2026-10-12)
 - El emisor debe ser uno de los evaluadores asignados (`evaluador_no_asignado`).
 - Solo se admite `APROBADO` o `CON_CORRECCIONES` (`resultado_invalido`).
 - Cada evaluador emite un concepto por versión (`concepto_repetido`).
 - La fecha del concepto no puede ser anterior a la radicación de la versión (`fecha_invalida`).
 - Al registrarse el segundo concepto de la versión:
-  - Ambos `APROBADO` → estado `APROBADO`, y el trabajo pasa a `APROBACION_CONSEJO`.
+  - Ambos `APROBADO` → estado `APROBADO`; el trabajo **sigue en `EVALUACION`** hasta que el Jefe de
+    departamento lo remite al Consejo con el formato C (ver abajo).
   - Alguno `CON_CORRECCIONES` → estado `CON_CORRECCIONES`, plazo de 10 días hábiles para el director, y el trabajo vuelve a `ANTEPROYECTO`.
-- El responsable del `CambioEtapa` es el código del evaluador que cerró la ronda.
+- El responsable del `CambioEtapa` (correcciones) es el código del evaluador que cerró la ronda.
+
+### `remitirAnteproyectoAlConsejo(rutaFormatoC, responsable, ahora)` (2026-10-12)
+- Paso **obligatorio** antes de la decisión del Consejo: el Jefe del departamento del director remite la
+  versión que ambos evaluadores aprobaron, con el **formato C** (`REMISION_CONSEJO`, carpeta `TI-C`/`PP-C`).
+- Solo en `EVALUACION`, con la versión actual `APROBADO` y aún no remitida (`remision_no_permitida`); sin
+  formato C, `formato_c_obligatorio`.
+- El trabajo pasa a `APROBACION_CONSEJO`; el responsable del `CambioEtapa` es el jefe.
+- Cada remisión se guarda en `Anteproyecto.remisiones` con el número de la versión remitida. Tras un NO
+  APROBADO del Consejo, la nueva versión aprobada se remite de nuevo.
+- Endpoint: `POST /trabajos-grado/{id}/anteproyecto/remision` (multipart, parte `archivo`, rol `JEFE_DEP`).
 
 ### Consultas nuevas en `TrabajoGrado`
 - `getAnteproyecto()`

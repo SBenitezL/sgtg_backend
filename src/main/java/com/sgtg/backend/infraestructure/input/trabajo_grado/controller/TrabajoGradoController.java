@@ -180,14 +180,34 @@ public class TrabajoGradoController {
                 usuario.getCusuari(), request.evaluador1Id(), request.evaluador2Id())));
     }
 
-    /** Registra el concepto de un evaluador asignado sobre el anteproyecto, con el formato B opcional. */
+    /**
+     * Registra el concepto de un evaluador asignado sobre el anteproyecto: el
+     * formato B (parte {@code archivo}, obligatorio) y, opcionalmente, un
+     * documento con sus anotaciones (parte {@code anotaciones}).
+     */
     @PostMapping(value = "/{trabajoId}/anteproyecto/conceptos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> registrarConceptoEvaluador(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestPart("datos") ConceptoEvaluadorDTORequest request,
-            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo,
+            @RequestPart(value = "anotaciones", required = false) MultipartFile anotaciones) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.registrarConceptoEvaluador(
-                trabajoId, usuario.getCusuari(), request.resultado(), request.observaciones(), adjunto(archivo))));
+                trabajoId, usuario.getCusuari(), request.resultado(), request.observaciones(), adjunto(archivo),
+                adjunto(anotaciones))));
+    }
+
+    /**
+     * El Jefe del departamento del director remite al Consejo de Facultad el
+     * anteproyecto aprobado por ambos evaluadores, con el formato C (parte
+     * {@code archivo}).
+     */
+    @PostMapping(value = "/{trabajoId}/anteproyecto/remision", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('JEFE_DEP')")
+    public ResponseEntity<TrabajoGradoDTOResponse> remitirAnteproyectoAlConsejo(
+            @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
+                manageTrabajoGrado.remitirAnteproyectoAlConsejo(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
     /** Registra el concepto del Consejo de Facultad sobre el anteproyecto, con la resolución adjunta. */

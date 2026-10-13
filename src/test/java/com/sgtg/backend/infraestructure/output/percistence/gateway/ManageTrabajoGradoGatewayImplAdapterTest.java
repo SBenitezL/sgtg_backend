@@ -40,7 +40,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
-import com.sgtg.backend.domain.models.trabajo_grado.VersionPropuesta;
+import com.sgtg.backend.domain.models.trabajo_grado.VersionDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoInvestigacion;
 import com.sgtg.backend.domain.services.CalendarioHabilFalso;
@@ -49,6 +49,9 @@ import com.sgtg.backend.domain.services.CalendarioHabilFalso;
 @DataJpaTest
 @Import(ManageTrabajoGradoGatewayImplAdapter.class)
 class ManageTrabajoGradoGatewayImplAdapterTest {
+
+    private static final String RUTA_FORMATO_B = "1/tg/formato-b.pdf";
+    private static final String RUTA_FORMATO_C = "1/tg/formato-c.pdf";
 
     private static final Departamento SISTEMAS = new Departamento(1L, "Sistemas");
     private static final Programa ING_SISTEMAS = new Programa(1L, "Ingeniería de Sistemas");
@@ -100,7 +103,7 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
                 leido.getPropuesta().getVersiones().stream().map(v -> v.documento().version()).toList());
         // Cada versión conserva el resultado de su revisión
         assertEquals(List.of(Estado.NO_APROBADO, Estado.APROBADO),
-                leido.getPropuesta().getVersiones().stream().map(VersionPropuesta::estado).toList());
+                leido.getPropuesta().getVersiones().stream().map(VersionDocumento::estado).toList());
         assertEquals(2, leido.getPropuesta().getDecisiones().size());
         assertEquals(ResultadoConcepto.NO_APROBADO, leido.getPropuesta().getDecisiones().get(0).resultado());
         assertEquals("actas/2026/acta-01.pdf", leido.getPropuesta().getDecisiones().get(0).rutaArchivo());
@@ -138,7 +141,8 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
                 calendario);
         trabajo = gateway.guardar(trabajo);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(21L), ResultadoConcepto.CON_CORRECCIONES,
-                "Ajustar cronograma", LUNES.plusDays(2)), null, LUNES.plusDays(2).atTime(9, 0), calendario);
+                "Ajustar cronograma", LUNES.plusDays(2)), RUTA_FORMATO_B, "1/notas.pdf", LUNES.plusDays(2).atTime(9, 0),
+                calendario);
         gateway.guardar(trabajo);
 
         TrabajoGrado leido = gateway.buscarPorId(trabajo.getId());
@@ -157,7 +161,11 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         ConceptoEvaluacion conCorrecciones = leido.getAnteproyecto().getConceptos().get(1);
         assertEquals(ResultadoConcepto.CON_CORRECCIONES, conCorrecciones.concepto().resultado());
         assertEquals("Ajustar cronograma", conCorrecciones.concepto().observaciones());
-        assertNull(conCorrecciones.formato());
+        assertEquals(RUTA_FORMATO_B, conCorrecciones.formato().ruta());
+        // El documento opcional de anotaciones del evaluador
+        assertEquals(new Documento(TipoDocumento.ANOTACIONES_EVALUACION, "1/notas.pdf", 1, LUNES.plusDays(2)),
+                conCorrecciones.anotaciones());
+        assertNull(aprobado.anotaciones());
         assertEquals(List.of(Proceso.ANTEPROYECTO, Proceso.EVALUACION, Proceso.ANTEPROYECTO),
                 leido.getHistorial().stream().map(c -> c.destino()).toList());
 
@@ -174,9 +182,10 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.radicarAnteproyecto("1/a1.pdf", "D1", LUNES.atTime(10, 0), calendario);
         trabajo.asignarEvaluadores(evaluador(20L), evaluador(21L), "J60", LUNES.atTime(11, 0), calendario);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(20L), ResultadoConcepto.APROBADO, null, LUNES),
-                null, LUNES.atTime(12, 0), calendario);
+                RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(21L), ResultadoConcepto.APROBADO, null, LUNES),
-                null, LUNES.atTime(12, 0), calendario);
+                RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
+        trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
                 "resoluciones/res-100.pdf", "Aprobado en sesión ordinaria", LUNES.plusDays(4)), "CF01",
                 LUNES.plusDays(4).atTime(9, 0));
@@ -185,6 +194,9 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         TrabajoGrado leido = gateway.buscarPorId(trabajo.getId());
 
         assertEquals(Proceso.EN_CURSO, leido.getEtapa());
+        // El formato C con el que el jefe remitió la versión aprobada
+        assertEquals(List.of(RUTA_FORMATO_C),
+                leido.getAnteproyecto().getRemisiones().stream().map(Documento::ruta).toList());
         Decision decision = leido.getAnteproyecto().getDecisionesConsejo().get(0);
         assertEquals(Organo.CONSEJO_FACULTAD, decision.organo());
         assertEquals("resoluciones/res-100.pdf", decision.rutaArchivo());
@@ -210,9 +222,10 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.radicarAnteproyecto("1/a.pdf", "D1", LUNES.atTime(10, 0), calendario);
         trabajo.asignarEvaluadores(evaluador(20L), evaluador(21L), "J60", LUNES.atTime(11, 0), calendario);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(20L), ResultadoConcepto.APROBADO, null, LUNES),
-                null, LUNES.atTime(12, 0), calendario);
+                RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(21L), ResultadoConcepto.APROBADO, null, LUNES),
-                null, LUNES.atTime(12, 0), calendario);
+                RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
+        trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
                 "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0));
         // Un cambio no aprobado y otro pendiente; dos informes
@@ -274,9 +287,10 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.radicarAnteproyecto("1/a1.pdf", "D1", LUNES.atTime(10, 0), calendario);
         trabajo.asignarEvaluadores(evaluador(20L), evaluador(21L), "J60", LUNES.atTime(11, 0), calendario);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(20L), ResultadoConcepto.APROBADO, null, LUNES),
-                null, LUNES.atTime(12, 0), calendario);
+                RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(21L), ResultadoConcepto.APROBADO, null, LUNES),
-                null, LUNES.atTime(12, 0), calendario);
+                RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
+        trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
                 "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0));
         // Sustentación: primera sesión aplazada; en la segunda, inasistencia

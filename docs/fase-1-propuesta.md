@@ -104,7 +104,7 @@ Registra el concepto del Comité de Programa sobre la versión actual.
 Indica si el Comité superó su plazo de 10 días hábiles mientras la versión sigue pendiente. **Es informativo**, para alertas: el reglamento no establece una consecuencia, así que no cambia la etapa.
 
 ### Flujo de estados de la propuesta
-El estado pertenece a **cada versión** (`VersionPropuesta`: documento + estado) y se asigna automáticamente: al radicar (enviar) la versión queda **`EN_REVISION`** ante el Comité, y su concepto la deja **`APROBADO`** o **`NO_APROBADO`**. Cada versión conserva el resultado de su revisión (por ejemplo, v1 `NO_APROBADO` y v2 `APROBADO`). Solo la versión `EN_REVISION` recibe concepto; tras un `NO_APROBADO` se radica una versión nueva. `Propuesta.getEstado()` devuelve el estado de la versión actual (`null` si no se ha radicado ninguna).
+El estado pertenece a **cada versión** (`VersionDocumento`: documento + estado, el mismo registro que usa el anteproyecto) y se asigna automáticamente: al radicar (enviar) la versión queda **`EN_REVISION`** ante el Comité, y su concepto la deja **`APROBADO`** o **`NO_APROBADO`**. Cada versión conserva el resultado de su revisión (por ejemplo, v1 `NO_APROBADO` y v2 `APROBADO`). Solo la versión `EN_REVISION` recibe concepto; tras un `NO_APROBADO` se radica una versión nueva. `Propuesta.getEstado()` devuelve el estado de la versión actual (`null` si no se ha radicado ninguna).
 
 En el API el estado va en `propuesta.versiones[i].estado`; la propuesta no tiene un `estado` propio.
 

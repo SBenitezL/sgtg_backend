@@ -32,7 +32,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.SesionSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
-import com.sgtg.backend.domain.models.trabajo_grado.VersionPropuesta;
+import com.sgtg.backend.domain.models.trabajo_grado.VersionDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.Propuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.AsesorEmbeddable;
@@ -45,7 +45,7 @@ import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grad
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DirectorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DirectorTrabajoEmbeddable.RolDireccion;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.DocumentoEmbeddable;
-import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.VersionPropuestaEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.VersionDocumentoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EstudianteTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EvaluadorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.InformeMensualEmbeddable;
@@ -88,7 +88,6 @@ public abstract class MapperTrabajoGrado {
         propuesta.getDecisiones().forEach(d -> entity.getPropuestaDecisiones().add(toEmbeddable(d)));
 
         Anteproyecto anteproyecto = trabajo.getAnteproyecto();
-        entity.setAnteproyectoEstado(anteproyecto.getEstado());
         entity.setAnteproyectoFechaLimiteEvaluacion(anteproyecto.getFechaLimiteEvaluacion());
         entity.setAnteproyectoFechaLimiteCorrecciones(anteproyecto.getFechaLimiteCorrecciones());
         anteproyecto.getVersiones().forEach(v -> entity.getAnteproyectoVersiones().add(toEmbeddable(v)));
@@ -96,6 +95,7 @@ public abstract class MapperTrabajoGrado {
         anteproyecto.getConceptos().forEach(c -> entity.getAnteproyectoConceptos().add(toEmbeddable(c)));
         anteproyecto.getDecisionesConsejo()
                 .forEach(d -> entity.getAnteproyectoDecisionesConsejo().add(toEmbeddable(d)));
+        anteproyecto.getRemisiones().forEach(r -> entity.getAnteproyectoRemisiones().add(toEmbeddable(r)));
 
         Ejecucion ejecucion = trabajo.getEjecucion();
         if (ejecucion != null) {
@@ -147,7 +147,8 @@ public abstract class MapperTrabajoGrado {
     private static ConceptoEvaluacionEmbeddable toEmbeddable(ConceptoEvaluacion c) {
         Concepto concepto = c.concepto();
         return new ConceptoEvaluacionEmbeddable(c.version(), concepto.emisor().getUsuarioId(), concepto.resultado(),
-                concepto.observaciones(), concepto.fecha(), c.formato() == null ? null : c.formato().ruta());
+                concepto.observaciones(), concepto.fecha(), c.formato() == null ? null : c.formato().ruta(),
+                c.anotaciones() == null ? null : c.anotaciones().ruta());
     }
 
     private static CambioObjetivosEmbeddable toEmbeddable(CambioObjetivos c) {
@@ -214,9 +215,9 @@ public abstract class MapperTrabajoGrado {
         return new InformeMensualEmbeddable(i.numero(), i.rutaArchivo(), i.fecha());
     }
 
-    private static VersionPropuestaEmbeddable toEmbeddable(VersionPropuesta v) {
+    private static VersionDocumentoEmbeddable toEmbeddable(VersionDocumento v) {
         Documento d = v.documento();
-        return new VersionPropuestaEmbeddable(d.tipo(), d.ruta(), d.version(), d.fechaCarga(), v.estado());
+        return new VersionDocumentoEmbeddable(d.tipo(), d.ruta(), d.version(), d.fechaCarga(), v.estado());
     }
 
     private static DocumentoEmbeddable toEmbeddable(Documento d) {
@@ -264,7 +265,8 @@ public abstract class MapperTrabajoGrado {
                 evaluadores,
                 entity.getAnteproyectoConceptos().stream().map(c -> toDomain(c, evaluadores)).toList(),
                 entity.getAnteproyectoDecisionesConsejo().stream().map(MapperTrabajoGrado::toDomain).toList(),
-                entity.getAnteproyectoEstado(), entity.getAnteproyectoFechaLimiteEvaluacion(),
+                entity.getAnteproyectoRemisiones().stream().map(MapperTrabajoGrado::toDomain).toList(),
+                entity.getAnteproyectoFechaLimiteEvaluacion(),
                 entity.getAnteproyectoFechaLimiteCorrecciones());
     }
 
@@ -358,8 +360,11 @@ public abstract class MapperTrabajoGrado {
                         "Concepto de un evaluador no asignado: usuario " + c.getEvaluadorUsuarioId()));
         Documento formato = c.getFormatoUrl() == null ? null
                 : new Documento(TipoDocumento.EVALUACION_ANTEPROYECTO, c.getFormatoUrl(), c.getVersion(), c.getFecha());
+        Documento anotaciones = c.getAnotacionesUrl() == null ? null
+                : new Documento(TipoDocumento.ANOTACIONES_EVALUACION, c.getAnotacionesUrl(), c.getVersion(),
+                        c.getFecha());
         return new ConceptoEvaluacion(c.getVersion(),
-                new Concepto(emisor, c.getResultado(), c.getObservaciones(), c.getFecha()), formato);
+                new Concepto(emisor, c.getResultado(), c.getObservaciones(), c.getFecha()), formato, anotaciones);
     }
 
     private static Director buscarDireccion(List<DirectorTrabajoEmbeddable> direccion, RolDireccion rol) {
@@ -390,8 +395,8 @@ public abstract class MapperTrabajoGrado {
                 a.getEmail(), a.getOrganizacion(), Boolean.TRUE.equals(a.getExterno()));
     }
 
-    private static VersionPropuesta toDomain(VersionPropuestaEmbeddable v) {
-        return new VersionPropuesta(new Documento(v.getTipo(), v.getUrl(), v.getVersion(), v.getFechaCarga()),
+    private static VersionDocumento toDomain(VersionDocumentoEmbeddable v) {
+        return new VersionDocumento(new Documento(v.getTipo(), v.getUrl(), v.getVersion(), v.getFechaCarga()),
                 v.getEstado());
     }
 

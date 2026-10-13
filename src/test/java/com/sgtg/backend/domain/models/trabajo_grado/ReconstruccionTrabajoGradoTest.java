@@ -27,7 +27,7 @@ import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 class ReconstruccionTrabajoGradoTest {
 
     private static DatosPropuesta propuestaRadicada() {
-        return new DatosPropuesta(List.of(new VersionPropuesta(
+        return new DatosPropuesta(List.of(new VersionDocumento(
                 Documento.inicial(TipoDocumento.PROPUESTA, RUTA_PROPUESTA, LUNES), Estado.EN_REVISION)),
                 List.of(), LocalDate.of(2026, 3, 16));
     }

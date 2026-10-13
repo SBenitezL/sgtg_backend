@@ -114,10 +114,21 @@ public interface ManageTrabajoGradoCUIntPort {
      * @param usuarioId     evaluador que emite el concepto
      * @param resultado     APROBADO o CON_CORRECCIONES
      * @param observaciones obligatorias si pide correcciones
-     * @param formato       archivo del formato B, opcional
+     * @param formato       archivo del formato B, obligatorio
+     * @param anotaciones   documento con las anotaciones del evaluador, opcional
      */
     public TrabajoGrado registrarConceptoEvaluador(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
-            String observaciones, ArchivoAdjunto formato);
+            String observaciones, ArchivoAdjunto formato, ArchivoAdjunto anotaciones);
+
+    /**
+     * El Jefe del departamento del director remite al Consejo de Facultad, con
+     * el formato C, el anteproyecto que ambos evaluadores aprobaron. Paso
+     * obligatorio antes de la decisión del Consejo.
+     *
+     * @param usuarioId jefe de departamento que remite
+     * @param formatoC  archivo del formato C
+     */
+    public TrabajoGrado remitirAnteproyectoAlConsejo(Long trabajoId, Long usuarioId, ArchivoAdjunto formatoC);
 
     /**
      * Registra el concepto del Consejo de Facultad sobre el anteproyecto

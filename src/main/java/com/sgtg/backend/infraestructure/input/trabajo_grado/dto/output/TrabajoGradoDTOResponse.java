@@ -34,7 +34,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.Propuesta;
-import com.sgtg.backend.domain.models.trabajo_grado.VersionPropuesta;
+import com.sgtg.backend.domain.models.trabajo_grado.VersionDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.input.catalogo.dto.output.CatalogoDTOResponse;
 
@@ -71,31 +71,40 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     }
 
     /**
-     * Versión de la propuesta con el estado de su revisión: EN_REVISION al
-     * radicarla, APROBADO o NO_APROBADO según el concepto del Comité.
+     * Versión de la propuesta o del anteproyecto con el estado de su revisión:
+     * EN_REVISION al radicarla y luego APROBADO, NO_APROBADO o CON_CORRECCIONES
+     * según el concepto del Comité, de los evaluadores o del Consejo.
      */
-    public record VersionPropuestaDTO(String tipo, String formato, String ruta, int version, LocalDate fechaCarga,
+    public record VersionDocumentoDTO(String tipo, String formato, String ruta, int version, LocalDate fechaCarga,
             Estado estado) {
     }
 
     /**
      * @param versiones versiones radicadas; el estado de la propuesta es el de la última
      */
-    public record PropuestaDTO(LocalDate fechaLimiteConcepto, List<VersionPropuestaDTO> versiones,
+    public record PropuestaDTO(LocalDate fechaLimiteConcepto, List<VersionDocumentoDTO> versiones,
             List<DecisionDTO> decisiones) {
     }
 
     public record EvaluadorDTO(Long usuarioId, String codigo, String nombreCompleto, String email) {
     }
 
-    /** @param formato formato B adjunto, null si no se cargó */
+    /**
+     * @param formato     formato B adjunto
+     * @param anotaciones documento con las anotaciones del evaluador, null si no lo adjuntó
+     */
     public record ConceptoEvaluacionDTO(int version, Long evaluadorUsuarioId, String evaluador,
-            ResultadoConcepto resultado, String observaciones, LocalDate fecha, DocumentoDTO formato) {
+            ResultadoConcepto resultado, String observaciones, LocalDate fecha, DocumentoDTO formato,
+            DocumentoDTO anotaciones) {
     }
 
-    public record AnteproyectoDTO(Estado estado, LocalDate fechaLimiteEvaluacion, LocalDate fechaLimiteCorrecciones,
-            List<DocumentoDTO> versiones, List<EvaluadorDTO> evaluadores, List<ConceptoEvaluacionDTO> conceptos,
-            List<DecisionDTO> decisionesConsejo) {
+    /**
+     * @param versiones  versiones radicadas con el estado de su revisión; el estado del anteproyecto es el de la última
+     * @param remisiones formatos C con los que el Jefe de departamento remitió al Consejo cada versión aprobada
+     */
+    public record AnteproyectoDTO(LocalDate fechaLimiteEvaluacion, LocalDate fechaLimiteCorrecciones,
+            List<VersionDocumentoDTO> versiones, List<EvaluadorDTO> evaluadores, List<ConceptoEvaluacionDTO> conceptos,
+            List<DecisionDTO> decisionesConsejo, List<DocumentoDTO> remisiones) {
     }
 
     /** @param decision decisión del Consejo, null mientras esté pendiente */
@@ -178,7 +187,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 trabajo.getEstudiantes().stream().map(TrabajoGradoDTOResponse::estudiante).toList(),
                 director(trabajo.getDirector()), director(trabajo.getCodirector()), asesor(trabajo.getAsesor()), carta,
                 new PropuestaDTO(propuesta.getFechaLimiteConcepto(),
-                        propuesta.getVersiones().stream().map(v -> versionPropuesta(v, modalidad)).toList(),
+                        propuesta.getVersiones().stream().map(v -> versionDocumento(v, modalidad)).toList(),
                         propuesta.getDecisiones().stream().map(TrabajoGradoDTOResponse::decision).toList()),
                 anteproyecto(trabajo.getAnteproyecto(), modalidad), ejecucion(trabajo.getEjecucion()),
                 sustentacion(trabajo.getSustentacion()),
@@ -205,9 +214,9 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 a.getOrganizacion(), a.isExterno());
     }
 
-    private static VersionPropuestaDTO versionPropuesta(VersionPropuesta v, Modalidad modalidad) {
+    private static VersionDocumentoDTO versionDocumento(VersionDocumento v, Modalidad modalidad) {
         Documento d = v.documento();
-        return new VersionPropuestaDTO(d.tipo().name(), d.tipo().formato(modalidad).orElse(null), d.ruta(),
+        return new VersionDocumentoDTO(d.tipo().name(), d.tipo().formato(modalidad).orElse(null), d.ruta(),
                 d.version(), d.fechaCarga(), v.estado());
     }
 
@@ -224,11 +233,12 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     }
 
     private static AnteproyectoDTO anteproyecto(Anteproyecto a, Modalidad modalidad) {
-        return new AnteproyectoDTO(a.getEstado(), a.getFechaLimiteEvaluacion(), a.getFechaLimiteCorrecciones(),
-                a.getVersiones().stream().map(v -> documento(v, modalidad)).toList(),
+        return new AnteproyectoDTO(a.getFechaLimiteEvaluacion(), a.getFechaLimiteCorrecciones(),
+                a.getVersiones().stream().map(v -> versionDocumento(v, modalidad)).toList(),
                 a.getEvaluadores().stream().map(TrabajoGradoDTOResponse::evaluador).toList(),
                 a.getConceptos().stream().map(c -> concepto(c, modalidad)).toList(),
-                a.getDecisionesConsejo().stream().map(TrabajoGradoDTOResponse::decision).toList());
+                a.getDecisionesConsejo().stream().map(TrabajoGradoDTOResponse::decision).toList(),
+                a.getRemisiones().stream().map(r -> documento(r, modalidad)).toList());
     }
 
     private static EjecucionDTO ejecucion(Ejecucion e) {
@@ -303,7 +313,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     private static ConceptoEvaluacionDTO concepto(ConceptoEvaluacion c, Modalidad modalidad) {
         return new ConceptoEvaluacionDTO(c.version(), c.concepto().emisor().getUsuarioId(),
                 c.concepto().emisor().getNombreCompleto(), c.concepto().resultado(), c.concepto().observaciones(),
-                c.concepto().fecha(), documento(c.formato(), modalidad));
+                c.concepto().fecha(), documento(c.formato(), modalidad), documento(c.anotaciones(), modalidad));
     }
 
     private static CambioEtapaDTO cambio(CambioEtapa c) {

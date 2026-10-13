@@ -301,22 +301,55 @@ public abstract class TrabajoGrado {
      */
     public void registrarConceptoEvaluador(Concepto concepto, String rutaFormato, LocalDateTime ahora,
             CalendarioHabil calendario) {
+        registrarConceptoEvaluador(concepto, rutaFormato, null, ahora, calendario);
+    }
+
+    /**
+     * Registra el concepto de un evaluador con el formato B (obligatorio) y,
+     * opcionalmente, el documento con sus anotaciones. Con correcciones el
+     * trabajo vuelve a anteproyecto; si ambos aprueban sigue en evaluación
+     * hasta que el Jefe de departamento lo remita al Consejo con el formato C.
+     *
+     * @param rutaFormato     ruta del formato B
+     * @param rutaAnotaciones ruta del documento de anotaciones, null si no se adjuntó
+     */
+    public void registrarConceptoEvaluador(Concepto concepto, String rutaFormato, String rutaAnotaciones,
+            LocalDateTime ahora, CalendarioHabil calendario) {
         validarEtapa(Proceso.EVALUACION);
         if (ahora == null)
             throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
-        // Se valida el cambio de etapa antes de modificar el anteproyecto
+        // Se valida todo antes de modificar el anteproyecto
         Estado resultado = this.anteproyecto.estadoTrasConcepto(concepto);
+        this.anteproyecto.validarFormatoB(rutaFormato);
         String responsable = concepto.emisor().getCodigo();
-        CambioEtapa cambio = switch (resultado) {
-            case APROBADO -> new CambioEtapa(this.etapa, Proceso.APROBACION_CONSEJO, ahora, responsable,
-                    "Anteproyecto aprobado por ambos evaluadores");
-            case CON_CORRECCIONES -> new CambioEtapa(this.etapa, Proceso.ANTEPROYECTO, ahora, responsable,
-                    "Anteproyecto con correcciones de los evaluadores");
-            default -> null;
-        };
-        this.anteproyecto.registrarConcepto(concepto, rutaFormato, calendario);
+        CambioEtapa cambio = resultado == Estado.CON_CORRECCIONES
+                ? new CambioEtapa(this.etapa, Proceso.ANTEPROYECTO, ahora, responsable,
+                        "Anteproyecto con correcciones de los evaluadores")
+                : null;
+        this.anteproyecto.registrarConcepto(concepto, rutaFormato, rutaAnotaciones, calendario);
         if (cambio != null)
             aplicarCambio(cambio);
+    }
+
+    /**
+     * El Jefe de departamento remite al Consejo de Facultad, con el formato C,
+     * la versión del anteproyecto que ambos evaluadores aprobaron. Es un paso
+     * obligatorio antes de la decisión del Consejo.
+     *
+     * @param rutaFormatoC ruta del formato C
+     * @param responsable  código del Jefe de departamento
+     * @param ahora        fecha y hora de la remisión
+     */
+    public void remitirAnteproyectoAlConsejo(String rutaFormatoC, String responsable, LocalDateTime ahora) {
+        validarEtapa(Proceso.EVALUACION);
+        if (ahora == null)
+            throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
+        // Se valida todo antes de modificar el anteproyecto
+        this.anteproyecto.validarRemision(rutaFormatoC, ahora.toLocalDate());
+        CambioEtapa cambio = new CambioEtapa(this.etapa, Proceso.APROBACION_CONSEJO, ahora, responsable,
+                "Anteproyecto remitido al Consejo de Facultad con el formato C");
+        this.anteproyecto.remitir(rutaFormatoC, ahora.toLocalDate());
+        aplicarCambio(cambio);
     }
 
     // ----- Fase 3: aprobación del Consejo de Facultad -----

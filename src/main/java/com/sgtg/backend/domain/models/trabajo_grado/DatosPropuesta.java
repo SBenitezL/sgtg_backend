@@ -12,7 +12,7 @@ import com.sgtg.backend.domain.models.comun.Decision;
  * @param decisiones          decisiones del Comité, en orden
  * @param fechaLimiteConcepto fecha límite del concepto de la versión actual
  */
-public record DatosPropuesta(List<VersionPropuesta> versiones, List<Decision> decisiones,
+public record DatosPropuesta(List<VersionDocumento> versiones, List<Decision> decisiones,
         LocalDate fechaLimiteConcepto) {
 
     public DatosPropuesta {

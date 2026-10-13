@@ -17,7 +17,7 @@ import com.sgtg.backend.domain.services.CalendarioHabil;
  * hábiles para emitir su concepto: APROBADO o NO_APROBADO. Si no es aprobada se
  * radica una nueva versión hasta que lo sea.
  *
- * El estado se asigna solo y pertenece a cada versión ({@link VersionPropuesta}):
+ * El estado se asigna solo y pertenece a cada versión ({@link VersionDocumento}):
  * EN_REVISION al radicarla y APROBADO o NO_APROBADO según el concepto del
  * Comité. Antes de radicar la primera versión no hay estado.
  *
@@ -29,7 +29,7 @@ public class Propuesta {
     public static final int DIAS_HABILES_CONCEPTO_COMITE = 10;
 
     /** Versiones radicadas del documento de propuesta (formato A), cada una con su estado */
-    private final List<VersionPropuesta> versiones;
+    private final List<VersionDocumento> versiones;
     /** Decisiones del Comité de Programa sobre cada versión */
     private final List<Decision> decisiones;
     /** Fecha límite para que el Comité emita concepto sobre la versión actual */
@@ -63,7 +63,7 @@ public class Propuesta {
         Documento documento = versionActual()
                 .map(anterior -> anterior.nuevaVersion(ruta, hoy))
                 .orElseGet(() -> Documento.inicial(TipoDocumento.PROPUESTA, ruta, hoy));
-        this.versiones.add(VersionPropuesta.enRevision(documento));
+        this.versiones.add(VersionDocumento.enRevision(documento));
         this.fechaLimiteConcepto = calendario.sumarDiasHabiles(hoy, DIAS_HABILES_CONCEPTO_COMITE);
     }
 
@@ -119,10 +119,10 @@ public class Propuesta {
      * @return la última versión radicada, vacía si no se ha radicado ninguna
      */
     public Optional<Documento> versionActual() {
-        return ultimaVersion().map(VersionPropuesta::documento);
+        return ultimaVersion().map(VersionDocumento::documento);
     }
 
-    private Optional<VersionPropuesta> ultimaVersion() {
+    private Optional<VersionDocumento> ultimaVersion() {
         if (this.versiones.isEmpty())
             return Optional.empty();
         return Optional.of(this.versiones.get(this.versiones.size() - 1));
@@ -131,7 +131,7 @@ public class Propuesta {
     /**
      * @return las versiones radicadas con el estado de la revisión de cada una
      */
-    public List<VersionPropuesta> getVersiones() {
+    public List<VersionDocumento> getVersiones() {
         return Collections.unmodifiableList(versiones);
     }
 
@@ -143,7 +143,7 @@ public class Propuesta {
      * @return el estado de la versión actual, null mientras no se haya radicado
      */
     public Estado getEstado() {
-        return ultimaVersion().map(VersionPropuesta::estado).orElse(null);
+        return ultimaVersion().map(VersionDocumento::estado).orElse(null);
     }
 
     public LocalDate getFechaLimiteConcepto() {

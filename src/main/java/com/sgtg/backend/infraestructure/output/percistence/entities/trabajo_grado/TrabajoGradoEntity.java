@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sgtg.backend.domain.models.trabajo_grado.Estado;
 import com.sgtg.backend.domain.models.trabajo_grado.EstadoSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
@@ -98,7 +97,7 @@ public class TrabajoGradoEntity {
     @ElementCollection
     @CollectionTable(name = "propuesta_versiones", joinColumns = @JoinColumn(name = "trabajo_id"))
     @OrderColumn(name = "orden")
-    private List<VersionPropuestaEmbeddable> propuestaVersiones = new ArrayList<>();
+    private List<VersionDocumentoEmbeddable> propuestaVersiones = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "propuesta_decisiones", joinColumns = @JoinColumn(name = "trabajo_id"))
@@ -107,9 +106,6 @@ public class TrabajoGradoEntity {
 
     // ----- Anteproyecto y evaluación -----
 
-    @Enumerated(EnumType.STRING)
-    private Estado anteproyectoEstado;
-
     private LocalDate anteproyectoFechaLimiteEvaluacion;
 
     private LocalDate anteproyectoFechaLimiteCorrecciones;
@@ -117,7 +113,7 @@ public class TrabajoGradoEntity {
     @ElementCollection
     @CollectionTable(name = "anteproyecto_versiones", joinColumns = @JoinColumn(name = "trabajo_id"))
     @OrderColumn(name = "orden")
-    private List<DocumentoEmbeddable> anteproyectoVersiones = new ArrayList<>();
+    private List<VersionDocumentoEmbeddable> anteproyectoVersiones = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "anteproyecto_evaluadores", joinColumns = @JoinColumn(name = "trabajo_id"))
@@ -133,6 +129,12 @@ public class TrabajoGradoEntity {
     @CollectionTable(name = "anteproyecto_decisiones_consejo", joinColumns = @JoinColumn(name = "trabajo_id"))
     @OrderColumn(name = "orden")
     private List<DecisionEmbeddable> anteproyectoDecisionesConsejo = new ArrayList<>();
+
+    /** Formatos C con los que el Jefe de departamento remitió cada versión aprobada al Consejo */
+    @ElementCollection
+    @CollectionTable(name = "anteproyecto_remisiones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<DocumentoEmbeddable> anteproyectoRemisiones = new ArrayList<>();
 
     // ----- Ejecución (null hasta la aprobación del Consejo) -----
 

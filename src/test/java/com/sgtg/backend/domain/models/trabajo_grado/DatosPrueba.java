@@ -25,6 +25,7 @@ final class DatosPrueba {
     static final String RUTA_PROPUESTA = "1/tg/propuesta.pdf";
     static final String RUTA_ANTEPROYECTO = "1/tg/anteproyecto.pdf";
     static final String RUTA_FORMATO_B = "1/tg/formato-b.pdf";
+    static final String RUTA_FORMATO_C = "1/tg/formato-c.pdf";
     /** Lunes 2 de marzo de 2026 */
     static final LocalDate LUNES = LocalDate.of(2026, 3, 2);
 

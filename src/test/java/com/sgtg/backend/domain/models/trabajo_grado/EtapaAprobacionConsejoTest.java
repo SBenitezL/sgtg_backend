@@ -3,6 +3,8 @@ package com.sgtg.backend.domain.models.trabajo_grado;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.LUNES;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.OBJETIVOS;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_ANTEPROYECTO;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_FORMATO_B;
+import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_FORMATO_C;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.RUTA_PROPUESTA;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.asesorOrganizacion;
 import static com.sgtg.backend.domain.models.trabajo_grado.DatosPrueba.cartaAceptacion;
@@ -62,12 +64,13 @@ class EtapaAprobacionConsejoTest {
         return fecha.atTime(15, 0);
     }
 
-    /** Ambos evaluadores aprueban la versión actual en la fecha dada. */
+    /** Ambos evaluadores aprueban la versión actual y el jefe la remite al Consejo con el formato C. */
     private void evaluadoresAprueban(TrabajoGrado trabajo, LocalDate fecha) {
-        trabajo.registrarConceptoEvaluador(new Concepto(evaluador1, ResultadoConcepto.APROBADO, null, fecha), null,
+        trabajo.registrarConceptoEvaluador(new Concepto(evaluador1, ResultadoConcepto.APROBADO, null, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
-        trabajo.registrarConceptoEvaluador(new Concepto(evaluador2, ResultadoConcepto.APROBADO, null, fecha), null,
+        trabajo.registrarConceptoEvaluador(new Concepto(evaluador2, ResultadoConcepto.APROBADO, null, fecha), RUTA_FORMATO_B,
                 dia(fecha), calendario);
+        trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J001", dia(fecha));
     }
 
     /** Lleva el trabajo hasta la aprobación del Consejo: propuesta y anteproyecto aprobados. */

@@ -213,8 +213,11 @@ class FlujoSustentacionIntegracionTest {
         enviar(post(TRABAJOS + trabajoId + "/anteproyecto/evaluadores"), login("J"),
                 Map.of("evaluador1Id", evaluador1Id, "evaluador2Id", evaluador2Id)).andExpect(status().isOk());
         for (String evaluador : List.of("V", "W"))
-            subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login(evaluador), Map.of("resultado", "APROBADO"))
+            subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login(evaluador), Map.of("resultado", "APROBADO"),
+                    archivo("formato-b.pdf"))
                     .andExpect(status().isOk());
+        subir(TRABAJOS + trabajoId + "/anteproyecto/remision", login("J"), null, archivo("formato-c.pdf"))
+                .andExpect(status().isOk());
         subir(TRABAJOS + trabajoId + "/anteproyecto/decisiones-consejo", login("F"), Map.of("resultado", "APROBADO"),
                 archivo("res-aprobacion.pdf"))
                 .andExpect(status().isOk())

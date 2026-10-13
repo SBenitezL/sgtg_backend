@@ -228,33 +228,57 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     public TrabajoGrado asignarEvaluadores(Long trabajoId, Long usuarioId, Long evaluador1Id, Long evaluador2Id) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Usuario jefe = cargarUsuario(usuarioId);
-        // El Departamento al que está adscrito el director es el que asigna (Art. 13)
-        PerfilDocente perfilJefe = this.perfilGateway.buscarPerfilDocente(usuarioId);
-        if (perfilJefe == null)
-            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.jefe_sin_perfil");
-        if (!perfilJefe.getDepartamento().esMismo(trabajo.getDirector().getDepartamento()))
-            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.otro_departamento");
+        validarJefeDelDepartamento(trabajo, usuarioId);
         Evaluador evaluador1 = evaluador1Id == null ? null : new Evaluador(cargarUsuario(evaluador1Id));
         Evaluador evaluador2 = evaluador2Id == null ? null : new Evaluador(cargarUsuario(evaluador2Id));
         trabajo.asignarEvaluadores(evaluador1, evaluador2, jefe.getCodigo(), LocalDateTime.now(this.clock),
                 this.calendario);
-        return this.trabajoGateway.guardar(trabajo);
+        TrabajoGrado guardado = this.trabajoGateway.guardar(trabajo);
+        // Rol de contexto: los evaluadores acceden a "Evaluar anteproyecto"
+        this.userGateway.agregarRol(evaluador1Id, RoleAdmited.EVALUADOR.name());
+        this.userGateway.agregarRol(evaluador2Id, RoleAdmited.EVALUADOR.name());
+        return guardado;
     }
 
     @Override
     public TrabajoGrado registrarConceptoEvaluador(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
-            String observaciones, ArchivoAdjunto formato) {
+            String observaciones, ArchivoAdjunto formato, ArchivoAdjunto anotaciones) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Optional<Evaluador> evaluador = trabajo.getAnteproyecto().evaluador(usuarioId);
         if (evaluador.isEmpty())
             this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_evaluador");
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.EVALUACION_ANTEPROYECTO, formato, rutas);
+        String rutaAnotaciones = almacenar(trabajo, trabajoId, TipoDocumento.ANOTACIONES_EVALUACION, anotaciones,
+                rutas);
         return conArchivos(rutas, () -> {
             Concepto concepto = new Concepto(evaluador.get(), resultado, observaciones, hoy());
-            trabajo.registrarConceptoEvaluador(concepto, ruta, LocalDateTime.now(this.clock), this.calendario);
+            trabajo.registrarConceptoEvaluador(concepto, ruta, rutaAnotaciones, LocalDateTime.now(this.clock),
+                    this.calendario);
             return this.trabajoGateway.guardar(trabajo);
         });
+    }
+
+    @Override
+    public TrabajoGrado remitirAnteproyectoAlConsejo(Long trabajoId, Long usuarioId, ArchivoAdjunto formatoC) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        Usuario jefe = cargarUsuario(usuarioId);
+        validarJefeDelDepartamento(trabajo, usuarioId);
+        List<String> rutas = new ArrayList<>();
+        String ruta = almacenar(trabajo, trabajoId, TipoDocumento.REMISION_CONSEJO, formatoC, rutas);
+        return conArchivos(rutas, () -> {
+            trabajo.remitirAnteproyectoAlConsejo(ruta, jefe.getCodigo(), LocalDateTime.now(this.clock));
+            return this.trabajoGateway.guardar(trabajo);
+        });
+    }
+
+    /** El Departamento al que está adscrito el director es el que asigna evaluadores y remite (Art. 13). */
+    private void validarJefeDelDepartamento(TrabajoGrado trabajo, Long usuarioId) {
+        PerfilDocente perfilJefe = this.perfilGateway.buscarPerfilDocente(usuarioId);
+        if (perfilJefe == null)
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.jefe_sin_perfil");
+        if (!perfilJefe.getDepartamento().esMismo(trabajo.getDirector().getDepartamento()))
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.otro_departamento");
     }
 
     @Override

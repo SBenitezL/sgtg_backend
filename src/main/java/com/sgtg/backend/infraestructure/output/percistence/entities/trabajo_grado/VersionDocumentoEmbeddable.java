@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class VersionPropuestaEmbeddable {
+public class VersionDocumentoEmbeddable {
     @Enumerated(EnumType.STRING)
     private TipoDocumento tipo;
     @Column(length = 1000)

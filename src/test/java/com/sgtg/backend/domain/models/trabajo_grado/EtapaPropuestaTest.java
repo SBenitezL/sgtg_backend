@@ -118,7 +118,7 @@ class EtapaPropuestaTest {
         assertEquals(2, trabajo.getPropuesta().getDecisiones().size());
         // Cada versión conserva el estado de su revisión
         assertEquals(java.util.List.of(Estado.NO_APROBADO, Estado.APROBADO),
-                trabajo.getPropuesta().getVersiones().stream().map(VersionPropuesta::estado).toList());
+                trabajo.getPropuesta().getVersiones().stream().map(VersionDocumento::estado).toList());
     }
 
     @Test

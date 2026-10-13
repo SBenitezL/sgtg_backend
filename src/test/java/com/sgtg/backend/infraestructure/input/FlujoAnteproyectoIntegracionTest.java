@@ -198,7 +198,9 @@ class FlujoAnteproyectoIntegracionTest {
         subir(TRABAJOS + trabajoId + "/anteproyecto", docente, null, archivo("anteproyecto.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
-                .andExpect(jsonPath("$.anteproyecto.estado").value("EN_REVISION"))
+                // El estado es de la versión: queda en revisión aunque aún no haya evaluadores
+                .andExpect(jsonPath("$.anteproyecto.estado").doesNotExist())
+                .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].tipo").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].ruta")
                         .value(trabajoId + "/ANTEPROYECTO/v1/anteproyecto.pdf"));
@@ -211,7 +213,7 @@ class FlujoAnteproyectoIntegracionTest {
                 Map.of("evaluador1Id", evaluador1Id, "evaluador2Id", evaluador2Id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("EVALUACION"))
-                .andExpect(jsonPath("$.anteproyecto.estado").value("EN_REVISION"))
+                .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.anteproyecto.evaluadores[1].usuarioId").value(evaluador2Id))
                 .andExpect(jsonPath("$.anteproyecto.fechaLimiteEvaluacion").isNotEmpty())
                 .andExpect(jsonPath("$.historial[1].responsable").value("J" + sufijo));
@@ -219,6 +221,9 @@ class FlujoAnteproyectoIntegracionTest {
         // Pedir correcciones exige observaciones
         String evaluador1 = login("V");
         String evaluador2 = login("W");
+        // El docente asignado como evaluador recibe el rol de contexto EVALUADOR
+        enviar(get(API + "/usuarios/me"), evaluador2, null)
+                .andExpect(jsonPath("$.roles", hasItem("EVALUADOR")));
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador2, Map.of("resultado", "CON_CORRECCIONES"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
@@ -232,29 +237,55 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.anteproyecto.conceptos[0].formato.formato").value("TI-B"))
                 .andExpect(jsonPath("$.anteproyecto.conceptos[0].formato.ruta")
                         .value(trabajoId + "/TI-B/v1/formato-b.pdf"));
+        // El formato B es obligatorio
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador2,
                 Map.of("resultado", "CON_CORRECCIONES", "observaciones", "Ajustar el cronograma"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El concepto del evaluador debe ir acompañado del formato B."));
+        // Con el formato B y, opcionalmente, el documento con sus anotaciones
+        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador2,
+                Map.of("resultado", "CON_CORRECCIONES", "observaciones", "Ajustar el cronograma"),
+                archivo("formato-b.pdf"), pdf("anotaciones", "notas.pdf"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.anteproyecto.conceptos[1].anotaciones.ruta")
+                        .value(trabajoId + "/ANOTACIONES_EVALUACION/v1/notas.pdf"))
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
-                .andExpect(jsonPath("$.anteproyecto.estado").value("CON_CORRECCIONES"))
+                .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("CON_CORRECCIONES"))
                 .andExpect(jsonPath("$.anteproyecto.fechaLimiteCorrecciones").isNotEmpty());
 
         // El director radica la versión corregida: vuelve directo a evaluación
         subir(TRABAJOS + trabajoId + "/anteproyecto", docente, null, archivo("anteproyecto_v2.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("EVALUACION"))
+                .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("CON_CORRECCIONES"))
+                .andExpect(jsonPath("$.anteproyecto.versiones[1].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[1].version").value(2))
                 .andExpect(jsonPath("$.anteproyecto.versiones[1].ruta")
                         .value(trabajoId + "/ANTEPROYECTO/v2/anteproyecto_v2.pdf"));
 
-        // Ambos aprueban la versión 2: pasa a aprobación del Consejo
-        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador1, Map.of("resultado", "APROBADO"))
+        // Ambos aprueban la versión 2: queda en el Departamento hasta que el jefe la remita
+        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador1, Map.of("resultado", "APROBADO"),
+                archivo("formato-b.pdf"))
                 .andExpect(status().isOk());
-        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador2, Map.of("resultado", "APROBADO"))
+        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador2, Map.of("resultado", "APROBADO"),
+                archivo("formato-b.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.etapa").value("EVALUACION"))
+                .andExpect(jsonPath("$.anteproyecto.versiones[1].estado").value("APROBADO"))
+                .andExpect(jsonPath("$.anteproyecto.conceptos.length()").value(4));
+
+        // Solo el jefe de departamento remite al Consejo, y con el formato C
+        subir(TRABAJOS + trabajoId + "/anteproyecto/remision", docente, null, archivo("formato-c.pdf"))
+                .andExpect(status().isForbidden());
+        subir(TRABAJOS + trabajoId + "/anteproyecto/remision", jefe, null)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("La remisión al Consejo de Facultad requiere el formato C."));
+        subir(TRABAJOS + trabajoId + "/anteproyecto/remision", jefe, null, archivo("formato-c.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("APROBACION_CONSEJO"))
-                .andExpect(jsonPath("$.anteproyecto.estado").value("APROBADO"))
-                .andExpect(jsonPath("$.anteproyecto.conceptos.length()").value(4));
+                .andExpect(jsonPath("$.anteproyecto.remisiones[0].formato").value("TI-C"))
+                .andExpect(jsonPath("$.anteproyecto.remisiones[0].version").value(2))
+                .andExpect(jsonPath("$.anteproyecto.remisiones[0].ruta").value(trabajoId + "/TI-C/v1/formato-c.pdf"));
 
         // El evaluador ve el trabajo entre los suyos
         enviar(get(API + "/trabajos-grado/mis-trabajos"), evaluador1, null)
@@ -262,11 +293,16 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$[0].id").value(trabajoId));
     }
 
-    /** Ambos evaluadores aprueban la versión actual. */
+    /** Ambos evaluadores aprueban la versión actual y el jefe la remite al Consejo con el formato C. */
     private void evaluadoresAprueban(long trabajoId) throws Exception {
-        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("V"), Map.of("resultado", "APROBADO"))
+        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("V"), Map.of("resultado", "APROBADO"),
+                archivo("formato-b.pdf"))
                 .andExpect(status().isOk());
-        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("W"), Map.of("resultado", "APROBADO"))
+        subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("W"), Map.of("resultado", "APROBADO"),
+                archivo("formato-b.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.etapa").value("EVALUACION"));
+        subir(TRABAJOS + trabajoId + "/anteproyecto/remision", login("J"), null, archivo("formato-c.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("APROBACION_CONSEJO"));
     }
@@ -298,7 +334,7 @@ class FlujoAnteproyectoIntegracionTest {
         subir(decisiones, consejo, Map.of("resultado", "NO_APROBADO"), archivo("res-correcciones.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
-                .andExpect(jsonPath("$.anteproyecto.estado").value("NO_APROBADO"))
+                .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("NO_APROBADO"))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo[0].organo").value("CONSEJO_FACULTAD"))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo[0].rutaArchivo")
                         .value(trabajoId + "/RESOLUCION/v1/res-correcciones.pdf"))

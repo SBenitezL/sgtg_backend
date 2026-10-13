@@ -30,6 +30,7 @@ APROBACION_CONSEJO ────────────────────�
 | 5 | La **ruta del documento de la resolución es obligatoria**: si no aprueba, el documento trae las correcciones; si aprueba, es el acta. Solo se guarda la ruta, como texto. |
 | 6 | No se guarda el número de la resolución (`acta` queda en `null`). |
 | 7 | El comentario es **opcional** incluso si no aprueba, porque la información puede venir en el documento. |
+| 8 | (2026-10-12) El Consejo solo decide sobre una versión que el Jefe de departamento **remitió con el formato C** (`remision_pendiente`); ver `remitirAnteproyectoAlConsejo` en la fase 2. |
 
 Hay una interpretación propia: en investigación, la fecha mínima para solicitar la sustentación es a los **3 meses**, la regla que el plan ya tenía para la Fase 7.
 
