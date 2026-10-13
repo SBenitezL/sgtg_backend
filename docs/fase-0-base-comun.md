@@ -107,7 +107,7 @@ Tipos de documento que se cargan durante el proceso. Los que corresponden a un f
 | `ANTEPROYECTO` | — | |
 | `EVALUACION_ANTEPROYECTO` | B | |
 | `REMISION_CONSEJO` | C | |
-| `INFORME_MENSUAL` | D | Sí |
+| `INFORME_MENSUAL` | D | No (desde 2026-10-12) |
 | `DOCUMENTO_FINAL` | E | |
 | `PAZ_Y_SALVO` | F | |
 | `ACTA_SUSTENTACION` | G | |
@@ -117,7 +117,7 @@ Tipos de documento que se cargan durante el proceso. Los que corresponden a un f
 
 **Funcionalidades**
 - `formato(modalidad)`: devuelve el código completo; por ejemplo, `PROPUESTA` en investigación es `"TI-A"`. Devuelve vacío si no es un formato o no aplica a la modalidad.
-- `aplicaA(modalidad)`: indica si el documento se usa en esa modalidad. El informe mensual y la carta de aceptación solo existen en práctica profesional.
+- `aplicaA(modalidad)`: indica si el documento se usa en esa modalidad. La carta de aceptación y el concepto del asesor solo existen en práctica profesional (el informe mensual aplica a ambas modalidades desde el 2026-10-12, ver Fase 4).
 
 ### `Documento` (record)
 Una versión de un archivo cargado al servidor de archivos. **El dominio solo guarda la URL**, no el archivo.

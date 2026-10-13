@@ -391,11 +391,11 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.message")
                         .value("El título u objetivos del trabajo de grado solo pueden cambiarse una vez."));
 
-        // Los informes mensuales son solo de práctica profesional
+        // En investigación los informes mensuales los radica el estudiante, no el director
         subir(TRABAJOS + trabajoId + "/informes-mensuales", docente, null, archivo("abril.pdf"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("Los informes mensuales solo aplican a la modalidad de práctica profesional."));
+                .andExpect(status().isNotAcceptable())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(
+                        "Los informes mensuales los radican los estudiantes del trabajo")));
 
         // Fase 5: el director solicita 2 meses de prórroga y el Consejo la aprueba
         String prorroga = TRABAJOS + trabajoId + "/prorroga";

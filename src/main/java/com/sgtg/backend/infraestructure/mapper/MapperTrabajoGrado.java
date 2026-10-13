@@ -25,6 +25,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.DatosPropuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.InformeMensual;
+import com.sgtg.backend.domain.models.trabajo_grado.RevisionInforme;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Prorroga;
 import com.sgtg.backend.domain.models.trabajo_grado.RegistroJurado;
@@ -49,6 +50,7 @@ import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grad
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EstudianteTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EvaluadorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.InformeMensualEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.RevisionInformeEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.ProrrogaEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.RegistroJuradoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SesionSustentacionEmbeddable;
@@ -105,6 +107,9 @@ public abstract class MapperTrabajoGrado {
             ejecucion.getCambiosObjetivos().forEach(c -> entity.getEjecucionCambiosObjetivos().add(toEmbeddable(c)));
             ejecucion.getInformesMensuales()
                     .forEach(i -> entity.getEjecucionInformesMensuales().add(toEmbeddable(i)));
+            ejecucion.getInformesMensuales().forEach(i -> i.revisiones().forEach(r -> entity
+                    .getEjecucionInformesRevisiones().add(new RevisionInformeEmbeddable(i.numero(),
+                            r.revisorUsuarioId(), r.revisor(), r.observaciones(), r.rutaArchivo(), r.fecha()))));
             entity.setProrroga(toEmbeddable(ejecucion.getProrroga()));
             ejecucion.getSuspensiones().forEach(s -> entity.getEjecucionSuspensiones().add(toEmbeddable(s)));
         }
@@ -212,7 +217,7 @@ public abstract class MapperTrabajoGrado {
     }
 
     private static InformeMensualEmbeddable toEmbeddable(InformeMensual i) {
-        return new InformeMensualEmbeddable(i.numero(), i.rutaArchivo(), i.fecha());
+        return new InformeMensualEmbeddable(i.numero(), i.rutaArchivo(), i.fecha(), i.radicadoPor(), i.observaciones());
     }
 
     private static VersionDocumentoEmbeddable toEmbeddable(VersionDocumento v) {
@@ -276,7 +281,8 @@ public abstract class MapperTrabajoGrado {
         return new DatosEjecucion(entity.getEjecucionFechaNotificacion(), entity.getEjecucionFechaFin(),
                 entity.getEjecucionFechaMinimaSustentacion(),
                 entity.getEjecucionCambiosObjetivos().stream().map(MapperTrabajoGrado::toDomain).toList(),
-                entity.getEjecucionInformesMensuales().stream().map(MapperTrabajoGrado::toDomain).toList(),
+                entity.getEjecucionInformesMensuales().stream()
+                        .map(i -> toDomain(i, entity.getEjecucionInformesRevisiones())).toList(),
                 toDomain(entity.getProrroga()),
                 entity.getEjecucionSuspensiones().stream().map(MapperTrabajoGrado::toDomain).toList());
     }
@@ -304,8 +310,15 @@ public abstract class MapperTrabajoGrado {
                 decision == null || decision.getOrgano() == null ? null : toDomain(decision));
     }
 
-    private static InformeMensual toDomain(InformeMensualEmbeddable i) {
-        return new InformeMensual(i.getNumero(), i.getRutaArchivo(), i.getFecha());
+    /** El informe con sus revisiones, que se guardan aparte con el consecutivo del informe. */
+    private static InformeMensual toDomain(InformeMensualEmbeddable i, List<RevisionInformeEmbeddable> revisiones) {
+        List<RevisionInforme> delInforme = revisiones.stream()
+                .filter(r -> i.getNumero().equals(r.getInformeNumero()))
+                .map(r -> new RevisionInforme(r.getRevisorUsuarioId(), r.getRevisor(), r.getObservaciones(),
+                        r.getRutaArchivo(), r.getFecha()))
+                .toList();
+        return new InformeMensual(i.getNumero(), i.getRutaArchivo(), i.getFecha(), i.getRadicadoPor(),
+                i.getObservaciones(), delInforme);
     }
 
     private static DatosSustentacion toDatosSustentacion(TrabajoGradoEntity entity) {

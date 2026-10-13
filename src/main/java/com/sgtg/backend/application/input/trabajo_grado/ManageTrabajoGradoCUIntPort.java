@@ -162,12 +162,25 @@ public interface ManageTrabajoGradoCUIntPort {
             ArchivoAdjunto resolucion, String observaciones);
 
     /**
-     * Radica un informe mensual de la práctica profesional con la fecha actual.
-     * Solo el director.
+     * Radica un informe mensual con la fecha actual, en ambas modalidades. Lo
+     * radica un estudiante del trabajo; en práctica profesional también el director.
      *
-     * @param documento archivo del informe (formato D)
+     * @param observaciones observaciones opcionales de quien radica
+     * @param documento     archivo del informe (formato D)
      */
-    public TrabajoGrado registrarInformeMensual(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
+    public TrabajoGrado registrarInformeMensual(Long trabajoId, Long usuarioId, String observaciones,
+            ArchivoAdjunto documento);
+
+    /**
+     * Registra la revisión de un informe mensual por el director, el codirector
+     * o el asesor del trabajo. Es una formalidad: no cambia el estado del trabajo.
+     *
+     * @param numero        consecutivo del informe
+     * @param observaciones observaciones del revisor
+     * @param notas         PDF opcional con las notas del revisor
+     */
+    public TrabajoGrado revisarInformeMensual(Long trabajoId, int numero, Long usuarioId, String observaciones,
+            ArchivoAdjunto notas);
 
     /**
      * Solicita la prórroga del plazo con la fecha actual. Solo el director.

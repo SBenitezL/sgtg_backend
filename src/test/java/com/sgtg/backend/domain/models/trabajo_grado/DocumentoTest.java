@@ -71,10 +71,11 @@ class DocumentoTest {
 
     @Test
     void documentosDePracticaProfesionalNoAplicanAInvestigacion() {
-        assertTrue(TipoDocumento.INFORME_MENSUAL.aplicaA(Modalidad.PRACTICA_PROFESIONAL));
-        assertFalse(TipoDocumento.INFORME_MENSUAL.aplicaA(Modalidad.TRABAJO_DE_INVESTIGACION));
+        assertTrue(TipoDocumento.CARTA_ACEPTACION.aplicaA(Modalidad.PRACTICA_PROFESIONAL));
         assertFalse(TipoDocumento.CARTA_ACEPTACION.aplicaA(Modalidad.TRABAJO_DE_INVESTIGACION));
-        assertEquals(Optional.empty(), TipoDocumento.INFORME_MENSUAL.formato(Modalidad.TRABAJO_DE_INVESTIGACION));
+        assertFalse(TipoDocumento.CONCEPTO_ASESOR.aplicaA(Modalidad.TRABAJO_DE_INVESTIGACION));
+        // Los informes mensuales (formato D) aplican a ambas modalidades
+        assertEquals(Optional.of("TI-D"), TipoDocumento.INFORME_MENSUAL.formato(Modalidad.TRABAJO_DE_INVESTIGACION));
     }
 
     @Test

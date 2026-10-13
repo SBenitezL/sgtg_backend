@@ -12,7 +12,7 @@ public enum TipoDocumento {
     ANTEPROYECTO(null, false),
     EVALUACION_ANTEPROYECTO("B", false),
     REMISION_CONSEJO("C", false),
-    INFORME_MENSUAL("D", true),
+    INFORME_MENSUAL("D", false),
     DOCUMENTO_FINAL("E", false),
     PAZ_Y_SALVO("F", false),
     ACTA_SUSTENTACION("G", false),
@@ -26,6 +26,8 @@ public enum TipoDocumento {
     CONCEPTO_ASESOR(null, true),
     /** Documento con las anotaciones del evaluador sobre el anteproyecto (opcional, acompaña al formato B) */
     ANOTACIONES_EVALUACION(null, false),
+    /** PDF con las notas del director, codirector o asesor al revisar un informe mensual */
+    REVISION_INFORME(null, false),
     AJUSTES_SUSTENTACION(null, false),
     SOLICITUD_CANCELACION(null, false);
 

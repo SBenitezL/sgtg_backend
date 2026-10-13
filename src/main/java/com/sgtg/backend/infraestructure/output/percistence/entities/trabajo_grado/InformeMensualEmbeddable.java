@@ -19,4 +19,8 @@ public class InformeMensualEmbeddable {
     @Column(length = 1000)
     private String rutaArchivo;
     private LocalDate fecha;
+    /** Código de quien radicó el informe */
+    private String radicadoPor;
+    @Column(length = 2000)
+    private String observaciones;
 }

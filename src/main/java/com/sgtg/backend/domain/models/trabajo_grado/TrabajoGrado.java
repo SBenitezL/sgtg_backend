@@ -437,11 +437,34 @@ public abstract class TrabajoGrado {
      * @return el informe registrado
      */
     public InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy) {
-        if (getModalidad() != Modalidad.PRACTICA_PROFESIONAL)
-            throw new ReglaNegocioException("error.dominio.informe_mensual.solo_practica");
+        return registrarInformeMensual(rutaArchivo, hoy, null, null);
+    }
+
+    /**
+     * Registra un informe mensual en cualquiera de las dos modalidades, mientras
+     * el trabajo está en curso o en prórroga (no durante una suspensión).
+     *
+     * @param radicadoPor   código de quien radica (estudiante o director)
+     * @param observaciones observaciones opcionales de quien radica
+     */
+    public InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy, String radicadoPor,
+            String observaciones) {
         if (this.etapa != Proceso.EN_CURSO && this.etapa != Proceso.PRORROGA)
             throw new ReglaNegocioException("error.dominio.trabajo_grado.etapa_invalida");
-        return this.ejecucion.registrarInformeMensual(rutaArchivo, hoy);
+        return this.ejecucion.registrarInformeMensual(rutaArchivo, hoy, radicadoPor, observaciones);
+    }
+
+    /**
+     * Registra la revisión de un informe mensual por el director, el codirector
+     * o el asesor. Es una formalidad: no cambia la etapa ni el flujo del trabajo.
+     *
+     * @param numero   consecutivo del informe
+     * @param revision revisión con observaciones y, opcionalmente, el PDF de notas
+     */
+    public InformeMensual revisarInformeMensual(int numero, RevisionInforme revision) {
+        if (this.ejecucion == null || estaCerrado())
+            throw new ReglaNegocioException("error.dominio.trabajo_grado.etapa_invalida");
+        return this.ejecucion.revisarInformeMensual(numero, revision);
     }
 
     // ----- Fase 5: prórroga -----
@@ -887,6 +910,26 @@ public abstract class TrabajoGrado {
      */
     public boolean esDirector(Long usuarioId) {
         return usuarioId != null && usuarioId.equals(this.director.getUsuarioId());
+    }
+
+    /**
+     * @param usuarioId usuario a verificar
+     * @return true si el usuario es uno de los estudiantes del trabajo
+     */
+    public boolean esEstudiante(Long usuarioId) {
+        return usuarioId != null
+                && this.estudiantes.stream().anyMatch(estudiante -> usuarioId.equals(estudiante.getUsuarioId()));
+    }
+
+    /**
+     * @param usuarioId usuario a verificar
+     * @return true si el usuario puede revisar los informes mensuales: director,
+     *         codirector o asesor (con usuario) del trabajo
+     */
+    public boolean esRevisorDeInformes(Long usuarioId) {
+        return usuarioId != null && (esDirector(usuarioId)
+                || (this.codirector != null && usuarioId.equals(this.codirector.getUsuarioId()))
+                || (this.asesor != null && usuarioId.equals(this.asesor.getUsuarioId())));
     }
 
     /**

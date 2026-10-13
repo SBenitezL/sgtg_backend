@@ -30,6 +30,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Calificacion;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioObjetivos;
 import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
 import com.sgtg.backend.domain.models.trabajo_grado.InformeMensual;
+import com.sgtg.backend.domain.models.trabajo_grado.RevisionInforme;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
@@ -236,7 +237,9 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.solicitarCambioObjetivos("Práctica ajustada", List.of("Objetivo ajustado"), "Ajuste",
                 LUNES.plusDays(30));
         trabajo.registrarInformeMensual("informes/marzo.pdf", LUNES.plusDays(28));
-        trabajo.registrarInformeMensual("informes/abril.pdf", LUNES.plusDays(58));
+        trabajo.registrarInformeMensual("informes/abril.pdf", LUNES.plusDays(58), "E010", "Avance de abril");
+        trabajo.revisarInformeMensual(2, new RevisionInforme(1L, "Director Uno", "Ajustar el cronograma",
+                "informes/notas-abril.pdf", LUNES.plusDays(60)));
         // Prórroga negada: la práctica sigue en curso con el plazo original
         trabajo.solicitarProrroga(3, "solicitudes/prorroga.pdf", LUNES.plusDays(60));
         trabajo.resolverProrroga(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.NO_APROBADO, null,
@@ -269,6 +272,12 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         assertEquals(List.of("informes/marzo.pdf", "informes/abril.pdf"), leido.getEjecucion()
                 .getInformesMensuales().stream().map(InformeMensual::rutaArchivo).toList());
         assertEquals(2, leido.getEjecucion().getInformesMensuales().get(1).numero());
+        InformeMensual abril = leido.getEjecucion().getInformesMensuales().get(1);
+        assertEquals("E010", abril.radicadoPor());
+        assertEquals("Avance de abril", abril.observaciones());
+        assertEquals(List.of(new RevisionInforme(1L, "Director Uno", "Ajustar el cronograma",
+                "informes/notas-abril.pdf", LUNES.plusDays(60))), abril.revisiones());
+        assertTrue(leido.getEjecucion().getInformesMensuales().get(0).revisiones().isEmpty());
         Prorroga prorroga = leido.getEjecucion().getProrroga();
         assertEquals(3, prorroga.meses());
         assertEquals("solicitudes/prorroga.pdf", prorroga.rutaSolicitud());

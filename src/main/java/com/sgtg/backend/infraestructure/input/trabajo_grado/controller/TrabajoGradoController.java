@@ -36,6 +36,7 @@ import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.CrearTraba
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionComiteDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionConsejoDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ObservacionesDTORequest;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ObservacionesOpcionalesDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ProgramacionSustentacionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.SolicitudCambioObjetivosDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.SolicitudProrrogaDTORequest;
@@ -243,13 +244,33 @@ public class TrabajoGradoController {
                 usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones())));
     }
 
-    /** Radica un informe mensual (formato D) de la práctica profesional. Solo el director. */
+    /**
+     * Radica un informe mensual (formato D, parte {@code archivo}) con
+     * observaciones opcionales (parte {@code datos}). Lo radica un estudiante del
+     * trabajo; en práctica profesional también el director.
+     */
     @PostMapping(value = "/{trabajoId}/informes-mensuales", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> registrarInformeMensual(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
+            @RequestPart(value = "datos", required = false) ObservacionesOpcionalesDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
-                manageTrabajoGrado.registrarInformeMensual(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.registrarInformeMensual(trabajoId,
+                usuario.getCusuari(), request == null ? null : request.observaciones(), adjunto(archivo))));
+    }
+
+    /**
+     * Revisión de un informe mensual por el director, el codirector o el asesor:
+     * observaciones (parte {@code datos}) y, opcionalmente, el PDF con sus notas
+     * (parte {@code archivo}). No cambia el estado del trabajo.
+     */
+    @PostMapping(value = "/{trabajoId}/informes-mensuales/{numero}/revisiones",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TrabajoGradoDTOResponse> revisarInformeMensual(
+            @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId, @PathVariable int numero,
+            @RequestPart(value = "datos", required = false) ObservacionesOpcionalesDTORequest request,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.revisarInformeMensual(trabajoId,
+                numero, usuario.getCusuari(), request == null ? null : request.observaciones(), adjunto(archivo))));
     }
 
     /** Solicita la prórroga del plazo (1 a 3 meses). Solo el director. */

@@ -154,6 +154,12 @@ public class TrabajoGradoEntity {
     @OrderColumn(name = "orden")
     private List<InformeMensualEmbeddable> ejecucionInformesMensuales = new ArrayList<>();
 
+    /** Revisiones de los informes mensuales (director, codirector o asesor), con el consecutivo del informe */
+    @ElementCollection
+    @CollectionTable(name = "ejecucion_informes_revisiones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<RevisionInformeEmbeddable> ejecucionInformesRevisiones = new ArrayList<>();
+
     @Embedded
     private ProrrogaEmbeddable prorroga;
 

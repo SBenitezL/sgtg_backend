@@ -20,7 +20,8 @@ import com.sgtg.backend.domain.models.comun.Periodo;
  *
  * Durante la ejecución el título u objetivos pueden cambiarse una sola vez,
  * dentro de los primeros 6 meses y con aprobación del Consejo (Arts. 17-18), y
- * en práctica profesional el director radica los informes mensuales (Art. 45).
+ * los estudiantes radican los informes mensuales (Art. 45), que revisan el
+ * director, el codirector o el asesor.
  * El plazo puede extenderse una sola vez con una prórroga de 1 a 3 meses
  * (Art. 16) y suspenderse una sola vez hasta por un período académico (Art.
  * 27): al reanudar, el fin es la fecha de reanudación más los días que
@@ -41,7 +42,7 @@ public class Ejecucion {
     private final LocalDate fechaMinimaSustentacion;
     /** Solicitudes de cambio de título u objetivos, en orden */
     private final List<CambioObjetivos> cambiosObjetivos;
-    /** Informes mensuales radicados (solo práctica profesional) */
+    /** Informes mensuales radicados, con sus revisiones */
     private final List<InformeMensual> informesMensuales;
     /** Prórroga solicitada, null si no se ha solicitado */
     private Prorroga prorroga;
@@ -143,13 +144,46 @@ public class Ejecucion {
      * @return el informe registrado
      */
     InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy) {
+        return registrarInformeMensual(rutaArchivo, hoy, null, null);
+    }
+
+    /**
+     * @param radicadoPor   código de quien radica
+     * @param observaciones observaciones opcionales de quien radica
+     */
+    InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy, String radicadoPor,
+            String observaciones) {
         if (hoy == null)
             throw new ReglaNegocioException("error.dominio.informe_mensual.datos_incompletos");
         if (hoy.isBefore(getFechaNotificacion()))
             throw new ReglaNegocioException("error.dominio.informe_mensual.fecha_invalida");
-        InformeMensual informe = new InformeMensual(this.informesMensuales.size() + 1, rutaArchivo, hoy);
+        InformeMensual informe = new InformeMensual(this.informesMensuales.size() + 1, rutaArchivo, hoy, radicadoPor,
+                observaciones, List.of());
         this.informesMensuales.add(informe);
         return informe;
+    }
+
+    /**
+     * Registra la revisión de un informe mensual: una por revisor y no anterior
+     * a la radicación del informe. No cambia el estado del trabajo.
+     *
+     * @param numero   consecutivo del informe revisado
+     * @param revision revisión del director, codirector o asesor
+     * @return el informe con la revisión
+     */
+    InformeMensual revisarInformeMensual(int numero, RevisionInforme revision) {
+        if (revision == null)
+            throw new ReglaNegocioException("error.dominio.informe_mensual.revision_incompleta");
+        if (numero < 1 || numero > this.informesMensuales.size())
+            throw new ReglaNegocioException("error.dominio.informe_mensual.no_encontrado");
+        InformeMensual informe = this.informesMensuales.get(numero - 1);
+        if (informe.revisadoPor(revision.revisorUsuarioId()))
+            throw new ReglaNegocioException("error.dominio.informe_mensual.revision_repetida");
+        if (revision.fecha().isBefore(informe.fecha()))
+            throw new ReglaNegocioException("error.dominio.informe_mensual.fecha_revision_invalida");
+        InformeMensual revisado = informe.conRevision(revision);
+        this.informesMensuales.set(numero - 1, revisado);
+        return revisado;
     }
 
     // ----- Prórroga -----

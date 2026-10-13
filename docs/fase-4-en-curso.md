@@ -5,7 +5,7 @@ Este documento describe la Fase 4: clases del dominio, reglas, operaciones, la A
 Con el anteproyecto aprobado por el Consejo, el trabajo está `EN_CURSO` y corre el plazo de la modalidad. En esta etapa hay tres cosas:
 
 1. **Cambio de título u objetivos:** el director lo solicita y el Consejo de Facultad lo decide con la resolución adjunta. Se hace una sola vez, dentro de los primeros 6 meses.
-2. **Informes mensuales:** solo en práctica profesional. Los radica el director con el documento adjunto.
+2. **Informes mensuales:** solo en práctica profesional. Los radica el director con el documento adjunto. *(Reemplazado el 2026-10-12: ver la sección final.)*
 3. **Vencimiento:** una tarea programada diaria cierra como `NO_APROBADO` (motivo `VENCIMIENTO_PLAZO`) los trabajos cuyo plazo terminó sin iniciar la sustentación.
 
 Artículos de la Resolución 231 de 2020 que cubre: **15, 17, 18, 21 y 45**.
@@ -146,3 +146,31 @@ En total son 79 peticiones, validadas contra Docker con MySQL. El vencimiento no
 ### Qué no se prueba en esta fase
 - La prórroga, que extiende el plazo y mantiene los informes en `PRORROGA`: Fase 5.
 - La solicitud de sustentación, que detiene el vencimiento: Fase 7.
+
+## Actualización 2026-10-12: informes mensuales en ambas modalidades y revisiones
+
+Decisiones del usuario al integrar el front (fases 4 y 5):
+
+1. Los informes mensuales (formato D) aplican **también a los trabajos de investigación**. Los radica un
+   **estudiante** del trabajo; en práctica profesional también el **director**. Quien radica puede agregar
+   observaciones (opcionales).
+2. El director, el codirector o el asesor **revisan** cada informe con observaciones y/o un PDF de notas
+   (tipo `REVISION_INFORME`). Es una formalidad: **no cambia la etapa** del trabajo. Una revisión por revisor.
+
+Cambios:
+
+| Elemento | Cambio |
+|---|---|
+| `TipoDocumento.INFORME_MENSUAL` | Ya no es solo de práctica profesional (`TI-D` / `PP-D`). Nuevo `REVISION_INFORME`. |
+| `InformeMensual` | `(numero, rutaArchivo, fecha, radicadoPor, observaciones, revisiones)`; `revisadoPor(id)`, `conRevision(rev)`. |
+| `RevisionInforme` (nuevo) | `(revisorUsuarioId, revisor, observaciones, rutaArchivo, fecha)`; exige observaciones o archivo (`revision_vacia`). |
+| `Ejecucion.revisarInformeMensual(numero, revision)` | `no_encontrado`, `revision_repetida`, `fecha_revision_invalida`. |
+| `TrabajoGrado` | Se quitó `solo_practica`; `registrarInformeMensual(ruta, hoy, radicadoPor, observaciones)` y `revisarInformeMensual(numero, revision)`. |
+| Caso de uso | Radica: estudiante, o director en práctica profesional (`solo_radicador_informe`, 406). Revisa: director, codirector o asesor (`solo_revisor_informe`, 406). |
+| `POST /{id}/informes-mensuales` | Parte `archivo` (formato D) y parte opcional `datos` `{ "observaciones": "..." }`. |
+| `POST /{id}/informes-mensuales/{numero}/revisiones` (nuevo) | Partes opcionales `datos` `{ "observaciones": "..." }` y `archivo` (notas); al menos una. |
+| Persistencia | `InformeMensualEmbeddable` + `radicadoPor`, `observaciones`; tabla `ejecucion_informes_revisiones` (`RevisionInformeEmbeddable`). |
+| Respuesta | `informesMensuales[]` incluye `radicadoPor`, `observaciones` y `revisiones[]`. |
+
+Thunder (carpeta 5): en investigación el director recibe 406; la estudiante radica con observaciones; la
+estudiante no revisa (406); el director revisa con notas sin cambiar la etapa; una sola revisión por revisor (400).

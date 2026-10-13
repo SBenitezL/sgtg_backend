@@ -180,9 +180,25 @@ class EtapaEnCursoTest {
     }
 
     @Test
-    void losInformesSoloAplicanALaPracticaProfesional() {
-        assertRegla("error.dominio.informe_mensual.solo_practica",
-                () -> trabajo.registrarInformeMensual("informes/abril.pdf", LocalDate.of(2026, 4, 20)));
+    void losInformesTambienAplicanALaInvestigacionYSeRevisanSinCambiarLaEtapa() {
+        InformeMensual informe = trabajo.registrarInformeMensual("informes/abril.pdf", LocalDate.of(2026, 4, 20),
+                "E001", "Avance de abril");
+        assertEquals(1, informe.numero());
+        assertEquals("E001", informe.radicadoPor());
+
+        InformeMensual revisado = trabajo.revisarInformeMensual(1,
+                new RevisionInforme(1L, "Director", "Bien", "informes/notas.pdf", LocalDate.of(2026, 4, 21)));
+        assertEquals(1, revisado.revisiones().size());
+        assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
+        // Una revisión por revisor, no anterior al informe y sobre un informe existente
+        assertRegla("error.dominio.informe_mensual.revision_repetida", () -> trabajo.revisarInformeMensual(1,
+                new RevisionInforme(1L, "Director", "Otra", null, LocalDate.of(2026, 4, 22))));
+        assertRegla("error.dominio.informe_mensual.fecha_revision_invalida", () -> trabajo.revisarInformeMensual(1,
+                new RevisionInforme(2L, "Codirector", "Antes", null, LocalDate.of(2026, 4, 19))));
+        assertRegla("error.dominio.informe_mensual.no_encontrado", () -> trabajo.revisarInformeMensual(2,
+                new RevisionInforme(2L, "Codirector", "No existe", null, LocalDate.of(2026, 4, 22))));
+        assertRegla("error.dominio.informe_mensual.revision_vacia",
+                () -> new RevisionInforme(2L, "Codirector", " ", null, LocalDate.of(2026, 4, 22)));
     }
 
     @Test

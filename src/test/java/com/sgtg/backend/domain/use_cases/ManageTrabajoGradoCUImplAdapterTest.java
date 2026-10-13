@@ -51,6 +51,8 @@ import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
+import com.sgtg.backend.domain.models.trabajo_grado.InformeMensual;
+import com.sgtg.backend.domain.models.trabajo_grado.RevisionInforme;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoInvestigacion;
@@ -442,13 +444,42 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
-    void soloElDirectorRadicaInformesYSoloEnPractica() {
+    void enInvestigacionElEstudianteRadicaLosInformesMensuales() {
         trabajoEnCurso();
+        // En investigación el director no radica; un usuario ajeno tampoco
         assertThrows(NoAccessException.class,
-                () -> casoDeUso.registrarInformeMensual(7L, 10L, pdf("abril.pdf")));
-        ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
-                () -> casoDeUso.registrarInformeMensual(7L, 1L, pdf("abril.pdf")));
-        assertEquals("error.dominio.informe_mensual.solo_practica", error.getMessage());
+                () -> casoDeUso.registrarInformeMensual(7L, 1L, null, pdf("abril.pdf")));
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.registrarInformeMensual(7L, 99L, null, pdf("abril.pdf")));
+
+        TrabajoGrado trabajo = casoDeUso.registrarInformeMensual(7L, 10L, "Avance de marzo", pdf("abril.pdf"));
+
+        InformeMensual informe = trabajo.getEjecucion().getInformesMensuales().get(0);
+        assertEquals(1, informe.numero());
+        assertEquals("U10", informe.radicadoPor());
+        assertEquals("Avance de marzo", informe.observaciones());
+        verify(archivoGateway).guardar(eq(7L), eq("TI-D"), any());
+    }
+
+    @Test
+    void elDirectorRevisaElInformeConSusNotasSinCambiarElEstado() {
+        trabajoEnCurso();
+        casoDeUso.registrarInformeMensual(7L, 10L, null, pdf("abril.pdf"));
+        // El estudiante no revisa informes
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.revisarInformeMensual(7L, 1, 10L, "Bien", null));
+
+        TrabajoGrado trabajo = casoDeUso.revisarInformeMensual(7L, 1, 1L, "Ajustar el cronograma", pdf("notas.pdf"));
+
+        RevisionInforme revision = trabajo.getEjecucion().getInformesMensuales().get(0).revisiones().get(0);
+        assertEquals(1L, revision.revisorUsuarioId());
+        assertEquals("Ajustar el cronograma", revision.observaciones());
+        assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
+        verify(archivoGateway).guardar(eq(7L), eq("REVISION_INFORME"), any());
+        // Una revisión por revisor
+        ReglaNegocioException repetida = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.revisarInformeMensual(7L, 1, 1L, "Otra", null));
+        assertEquals("error.dominio.informe_mensual.revision_repetida", repetida.getMessage());
     }
 
     @Test

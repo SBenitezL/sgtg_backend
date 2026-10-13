@@ -37,6 +37,7 @@ import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
 import com.sgtg.backend.domain.models.trabajo_grado.Calificacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
+import com.sgtg.backend.domain.models.trabajo_grado.RevisionInforme;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
@@ -316,12 +317,36 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
-    public TrabajoGrado registrarInformeMensual(Long trabajoId, Long usuarioId, ArchivoAdjunto documento) {
-        TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+    public TrabajoGrado registrarInformeMensual(Long trabajoId, Long usuarioId, String observaciones,
+            ArchivoAdjunto documento) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        boolean directorDePractica = trabajo.esDirector(usuarioId)
+                && trabajo.getModalidad() == Modalidad.PRACTICA_PROFESIONAL;
+        if (!trabajo.esEstudiante(usuarioId) && !directorDePractica)
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_radicador_informe");
+        Usuario usuario = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.INFORME_MENSUAL, documento, rutas);
         return conArchivos(rutas, () -> {
-            trabajo.registrarInformeMensual(ruta, hoy());
+            trabajo.registrarInformeMensual(ruta, hoy(), usuario.getCodigo(), observaciones);
+            return this.trabajoGateway.guardar(trabajo);
+        });
+    }
+
+    @Override
+    public TrabajoGrado revisarInformeMensual(Long trabajoId, int numero, Long usuarioId, String observaciones,
+            ArchivoAdjunto notas) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        if (!trabajo.esRevisorDeInformes(usuarioId))
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_revisor_informe");
+        Usuario revisor = cargarUsuario(usuarioId);
+        String nombre = String.join(" ", java.util.stream.Stream.of(revisor.getPrimerNombre(),
+                revisor.getSegundoNombre(), revisor.getPrimerApellido(), revisor.getSegundoApellido())
+                .filter(parte -> parte != null && !parte.isBlank()).toList());
+        List<String> rutas = new ArrayList<>();
+        String ruta = almacenar(trabajo, trabajoId, TipoDocumento.REVISION_INFORME, notas, rutas);
+        return conArchivos(rutas, () -> {
+            trabajo.revisarInformeMensual(numero, new RevisionInforme(usuarioId, nombre, observaciones, ruta, hoy()));
             return this.trabajoGateway.guardar(trabajo);
         });
     }

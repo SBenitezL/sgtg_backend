@@ -4787,7 +4787,7 @@
       "_id": "f4977368-ef5b-4771-bb6e-f3f9820e56ec",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
-      "name": "Informes mensuales solo en práctica (400)",
+      "name": "En investigación el director no radica informes (406)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales",
       "method": "POST",
       "sortNum": 810000,
@@ -4799,13 +4799,13 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "400"
+          "value": "406"
         },
         {
           "type": "json-query",
           "custom": "json.message",
-          "action": "equal",
-          "value": "Los informes mensuales solo aplican a la modalidad de práctica profesional."
+          "action": "contains",
+          "value": "Los informes mensuales los radican los estudiantes del trabajo"
         }
       ],
       "body": {
@@ -4823,6 +4823,204 @@
         "type": "bearer",
         "bearer": "{{docenteToken}}"
       }
+    },
+    {
+      "_id": "71a308fd-6457-4e05-a4be-a7715040dfc5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "En investigación el estudiante radica el informe mensual",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales",
+      "method": "POST",
+      "sortNum": 811000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"observaciones\": \"Avance del primer mes\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/informe-mensual.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].numero",
+          "action": "equal",
+          "value": "1"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].radicadoPor",
+          "action": "equal",
+          "value": "{{estudianteCodigo}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].observaciones",
+          "action": "equal",
+          "value": "Avance del primer mes"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].rutaArchivo",
+          "action": "regex",
+          "value": "^{{trabajoId}}/TI-D/v\\d+/informe-mensual\\.pdf$"
+        }
+      ]
+    },
+    {
+      "_id": "8989dab5-d508-4e49-b3f2-3b47cda83e56",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El estudiante no revisa informes (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales/1/revisiones",
+      "method": "POST",
+      "sortNum": 812000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"observaciones\": \"Bien\"\n}"
+          }
+        ],
+        "files": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        }
+      ]
+    },
+    {
+      "_id": "9c9c0f61-e999-420a-a157-9e7f229c8e5c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El director revisa el informe con sus notas",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales/1/revisiones",
+      "method": "POST",
+      "sortNum": 813000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"observaciones\": \"Ajustar el cronograma\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/anotaciones.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "EN_CURSO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].revisiones[0].observaciones",
+          "action": "equal",
+          "value": "Ajustar el cronograma"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.informesMensuales[0].revisiones[0].rutaArchivo",
+          "action": "regex",
+          "value": "^{{trabajoId}}/REVISION_INFORME/v\\d+/anotaciones\\.pdf$"
+        }
+      ]
+    },
+    {
+      "_id": "affb9fb7-3f69-4809-8514-e256e2d0bf63",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Una sola revisión por revisor (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales/1/revisiones",
+      "method": "POST",
+      "sortNum": 814000,
+      "created": "2026-10-12T00:00:00.000Z",
+      "modified": "2026-10-12T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"observaciones\": \"Otra\"\n}"
+          }
+        ],
+        "files": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "Ya registró una revisión de este informe mensual."
+        }
+      ]
     },
     {
       "_id": "c23d670d-da5f-4459-966f-69a580c4a6ae",

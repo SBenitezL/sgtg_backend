@@ -112,7 +112,18 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             List<String> objetivosPropuestos, String justificacion, LocalDate fechaSolicitud, DecisionDTO decision) {
     }
 
-    public record InformeMensualDTO(int numero, String rutaArchivo, LocalDate fecha) {
+    /**
+     * @param radicadoPor   código de quien lo radicó
+     * @param observaciones observaciones de quien lo radicó
+     * @param revisiones    revisiones del director, codirector o asesor (no cambian el estado del trabajo)
+     */
+    public record InformeMensualDTO(int numero, String rutaArchivo, LocalDate fecha, String radicadoPor,
+            String observaciones, List<RevisionInformeDTO> revisiones) {
+    }
+
+    /** @param rutaArchivo PDF con las notas del revisor, null si no lo adjuntó */
+    public record RevisionInformeDTO(Long revisorUsuarioId, String revisor, String observaciones, String rutaArchivo,
+            LocalDate fecha) {
     }
 
     /**
@@ -248,7 +259,12 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 e.fechaLimiteCambioObjetivos(), e.fechaLimiteSolicitudProrroga(),
                 e.getCambiosObjetivos().stream().map(TrabajoGradoDTOResponse::cambioObjetivos).toList(),
                 e.getInformesMensuales().stream()
-                        .map(i -> new InformeMensualDTO(i.numero(), i.rutaArchivo(), i.fecha())).toList(),
+                        .map(i -> new InformeMensualDTO(i.numero(), i.rutaArchivo(), i.fecha(), i.radicadoPor(),
+                                i.observaciones(), i.revisiones().stream()
+                                        .map(r -> new RevisionInformeDTO(r.revisorUsuarioId(), r.revisor(),
+                                                r.observaciones(), r.rutaArchivo(), r.fecha()))
+                                        .toList()))
+                        .toList(),
                 prorroga(e.getProrroga()),
                 e.getSuspensiones().stream().map(TrabajoGradoDTOResponse::suspension).toList());
     }
