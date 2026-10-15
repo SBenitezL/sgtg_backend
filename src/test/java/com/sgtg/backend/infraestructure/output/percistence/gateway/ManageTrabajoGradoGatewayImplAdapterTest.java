@@ -302,17 +302,19 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
                 "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0));
-        // Sustentación: primera sesión aplazada; en la segunda, inasistencia
+        // Sustentación: nueva fecha negada, primera sesión aplazada; en la segunda, inasistencia
         LocalDate julio = LocalDate.of(2026, 7, 1);
-        trabajo.solicitarSustentacion("finales/tg.pdf", "paz-y-salvo/tg.pdf", null, "D1", julio.atTime(9, 0));
-        trabajo.programarSustentacion(evaluador(20L), evaluador(40L), julio.plusDays(9).atTime(14, 0), "Salón 301",
-                "CF01", julio.plusDays(1).atTime(9, 0));
-        trabajo.calificarSustentacion(evaluador(20L), Calificacion.APROBADO_CON_OBSERVACIONES, "Ajustar conclusiones",
+        trabajo.solicitarSustentacion("monografias/tg.pdf", "finales/tg.pdf", "paz-y-salvo/tg.pdf", null,
+                "anexos/tg.pdf", "D1", julio.atTime(9, 0));
+        trabajo.programarSustentacion(evaluador(30L), evaluador(40L), julio.plusDays(9).atTime(14, 0), "Salón 301",
+                "formatos/e-1.pdf", "CF01", julio.plusDays(1).atTime(9, 0));
+        trabajo.solicitarNuevaFechaSustentacion("solicitudes/nueva-fecha.pdf", julio.plusDays(2).atTime(9, 0));
+        trabajo.resolverNuevaFechaSustentacion(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.NO_APROBADO,
+                null, "resoluciones/res-300.pdf", "No procede", julio.plusDays(3)), null, null);
+        trabajo.calificarSustentacion(evaluador(30L), Calificacion.APLAZADO, "Repetir la presentación",
                 "actas/sesion-1.pdf", julio.plusDays(9).atTime(16, 0), calendario);
-        trabajo.calificarSustentacion(evaluador(40L), Calificacion.APLAZADO, "Repetir la presentación", null,
-                julio.plusDays(9).atTime(16, 0), calendario);
-        trabajo.programarSustentacion(evaluador(40L), evaluador(41L), julio.plusDays(30).atTime(14, 0), "Salón 205",
-                "CF01", julio.plusDays(15).atTime(9, 0));
+        trabajo.programarSustentacion(evaluador(41L), evaluador(40L), julio.plusDays(30).atTime(14, 0), "Salón 205",
+                "formatos/e-2.pdf", "CF01", julio.plusDays(15).atTime(9, 0));
         trabajo.registrarInasistencia(evaluador(41L), "El estudiante no se presentó",
                 julio.plusDays(30).atTime(15, 0));
         gateway.guardar(trabajo);
@@ -324,12 +326,21 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         Sustentacion sustentacion = leido.getSustentacion();
         assertEquals(EstadoSustentacion.NO_APROBADA, sustentacion.getEstado());
         assertEquals("paz-y-salvo/tg.pdf", sustentacion.getRutaPazYSalvo());
+        assertEquals("monografias/tg.pdf", sustentacion.getRutaMonografia());
+        assertEquals("anexos/tg.pdf", sustentacion.getRutaAnexos());
         assertEquals(2, sustentacion.getSesiones().size());
         assertEquals("Salón 205", sustentacion.sesionActual().salon());
-        assertEquals(List.of(40L, 41L), sustentacion.sesionActual().jurados().stream().map(Evaluador::getUsuarioId)
+        assertEquals("formatos/e-2.pdf", sustentacion.sesionActual().rutaFormatoE());
+        // El coordinador es el primer jurado
+        assertEquals(List.of(41L, 40L), sustentacion.sesionActual().jurados().stream().map(Evaluador::getUsuarioId)
                 .toList());
-        assertEquals(List.of(Calificacion.APROBADO_CON_OBSERVACIONES, Calificacion.APLAZADO),
+        assertEquals(41L, sustentacion.sesionActual().coordinador().getUsuarioId());
+        assertEquals(List.of(Calificacion.APLAZADO),
                 sustentacion.getCalificaciones().stream().map(c -> c.calificacion()).toList());
+        assertEquals(1, sustentacion.getSolicitudesNuevaFecha().size());
+        assertEquals("No procede", sustentacion.getSolicitudesNuevaFecha().get(0).decision().observaciones());
+        assertEquals(julio.plusDays(9).atTime(14, 0), sustentacion.getSolicitudesNuevaFecha().get(0)
+                .fechaHoraAnterior());
         assertEquals("actas/sesion-1.pdf", sustentacion.getCalificaciones().get(0).rutaActa());
         assertEquals(41L, sustentacion.getInasistencias().get(0).jurado().getUsuarioId());
         assertEquals(julio.plusDays(9).plusDays(60), sustentacion.getFechaLimiteSegundaSesion());

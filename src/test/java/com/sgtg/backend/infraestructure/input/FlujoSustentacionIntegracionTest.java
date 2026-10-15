@@ -39,9 +39,11 @@ import com.jayway.jsonpath.JsonPath;
 
 /**
  * Prueba de punta a punta por HTTP de la Fase 7 (H2, JWT real): un trabajo en
- * curso solicita la sustentación, el Consejo la programa, los jurados la
- * califican con observaciones, el director radica los ajustes, los jurados los
- * verifican y cargan la versión definitiva. Usa un reloj ajustable para
+ * curso solicita la sustentación (monografía, formato E, paz y salvo y
+ * anexos), el Consejo la programa con un jurado coordinador y el formato E, el
+ * director pide una nueva fecha que el Consejo aprueba, el coordinador la
+ * califica con observaciones, el director radica los ajustes, el coordinador
+ * los verifica y carga la versión definitiva. Usa un reloj ajustable para
  * avanzar los meses mínimos de ejecución.
  */
 @SpringBootTest
@@ -240,84 +242,130 @@ class FlujoSustentacionIntegracionTest {
 
     // ----- Pruebas -----
 
+    /** Partes de la solicitud de sustentación (sin anexos). */
+    private static MockMultipartFile[] solicitud() {
+        return new MockMultipartFile[] { pdf("monografia", "monografia.pdf"), pdf("documentoFinal", "tg.pdf"),
+                pdf("pazYSalvo", "paz-y-salvo.pdf") };
+    }
+
+    private static Map<String, Object> programacion(long coordinadorId, long juradoId, String fechaHora,
+            String salon) {
+        return Map.of("juradoCoordinadorId", coordinadorId, "juradoId", juradoId, "fechaHora", fechaHora, "salon",
+                salon);
+    }
+
     @Test
     void flujoCompletoDeLaSustentacion() throws Exception {
         long trabajoId = trabajoEnCurso();
-        long jurado1Id = crearUsuario("X", "JURADO");
+        long coordinadorId = crearUsuario("X", "JURADO");
+        long juradoId = crearUsuario("Y", "DOCENTE");
         long evaluadorId = id(enviar(get(TRABAJOS + trabajoId), login("F"), null), "$.anteproyecto.evaluadores[0].usuarioId");
         String docente = login("D");
         String consejo = login("F");
         String sustentacion = TRABAJOS + trabajoId + "/sustentacion";
-        MockMultipartFile[] solicitud = { pdf("documentoFinal", "tg.pdf"), pdf("pazYSalvo", "paz-y-salvo.pdf") };
 
         // Antes de los 3 meses no se puede solicitar (los archivos que se alcanzaron a guardar se eliminan)
-        subir(sustentacion, docente, null, solicitud)
+        subir(sustentacion, docente, null, solicitud())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "La sustentación solo puede solicitarse después de los meses mínimos de ejecución de la modalidad."));
 
-        // 6 de julio: el director la solicita
+        // 6 de julio: el director la solicita con monografía, formato E, paz y salvo y anexos
         reloj.fijar(LocalDate.of(2026, 7, 6));
-        subir(sustentacion, login("E"), null, solicitud).andExpect(status().isNotAcceptable());
-        subir(sustentacion, docente, null, solicitud)
+        subir(sustentacion, login("E"), null, solicitud()).andExpect(status().isNotAcceptable());
+        subir(sustentacion, docente, null, pdf("documentoFinal", "tg.pdf"), pdf("pazYSalvo", "paz-y-salvo.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("La monografía es obligatoria."));
+        subir(sustentacion, docente, null, pdf("monografia", "monografia.pdf"), pdf("documentoFinal", "tg.pdf"),
+                pdf("pazYSalvo", "paz-y-salvo.pdf"), pdf("anexos", "anexos.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("SUSTENTACION"))
                 .andExpect(jsonPath("$.sustentacion.estado").value("SOLICITADA"))
+                .andExpect(jsonPath("$.sustentacion.rutaMonografia").value(trabajoId + "/MONOGRAFIA/v1/monografia.pdf"))
                 .andExpect(jsonPath("$.sustentacion.rutaDocumentoFinal").value(trabajoId + "/TI-E/v1/tg.pdf"))
-                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").value(trabajoId + "/TI-F/v1/paz-y-salvo.pdf"));
+                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").value(trabajoId + "/TI-F/v1/paz-y-salvo.pdf"))
+                .andExpect(jsonPath("$.sustentacion.rutaAnexos").value(trabajoId + "/ANEXOS/v1/anexos.pdf"));
 
-        // El Consejo programa: un jurado nuevo y uno de los evaluadores del anteproyecto
-        Map<String, Object> programacion = Map.of("jurado1Id", jurado1Id, "jurado2Id", evaluadorId,
-                "fechaHora", "2026-07-15T14:00:00", "salon", "Salón 301");
-        enviar(post(sustentacion + "/programacion"), docente, programacion).andExpect(status().isForbidden());
-        enviar(post(sustentacion + "/programacion"), consejo, programacion)
+        // El Consejo programa con el formato E: un evaluador del anteproyecto no puede ser jurado del mismo trabajo
+        Map<String, Object> datos = programacion(coordinadorId, juradoId, "2026-07-15T14:00:00", "Salón 301");
+        subir(sustentacion + "/programacion", docente, datos, archivo("formato-e.pdf"))
+                .andExpect(status().isForbidden());
+        subir(sustentacion + "/programacion", consejo,
+                programacion(coordinadorId, evaluadorId, "2026-07-15T14:00:00", "Salón 301"), archivo("formato-e.pdf"))
+                .andExpect(status().isBadRequest());
+        subir(sustentacion + "/programacion", consejo, datos)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El formato E es obligatorio para programar la sustentación."));
+        subir(sustentacion + "/programacion", consejo, datos, archivo("formato-e.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.estado").value("PROGRAMADA"))
                 .andExpect(jsonPath("$.sustentacion.sesiones[0].salon").value("Salón 301"))
-                .andExpect(jsonPath("$.sustentacion.sesiones[0].jurados[0].usuarioId").value(jurado1Id));
+                .andExpect(jsonPath("$.sustentacion.sesiones[0].juradoCoordinadorId").value(coordinadorId))
+                .andExpect(jsonPath("$.sustentacion.sesiones[0].rutaFormatoE").value(trabajoId + "/TI-E/v2/formato-e.pdf"));
+        // Los jurados reciben sus roles
+        enviar(get(API + "/usuarios/me"), login("X"), null)
+                .andExpect(jsonPath("$.roles").value(org.hamcrest.Matchers.hasItems("JURADO", "JURADO_COORDINADOR")));
+        enviar(get(API + "/usuarios/me"), login("Y"), null)
+                .andExpect(jsonPath("$.roles").value(org.hamcrest.Matchers.hasItem("JURADO")));
 
-        // 15 de julio: los jurados califican; rige la menos favorable
-        reloj.fijar(LocalDate.of(2026, 7, 15));
-        String jurado1 = login("X");
-        String jurado2 = login("V");
-        String calificaciones = sustentacion + "/calificaciones";
-        subir(calificaciones, docente, Map.of("calificacion", "APROBADO"))
-                .andExpect(status().isNotAcceptable());
-        subir(calificaciones, jurado1, Map.of("calificacion", "APROBADO"), archivo("sesion-1.pdf"))
+        // 10 de julio: el director pide una nueva fecha y el Consejo la aprueba (21 de julio)
+        reloj.fijar(LocalDate.of(2026, 7, 10));
+        subir(sustentacion + "/nueva-fecha", docente, null, archivo("nueva-fecha.pdf"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sustentacion.calificaciones[0].rutaActa")
-                        .value(trabajoId + "/TI-G/v1/sesion-1.pdf"));
-        subir(calificaciones, jurado2,
-                Map.of("calificacion", "APROBADO_CON_OBSERVACIONES", "observaciones", "Ajustar conclusiones"))
+                .andExpect(jsonPath("$.sustentacion.solicitudesNuevaFecha[0].fechaHoraAnterior")
+                        .value("2026-07-15T14:00:00"));
+        subir(sustentacion + "/nueva-fecha/decisiones-consejo", consejo,
+                Map.of("resultado", "APROBADO", "fechaHora", "2026-07-21T09:00:00"), archivo("res-nueva-fecha.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sustentacion.sesiones[0].fechaHora").value("2026-07-21T09:00:00"))
+                .andExpect(jsonPath("$.sustentacion.solicitudesNuevaFecha[0].decision.resultado").value("APROBADO"));
+
+        // 21 de julio: solo el coordinador califica, con el acta
+        reloj.fijar(LocalDate.of(2026, 7, 21));
+        String coordinador = login("X");
+        String jurado = login("Y");
+        String calificaciones = sustentacion + "/calificaciones";
+        Map<String, Object> conObservaciones = Map.of("calificacion", "APROBADO_CON_OBSERVACIONES", "observaciones",
+                "Ajustar conclusiones");
+        subir(calificaciones, docente, conObservaciones, archivo("acta.pdf")).andExpect(status().isNotAcceptable());
+        subir(calificaciones, jurado, conObservaciones, archivo("acta.pdf")).andExpect(status().isNotAcceptable());
+        subir(calificaciones, coordinador, conObservaciones)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El acta de sustentación (formato G) es obligatoria."));
+        subir(calificaciones, coordinador, conObservaciones, archivo("sesion-1.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.estado").value("EN_AJUSTES"))
+                .andExpect(jsonPath("$.sustentacion.calificaciones[0].rutaActa")
+                        .value(trabajoId + "/TI-G/v1/sesion-1.pdf"))
                 .andExpect(jsonPath("$.sustentacion.fechaLimiteAjustes").isNotEmpty());
 
-        // El director radica los ajustes y los jurados los verifican
-        reloj.fijar(LocalDate.of(2026, 7, 20));
-        subir(sustentacion + "/ajustes", docente, null, archivo("tg.pdf"))
+        // El director radica los ajustes con anexos y el coordinador los verifica
+        reloj.fijar(LocalDate.of(2026, 7, 24));
+        subir(sustentacion + "/ajustes", docente, null, archivo("tg.pdf"), pdf("anexos", "anexos-ajustes.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.estado").value("AJUSTES_RADICADOS"))
-                .andExpect(jsonPath("$.sustentacion.rutaAjustes").value(trabajoId + "/AJUSTES_SUSTENTACION/v1/tg.pdf"));
-        enviar(post(sustentacion + "/ajustes/verificaciones"), jurado1, Map.of("cumple", true))
-                .andExpect(status().isOk());
-        enviar(post(sustentacion + "/ajustes/verificaciones"), jurado2, Map.of("cumple", true))
+                .andExpect(jsonPath("$.sustentacion.rutaAjustes").value(trabajoId + "/AJUSTES_SUSTENTACION/v1/tg.pdf"))
+                .andExpect(jsonPath("$.sustentacion.rutaAnexosAjustes")
+                        .value(trabajoId + "/ANEXOS/v2/anexos-ajustes.pdf"));
+        enviar(post(sustentacion + "/ajustes/verificaciones"), jurado, Map.of("cumple", true))
+                .andExpect(status().isNotAcceptable());
+        enviar(post(sustentacion + "/ajustes/verificaciones"), coordinador, Map.of("cumple", true))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.estado").value("APROBADA"));
 
-        // Un jurado carga la versión definitiva: el trabajo finaliza
-        subir(sustentacion + "/version-definitiva", docente, null, archivo("tg.pdf"))
+        // El coordinador carga la versión definitiva: el trabajo finaliza
+        subir(sustentacion + "/version-definitiva", jurado, null, archivo("tg.pdf"))
                 .andExpect(status().isNotAcceptable());
-        subir(sustentacion + "/version-definitiva", jurado1, null, archivo("tg.pdf"))
+        subir(sustentacion + "/version-definitiva", coordinador, null, archivo("tg.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("FINALIZADO"))
                 .andExpect(jsonPath("$.sustentacion.rutaVersionDefinitiva").value(trabajoId + "/TI-H/v1/tg.pdf"));
 
-        // El jurado ve el trabajo entre los suyos y descarga sus archivos
-        enviar(get(API + "/trabajos-grado/mis-trabajos"), jurado1, null)
+        // El otro jurado ve el trabajo entre los suyos y descarga sus archivos
+        enviar(get(API + "/trabajos-grado/mis-trabajos"), jurado, null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(trabajoId));
-        enviar(get(TRABAJOS + trabajoId + "/archivos").param("ruta", trabajoId + "/TI-E/v1/tg.pdf"), jurado1, null)
+        enviar(get(TRABAJOS + trabajoId + "/archivos").param("ruta", trabajoId + "/TI-E/v1/tg.pdf"), jurado, null)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF));
     }
@@ -325,29 +373,33 @@ class FlujoSustentacionIntegracionTest {
     @Test
     void laInasistenciaAplazaYLaSegundaCierraElTrabajo() throws Exception {
         long trabajoId = trabajoEnCurso();
-        long jurado1Id = crearUsuario("X", "JURADO");
-        long jurado2Id = crearUsuario("Y", "DOCENTE");
+        long coordinadorId = crearUsuario("X", "JURADO");
+        long juradoId = crearUsuario("Y", "DOCENTE");
         String consejo = login("F");
         String sustentacion = TRABAJOS + trabajoId + "/sustentacion";
         reloj.fijar(LocalDate.of(2026, 7, 6));
-        subir(sustentacion, login("D"), null, pdf("documentoFinal", "tg.pdf"), pdf("pazYSalvo", "tg.pdf"))
+        subir(sustentacion, login("D"), null, solicitud()).andExpect(status().isOk());
+        subir(sustentacion + "/programacion", consejo,
+                programacion(coordinadorId, juradoId, "2026-07-06T16:00:00", "Salón 301"), archivo("e.pdf"))
                 .andExpect(status().isOk());
-        enviar(post(sustentacion + "/programacion"), consejo, Map.of("jurado1Id", jurado1Id, "jurado2Id", jurado2Id,
-                "fechaHora", "2026-07-06T16:00:00", "salon", "Salón 301")).andExpect(status().isOk());
 
+        // El otro jurado no registra la inasistencia; el coordinador sí
+        enviar(post(sustentacion + "/inasistencia"), login("Y"), Map.of("observaciones", "No se presentó"))
+                .andExpect(status().isNotAcceptable());
         enviar(post(sustentacion + "/inasistencia"), login("X"), Map.of("observaciones", "No se presentó"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("APLAZADO"))
                 .andExpect(jsonPath("$.sustentacion.fechaLimiteSegundaSesion").value("2026-09-04"));
 
-        // Segunda sesión fuera de los 60 días: no se permite
-        enviar(post(sustentacion + "/programacion"), consejo, Map.of("jurado1Id", jurado1Id, "jurado2Id", jurado2Id,
-                "fechaHora", "2026-09-05T16:00:00", "salon", "Salón 205"))
+        // Segunda sesión fuera de los 60 días: no se permite; dentro sí, con el coordinador Y
+        subir(sustentacion + "/programacion", consejo,
+                programacion(juradoId, coordinadorId, "2026-09-05T16:00:00", "Salón 205"), archivo("e.pdf"))
                 .andExpect(status().isBadRequest());
-        enviar(post(sustentacion + "/programacion"), consejo, Map.of("jurado1Id", jurado1Id, "jurado2Id", jurado2Id,
-                "fechaHora", "2026-08-03T16:00:00", "salon", "Salón 205"))
+        subir(sustentacion + "/programacion", consejo,
+                programacion(juradoId, coordinadorId, "2026-08-03T16:00:00", "Salón 205"), archivo("e.pdf"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.etapa").value("SUSTENTACION"));
+                .andExpect(jsonPath("$.etapa").value("SUSTENTACION"))
+                .andExpect(jsonPath("$.sustentacion.sesiones[1].juradoCoordinadorId").value(juradoId));
 
         reloj.fijar(LocalDate.of(2026, 8, 3));
         enviar(post(sustentacion + "/inasistencia"), login("Y"), Map.of("observaciones", "No se presentó de nuevo"))

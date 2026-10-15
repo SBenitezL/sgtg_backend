@@ -35,6 +35,7 @@ import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.CrearPract
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.CrearTrabajoInvestigacionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionComiteDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionConsejoDTORequest;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionNuevaFechaDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ObservacionesDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ObservacionesOpcionalesDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ProgramacionSustentacionDTORequest;
@@ -320,32 +321,68 @@ public class TrabajoGradoController {
     }
 
     /**
-     * Solicita la sustentación con el documento final (formato E), el paz y
-     * salvo (formato F) y, en práctica profesional, el concepto del asesor.
-     * Solo el director.
+     * Solicita la sustentación con la monografía, el documento final (formato
+     * E), el paz y salvo (formato F), en práctica profesional el concepto del
+     * asesor y, opcionalmente, los anexos (PDF). Solo el director.
      */
     @PostMapping(value = "/{trabajoId}/sustentacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarSustentacion(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId,
+            @RequestPart(value = "monografia", required = false) MultipartFile monografia,
             @RequestPart(value = "documentoFinal", required = false) MultipartFile documentoFinal,
             @RequestPart(value = "pazYSalvo", required = false) MultipartFile pazYSalvo,
-            @RequestPart(value = "conceptoAsesor", required = false) MultipartFile conceptoAsesor) {
+            @RequestPart(value = "conceptoAsesor", required = false) MultipartFile conceptoAsesor,
+            @RequestPart(value = "anexos", required = false) MultipartFile anexos) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.solicitarSustentacion(trabajoId,
-                usuario.getCusuari(), adjunto(documentoFinal), adjunto(pazYSalvo), adjunto(conceptoAsesor))));
+                usuario.getCusuari(), adjunto(monografia), adjunto(documentoFinal), adjunto(pazYSalvo),
+                adjunto(conceptoAsesor), adjunto(anexos))));
     }
 
-    /** Programa la sesión de sustentación: jurados, fecha, hora y salón. */
-    @PostMapping("/{trabajoId}/sustentacion/programacion")
+    /**
+     * Programa la sesión de sustentación: jurado coordinador, otro jurado,
+     * fecha, hora y salón (parte {@code datos}) y el formato E (parte
+     * {@code archivo}, obligatorio).
+     */
+    @PostMapping(value = "/{trabajoId}/sustentacion/programacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('CONSEJO')")
     public ResponseEntity<TrabajoGradoDTOResponse> programarSustentacion(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
-            @Valid @RequestBody ProgramacionSustentacionDTORequest request) {
+            @Valid @RequestPart("datos") ProgramacionSustentacionDTORequest request,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.programarSustentacion(trabajoId,
-                usuario.getCusuari(), request.jurado1Id(), request.jurado2Id(), request.fechaHora(),
-                request.salon())));
+                usuario.getCusuari(), request.juradoCoordinadorId(), request.juradoId(), request.fechaHora(),
+                request.salon(), adjunto(archivo))));
     }
 
-    /** Registra la calificación de un jurado de la sesión actual, con el acta (formato G) opcional. */
+    /**
+     * Solicita una nueva fecha para la sesión programada, antes de la fecha
+     * designada, con el documento de la solicitud. Solo el director.
+     */
+    @PostMapping(value = "/{trabajoId}/sustentacion/nueva-fecha", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TrabajoGradoDTOResponse> solicitarNuevaFechaSustentacion(
+            @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado
+                .solicitarNuevaFechaSustentacion(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+    }
+
+    /**
+     * Registra la decisión del Consejo sobre la nueva fecha (parte {@code datos})
+     * con la resolución (parte {@code archivo}). Si la aprueba, reprograma la sesión.
+     */
+    @PostMapping(value = "/{trabajoId}/sustentacion/nueva-fecha/decisiones-consejo",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('CONSEJO')")
+    public ResponseEntity<TrabajoGradoDTOResponse> resolverNuevaFechaSustentacion(
+            @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
+            @Valid @RequestPart("datos") DecisionNuevaFechaDTORequest request,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.resolverNuevaFechaSustentacion(
+                trabajoId, usuario.getCusuari(), request.resultado(), request.fechaHora(), request.salon(),
+                adjunto(archivo), request.observaciones())));
+    }
+
+    /** Registra la calificación de la sesión actual con el acta (formato G). Solo el jurado coordinador. */
     @PostMapping(value = "/{trabajoId}/sustentacion/calificaciones", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> calificarSustentacion(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
@@ -355,7 +392,7 @@ public class TrabajoGradoController {
                 usuario.getCusuari(), request.calificacion(), request.observaciones(), adjunto(archivo))));
     }
 
-    /** Registra la inasistencia del estudiante. Solo un jurado de la sesión actual. */
+    /** Registra la inasistencia del estudiante. Solo el jurado coordinador de la sesión actual. */
     @PostMapping("/{trabajoId}/sustentacion/inasistencia")
     public ResponseEntity<TrabajoGradoDTOResponse> registrarInasistencia(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
@@ -364,16 +401,20 @@ public class TrabajoGradoController {
                 manageTrabajoGrado.registrarInasistencia(trabajoId, usuario.getCusuari(), request.observaciones())));
     }
 
-    /** Radica los ajustes de una sustentación aprobada con observaciones. Solo el director. */
+    /**
+     * Radica los ajustes de una sustentación aprobada con observaciones (parte
+     * {@code archivo}) y, opcionalmente, sus anexos (parte {@code anexos}). Solo el director.
+     */
     @PostMapping(value = "/{trabajoId}/sustentacion/ajustes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> radicarAjustesSustentacion(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
-            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo,
+            @RequestPart(value = "anexos", required = false) MultipartFile anexos) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado
-                .radicarAjustesSustentacion(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+                .radicarAjustesSustentacion(trabajoId, usuario.getCusuari(), adjunto(archivo), adjunto(anexos))));
     }
 
-    /** Registra la verificación de los ajustes. Solo un jurado de la sesión actual. */
+    /** Registra la verificación de los ajustes. Solo el jurado coordinador de la sesión actual. */
     @PostMapping("/{trabajoId}/sustentacion/ajustes/verificaciones")
     public ResponseEntity<TrabajoGradoDTOResponse> verificarAjustesSustentacion(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
@@ -382,7 +423,7 @@ public class TrabajoGradoController {
                 trabajoId, usuario.getCusuari(), request.cumple(), request.observaciones())));
     }
 
-    /** Carga la versión definitiva (formato H) de la sustentación aprobada. Solo un jurado de la sesión actual. */
+    /** Carga la versión definitiva (formato H) de la sustentación aprobada. Solo el jurado coordinador. */
     @PostMapping(value = "/{trabajoId}/sustentacion/version-definitiva",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> cargarVersionDefinitiva(

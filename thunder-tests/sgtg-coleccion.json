@@ -5816,6 +5816,10 @@
         "form": [],
         "files": [
           {
+            "name": "monografia",
+            "value": "archivos/monografia.pdf"
+          },
+          {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
           },
@@ -5862,6 +5866,10 @@
         "form": [],
         "files": [
           {
+            "name": "monografia",
+            "value": "archivos/monografia.pdf"
+          },
+          {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
           },
@@ -5896,9 +5904,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"jurado1Id\": \"{{evaluador1Id}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"2030-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{evaluador1Id}}\",\n  \"juradoId\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"2030-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-e.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5931,9 +5950,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"jurado1Id\": \"{{evaluador1Id}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"2030-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{evaluador1Id}}\",\n  \"juradoId\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"2030-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-e.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -6011,6 +6041,81 @@
         "raw": "{\n  \"email\": \"{{juradoEmail}}\",\n  \"password\": \"Clave123*\"\n}",
         "form": []
       }
+    },
+    {
+      "_id": "a2218242-72af-47d5-afe1-4476268fdeb3",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Crear segundo jurado",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 1072000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"Y-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"y.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Jurado\",\n  \"primerApellido\": \"Dos\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"JURADO\"\n  ]\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{jurado2Id}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{jurado2Email}}"
+        }
+      ]
+    },
+    {
+      "_id": "8248cd7b-5583-4efd-9c76-cb07fe401c6c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "Login segundo jurado",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 1074000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "none"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{jurado2Email}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{jurado2Token}}"
+        }
+      ]
     },
     {
       "_id": "92f08eb5-ea60-4403-8425-57540a175136",
@@ -6475,6 +6580,10 @@
         "form": [],
         "files": [
           {
+            "name": "monografia",
+            "value": "archivos/monografia.pdf"
+          },
+          {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
           }
@@ -6485,6 +6594,51 @@
         "bearer": "{{docenteToken}}"
       },
       "docs": "Ya cumplidos los meses mínimos: la solicitud sin el paz y salvo (Formato F) se rechaza."
+    },
+    {
+      "_id": "ee6717a8-e621-44f3-a0fa-932712893251",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Sustentación sin monografía (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion",
+      "method": "POST",
+      "sortNum": 1176000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "documentoFinal",
+            "value": "archivos/documento-final.pdf"
+          },
+          {
+            "name": "pazYSalvo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La monografía es obligatoria."
+        }
+      ]
     },
     {
       "_id": "8e5a7107-d725-424b-978e-74627d2edf2d",
@@ -6515,6 +6669,18 @@
           "custom": "json.sustentacion.estado",
           "action": "equal",
           "value": "SOLICITADA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.rutaMonografia",
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/MONOGRAFIA/v\\d+/monografia\\.pdf$"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.rutaAnexos",
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/ANEXOS/v\\d+/anexos\\.pdf$"
         }
       ],
       "body": {
@@ -6523,12 +6689,20 @@
         "form": [],
         "files": [
           {
+            "name": "monografia",
+            "value": "archivos/monografia.pdf"
+          },
+          {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
           },
           {
             "name": "pazYSalvo",
             "value": "archivos/paz-y-salvo.pdf"
+          },
+          {
+            "name": "anexos",
+            "value": "archivos/anexos.pdf"
           }
         ]
       },
@@ -6539,10 +6713,97 @@
       "docs": "Documento final (formato E) y paz y salvo (formato F). Con la sustentación solicitada ya no aplica el vencimiento del plazo."
     },
     {
+      "_id": "e92f9510-1eb4-4832-b31b-c524f318e9ab",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Un evaluador del anteproyecto no es jurado del mismo trabajo (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1185000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{juradoId}}\",\n  \"juradoId\": \"{{evaluador1Id}}\",\n  \"fechaHora\": \"2099-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-e.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "evaluador del anteproyecto"
+        }
+      ]
+    },
+    {
+      "_id": "b87ceab8-6d6f-494a-9318-c0247dfded7a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Sin formato E no se programa (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1187000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{juradoId}}\",\n  \"juradoId\": \"{{jurado2Id}}\",\n  \"fechaHora\": \"2099-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}"
+          }
+        ],
+        "files": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El formato E es obligatorio para programar la sustentación."
+        }
+      ]
+    },
+    {
       "_id": "6c2d5f19-daee-473a-8c9d-c3b0098a67bd",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Consejo programa la sustentación",
+      "name": "A. Consejo programa con coordinador y formato E",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/programacion",
       "method": "POST",
       "sortNum": 1190000,
@@ -6570,15 +6831,38 @@
         },
         {
           "type": "json-query",
-          "custom": "json.sustentacion.sesiones[0].jurados[0].usuarioId",
+          "custom": "json.sustentacion.sesiones[0].juradoCoordinadorId",
           "action": "equal",
           "value": "{{juradoId}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.sesiones[0].jurados[1].usuarioId",
+          "action": "equal",
+          "value": "{{jurado2Id}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.sesiones[0].rutaFormatoE",
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/TI-E/v\\d+/formato-e\\.pdf$"
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"jurado1Id\": \"{{juradoId}}\",\n  \"jurado2Id\": \"{{evaluador1Id}}\",\n  \"fechaHora\": \"{{hoy}}T23:00:00\",\n  \"salon\": \"Salón 301\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{juradoId}}\",\n  \"juradoId\": \"{{jurado2Id}}\",\n  \"fechaHora\": \"2099-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-e.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -6587,10 +6871,271 @@
       "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
     },
     {
+      "_id": "fce6b0b6-e949-44b7-a27f-cbd32bfe7c7b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. El coordinador recibe los roles JURADO y JURADO_COORDINADOR",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios/me",
+      "method": "GET",
+      "sortNum": 1191000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles",
+          "action": "contains",
+          "value": "JURADO_COORDINADOR"
+        }
+      ]
+    },
+    {
+      "_id": "b85dfe92-42f8-4779-abb6-c88f509c46bc",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Director solicita una nueva fecha",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/nueva-fecha",
+      "method": "POST",
+      "sortNum": 1192000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/solicitud-nueva-fecha.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.solicitudesNuevaFecha[0].fechaHoraAnterior",
+          "action": "equal",
+          "value": "2099-01-15T14:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "b6e6328e-c282-48d8-a5b6-7a46a479ae2f",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Con la nueva fecha pendiente no se califica (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1193000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-sustentacion.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ]
+    },
+    {
+      "_id": "9278fd95-e46f-4fe3-a2ac-c487cf9c2121",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Consejo aprueba la nueva fecha (hoy)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/nueva-fecha/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 1194000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"fechaHora\": \"{{hoy}}T23:00:00\",\n  \"observaciones\": null\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.sesiones[0].fechaHora",
+          "action": "equal",
+          "value": "{{hoy}}T23:00:00"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.sesiones[0].salon",
+          "action": "equal",
+          "value": "Salón 301"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.solicitudesNuevaFecha[0].decision.resultado",
+          "action": "equal",
+          "value": "APROBADO"
+        }
+      ]
+    },
+    {
+      "_id": "b922273c-1f0f-4d52-86b5-97da1a2d44e6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. El otro jurado no califica (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1196000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jurado2Token}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-sustentacion.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "jurado coordinador"
+        }
+      ]
+    },
+    {
+      "_id": "c04fee76-8ffe-4e93-a423-0be4c6a726e5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Calificación sin acta (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
+      "method": "POST",
+      "sortNum": 1198000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{juradoToken}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El acta de sustentación (formato G) es obligatoria."
+        }
+      ]
+    },
+    {
       "_id": "cba6822a-008c-44be-b260-1f650a9d20a4",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Jurado califica APROBADO con el acta",
+      "name": "A. Coordinador califica CON OBSERVACIONES con el acta",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
       "method": "POST",
       "sortNum": 1200000,
@@ -6608,7 +7153,7 @@
           "type": "json-query",
           "custom": "json.sustentacion.estado",
           "action": "equal",
-          "value": "PROGRAMADA"
+          "value": "EN_AJUSTES"
         },
         {
           "type": "json-query",
@@ -6623,7 +7168,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+            "value": "{\n  \"calificacion\": \"APROBADO_CON_OBSERVACIONES\",\n  \"observaciones\": \"Ajustar las conclusiones\"\n}"
           }
         ],
         "files": [
@@ -6637,48 +7182,6 @@
         "type": "bearer",
         "bearer": "{{juradoToken}}"
       }
-    },
-    {
-      "_id": "f0e72c4a-cbe1-4b5e-a067-8ee8df02c4c5",
-      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
-      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Evaluador 1 (jurado) califica CON OBSERVACIONES",
-      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
-      "method": "POST",
-      "sortNum": 1210000,
-      "created": "2026-10-06T02:28:11.000Z",
-      "modified": "2026-10-06T02:28:11.000Z",
-      "headers": [],
-      "tests": [
-        {
-          "type": "res-code",
-          "custom": "",
-          "action": "equal",
-          "value": "200"
-        },
-        {
-          "type": "json-query",
-          "custom": "json.sustentacion.estado",
-          "action": "equal",
-          "value": "EN_AJUSTES"
-        }
-      ],
-      "body": {
-        "type": "formdata",
-        "raw": "",
-        "form": [
-          {
-            "name": "datos=application/json",
-            "value": "{\n  \"calificacion\": \"APROBADO_CON_OBSERVACIONES\",\n  \"observaciones\": \"Ajustar las conclusiones\"\n}"
-          }
-        ],
-        "files": []
-      },
-      "auth": {
-        "type": "bearer",
-        "bearer": "{{evaluador1Token}}"
-      },
-      "docs": "Rige la calificación menos favorable: el director tiene 10 días hábiles para los ajustes (sustentacion.fechaLimiteAjustes)."
     },
     {
       "_id": "93cee827-52cc-42b7-a65b-ac38042099bb",
@@ -6719,7 +7222,7 @@
       "_id": "6d967247-d513-4255-b0d4-5eafcab37eae",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Director radica los ajustes",
+      "name": "A. Director radica los ajustes con anexos",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/ajustes",
       "method": "POST",
       "sortNum": 1230000,
@@ -6738,6 +7241,12 @@
           "custom": "json.sustentacion.estado",
           "action": "equal",
           "value": "AJUSTES_RADICADOS"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.rutaAnexosAjustes",
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/ANEXOS/v\\d+/anexos\\.pdf$"
         }
       ],
       "body": {
@@ -6748,6 +7257,10 @@
           {
             "name": "archivo",
             "value": "archivos/ajustes.pdf"
+          },
+          {
+            "name": "anexos",
+            "value": "archivos/anexos.pdf"
           }
         ]
       },
@@ -6757,13 +7270,13 @@
       }
     },
     {
-      "_id": "a5c993f4-10a0-4638-a12d-bf07ff329f4d",
+      "_id": "761cdf8b-f45b-470f-a5c9-ef8355cdafd5",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Jurado verifica: cumple",
+      "name": "A. El otro jurado no verifica los ajustes (406)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/ajustes/verificaciones",
       "method": "POST",
-      "sortNum": 1240000,
+      "sortNum": 1235000,
       "created": "2026-10-06T02:28:11.000Z",
       "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
@@ -6772,13 +7285,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "200"
-        },
-        {
-          "type": "json-query",
-          "custom": "json.sustentacion.estado",
-          "action": "equal",
-          "value": "AJUSTES_RADICADOS"
+          "value": "406"
         }
       ],
       "body": {
@@ -6788,17 +7295,17 @@
       },
       "auth": {
         "type": "bearer",
-        "bearer": "{{juradoToken}}"
+        "bearer": "{{jurado2Token}}"
       }
     },
     {
-      "_id": "761cdf8b-f45b-470f-a5c9-ef8355cdafd5",
+      "_id": "a5c993f4-10a0-4638-a12d-bf07ff329f4d",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Evaluador 1 verifica: cumple",
+      "name": "A. Coordinador verifica: cumple",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/ajustes/verificaciones",
       "method": "POST",
-      "sortNum": 1250000,
+      "sortNum": 1240000,
       "created": "2026-10-06T02:28:11.000Z",
       "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
@@ -6823,7 +7330,7 @@
       },
       "auth": {
         "type": "bearer",
-        "bearer": "{{evaluador1Token}}"
+        "bearer": "{{juradoToken}}"
       }
     },
     {
@@ -6868,10 +7375,45 @@
       }
     },
     {
+      "_id": "46c02d1d-42cb-4eaf-a3a9-afbaecf8f212",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. El otro jurado no carga la versión definitiva (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/version-definitiva",
+      "method": "POST",
+      "sortNum": 1265000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jurado2Token}}"
+      },
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/version-definitiva.pdf"
+          }
+        ]
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        }
+      ]
+    },
+    {
       "_id": "13c5f34e-0598-4400-8863-21969d533f34",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Jurado carga la versión definitiva",
+      "name": "A. Coordinador carga la versión definitiva",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/version-definitiva",
       "method": "POST",
       "sortNum": 1270000,
@@ -6951,6 +7493,41 @@
       }
     },
     {
+      "_id": "1f2aec06-6f9d-4b14-8ec6-30b9466b1251",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. El otro jurado ve el trabajo en sus trabajos",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/mis-trabajos",
+      "method": "GET",
+      "sortNum": 1285000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jurado2Token}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].id",
+          "action": "equal",
+          "value": "{{trabajo2Id}}"
+        }
+      ]
+    },
+    {
       "_id": "a899a03d-b293-4eda-84ce-2c7938ca9173",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
@@ -7017,6 +7594,10 @@
         "form": [],
         "files": [
           {
+            "name": "monografia",
+            "value": "archivos/monografia.pdf"
+          },
+          {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
           },
@@ -7068,6 +7649,10 @@
         "form": [],
         "files": [
           {
+            "name": "monografia",
+            "value": "archivos/monografia.pdf"
+          },
+          {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
           },
@@ -7113,9 +7698,20 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"jurado1Id\": \"{{juradoId}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"{{hoy}}T22:00:00\",\n  \"salon\": \"Salón 205\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{juradoId}}\",\n  \"juradoId\": \"{{jurado2Id}}\",\n  \"fechaHora\": \"{{hoy}}T22:00:00\",\n  \"salon\": \"Salón 205\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-e.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -7123,13 +7719,13 @@
       }
     },
     {
-      "_id": "758f00b1-66df-4bc4-ba04-fb5c60fbc909",
+      "_id": "480cae22-53eb-48aa-ad02-21d37c6bc9ff",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "B. Jurado califica APLAZADO",
+      "name": "B. El otro jurado no califica (406)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/calificaciones",
       "method": "POST",
-      "sortNum": 1330000,
+      "sortNum": 1325000,
       "created": "2026-10-06T02:28:11.000Z",
       "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
@@ -7138,7 +7734,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "200"
+          "value": "406"
         }
       ],
       "body": {
@@ -7147,24 +7743,30 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"calificacion\": \"APLAZADO\",\n  \"observaciones\": \"Repetir la presentación\"\n}"
+            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-sustentacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
-        "bearer": "{{juradoToken}}"
-      }
+        "bearer": "{{jurado2Token}}"
+      },
+      "docs": "Rige APLAZADO: el Consejo debe programar la segunda sesión en máximo 60 días calendario (sustentacion.fechaLimiteSegundaSesion)."
     },
     {
-      "_id": "480cae22-53eb-48aa-ad02-21d37c6bc9ff",
+      "_id": "758f00b1-66df-4bc4-ba04-fb5c60fbc909",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "B. Evaluador 2 (jurado) califica APROBADO",
+      "name": "B. Coordinador califica APLAZADO con el acta",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/calificaciones",
       "method": "POST",
-      "sortNum": 1340000,
+      "sortNum": 1330000,
       "created": "2026-10-06T02:28:11.000Z",
       "modified": "2026-10-06T02:28:11.000Z",
       "headers": [],
@@ -7194,16 +7796,20 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"calificacion\": \"APROBADO\"\n}"
+            "value": "{\n  \"calificacion\": \"APLAZADO\",\n  \"observaciones\": \"Repetir la presentación\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-sustentacion.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
-        "bearer": "{{evaluador2Token}}"
-      },
-      "docs": "Rige APLAZADO: el Consejo debe programar la segunda sesión en máximo 60 días calendario (sustentacion.fechaLimiteSegundaSesion)."
+        "bearer": "{{juradoToken}}"
+      }
     },
     {
       "_id": "8ac3e691-bd70-47fa-90bb-86dba5f8a634",
@@ -7237,14 +7843,54 @@
         }
       ],
       "body": {
-        "type": "json",
-        "raw": "{\n  \"jurado1Id\": \"{{juradoId}}\",\n  \"jurado2Id\": \"{{evaluador2Id}}\",\n  \"fechaHora\": \"{{hoy}}T23:30:00\",\n  \"salon\": \"Salón 205\"\n}",
-        "form": []
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{juradoId}}\",\n  \"juradoId\": \"{{jurado2Id}}\",\n  \"fechaHora\": \"{{hoy}}T23:30:00\",\n  \"salon\": \"Salón 205\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-e.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{consejoToken}}"
       }
+    },
+    {
+      "_id": "c66311b8-915c-464c-a880-e226e114bf34",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. El otro jurado no registra la inasistencia (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/inasistencia",
+      "method": "POST",
+      "sortNum": 1355000,
+      "created": "2026-10-13T00:00:00.000Z",
+      "modified": "2026-10-13T00:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{jurado2Token}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"observaciones\": \"No se presentó\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        }
+      ]
     },
     {
       "_id": "76b5feb3-e338-4c86-9e47-6ecb57e3e4b7",

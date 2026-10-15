@@ -107,8 +107,9 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 .thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, SISTEMAS));
         when(userGateway.findById(20L)).thenReturn(usuario(20L, RoleAdmited.DOCENTE));
         when(userGateway.findById(21L)).thenReturn(usuario(21L, RoleAdmited.EVALUADOR));
-        // Miembro del Consejo de Facultad (70)
+        // Miembro del Consejo de Facultad (70) y jurado de otros trabajos (30)
         when(userGateway.findById(70L)).thenReturn(usuario(70L, RoleAdmited.CONSEJO));
+        when(userGateway.findById(30L)).thenReturn(usuario(30L, RoleAdmited.JURADO));
         // El gateway devuelve el mismo trabajo que recibe
         when(trabajoGateway.guardar(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
         // El almacenamiento devuelve <trabajo>/<carpeta>/v1/<nombre>
@@ -546,44 +547,115 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 new ExceptionFormatterImplAdapter());
     }
 
+    /** Solicita la sustentación con monografía, formato E y paz y salvo (sin anexos). */
+    private TrabajoGrado solicitarSustentacion(ManageTrabajoGradoCUImplAdapter casoDeUso, long usuarioId) {
+        return casoDeUso.solicitarSustentacion(7L, usuarioId, pdf("monografia.pdf"), pdf("formato-e.pdf"),
+                pdf("paz-y-salvo.pdf"), null, null);
+    }
+
     @Test
     void laSustentacionSeSolicitaProgramaCalificaYFinaliza() {
         trabajoEnCurso();
         // En curso desde el 2-mar-2026: antes de los 3 meses no se puede solicitar
-        ReglaNegocioException temprano = assertThrows(ReglaNegocioException.class, () -> casoDeUso
-                .solicitarSustentacion(7L, 1L, pdf("tg.pdf"), pdf("tg.pdf"), null));
+        ReglaNegocioException temprano = assertThrows(ReglaNegocioException.class,
+                () -> solicitarSustentacion(casoDeUso, 1L));
         assertEquals("error.dominio.sustentacion.antes_de_tiempo", temprano.getMessage());
 
         ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
-        assertThrows(NoAccessException.class,
-                () -> enJulio.solicitarSustentacion(7L, 10L, pdf("tg.pdf"), pdf("tg.pdf"), null));
-        enJulio.solicitarSustentacion(7L, 1L, pdf("tg.pdf"), pdf("tg.pdf"), null);
-        // El Consejo programa a los jurados 20 (DOCENTE) y 21 (EVALUADOR), que fueron evaluadores
-        TrabajoGrado trabajo = enJulio.programarSustentacion(7L, 70L, 20L, 21L,
-                LocalDate.of(2026, 7, 6).atTime(15, 0), "Salón 301");
-        assertEquals(EstadoSustentacion.PROGRAMADA, trabajo.getSustentacion().getEstado());
+        assertThrows(NoAccessException.class, () -> solicitarSustentacion(enJulio, 10L));
+        TrabajoGrado trabajo = enJulio.solicitarSustentacion(7L, 1L, pdf("monografia.pdf"), pdf("formato-e.pdf"),
+                pdf("paz-y-salvo.pdf"), null, pdf("anexos.pdf"));
+        assertEquals("7/MONOGRAFIA/v1/monografia.pdf", trabajo.getSustentacion().getRutaMonografia());
+        assertEquals("7/ANEXOS/v1/anexos.pdf", trabajo.getSustentacion().getRutaAnexos());
 
+        // El Consejo programa al coordinador 99 (DOCENTE) y al jurado 30 (JURADO) con el formato E
+        trabajo = enJulio.programarSustentacion(7L, 70L, 99L, 30L, LocalDate.of(2026, 7, 6).atTime(15, 0),
+                "Salón 301", pdf("formato-e-consejo.pdf"));
+        assertEquals(EstadoSustentacion.PROGRAMADA, trabajo.getSustentacion().getEstado());
+        assertEquals(99L, trabajo.getSustentacion().sesionActual().coordinador().getUsuarioId());
+        assertEquals("7/TI-E/v1/formato-e-consejo.pdf", trabajo.getSustentacion().sesionActual().rutaFormatoE());
+        verify(userGateway).agregarRol(99L, "JURADO");
+        verify(userGateway).agregarRol(99L, "JURADO_COORDINADOR");
+        verify(userGateway).agregarRol(30L, "JURADO");
+
+        // Solo el coordinador califica (el otro jurado solo consulta), con el acta
         assertThrows(NoAccessException.class,
-                () -> enJulio.calificarSustentacion(7L, 1L, Calificacion.APROBADO, null, null));
-        enJulio.calificarSustentacion(7L, 20L, Calificacion.APROBADO, null, pdf("acta-sustentacion.pdf"));
-        trabajo = enJulio.calificarSustentacion(7L, 21L, Calificacion.APROBADO, null, null);
+                () -> enJulio.calificarSustentacion(7L, 1L, Calificacion.APROBADO, null, pdf("acta.pdf")));
+        NoAccessException noCoordina = assertThrows(NoAccessException.class,
+                () -> enJulio.calificarSustentacion(7L, 30L, Calificacion.APROBADO, null, pdf("acta.pdf")));
+        assertEquals("error.trabajo_grado.solo_jurado_coordinador", noCoordina.getMessage());
+        trabajo = enJulio.calificarSustentacion(7L, 99L, Calificacion.APROBADO, null, pdf("acta-sustentacion.pdf"));
         assertEquals(EstadoSustentacion.APROBADA, trabajo.getSustentacion().getEstado());
 
-        trabajo = enJulio.cargarVersionDefinitiva(7L, 21L, pdf("tg.pdf"));
+        assertThrows(NoAccessException.class, () -> enJulio.cargarVersionDefinitiva(7L, 30L, pdf("tg.pdf")));
+        trabajo = enJulio.cargarVersionDefinitiva(7L, 99L, pdf("tg.pdf"));
         assertEquals(Proceso.FINALIZADO, trabajo.getEtapa());
-        assertEquals("U21", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+        assertEquals("U99", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+    }
+
+    @Test
+    void losEvaluadoresDelAnteproyectoNoSonJuradosDelMismoTrabajo() {
+        trabajoEnCurso();
+        ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
+        solicitarSustentacion(enJulio, 1L);
+
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> enJulio.programarSustentacion(
+                7L, 70L, 20L, 30L, LocalDate.of(2026, 7, 10).atTime(15, 0), "Salón 301", pdf("e.pdf")));
+        assertEquals("error.dominio.sustentacion.jurado_con_conflicto", error.getMessage());
+        verify(userGateway, never()).agregarRol(30L, "JURADO");
     }
 
     @Test
     void elJuradoDebeTenerUnRolQueLePermitaSerlo() {
         trabajoEnCurso();
         ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
-        enJulio.solicitarSustentacion(7L, 1L, pdf("tg.pdf"), pdf("tg.pdf"), null);
+        solicitarSustentacion(enJulio, 1L);
 
         // El usuario 50 solo tiene rol COMITE
-        ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> enJulio
-                .programarSustentacion(7L, 70L, 20L, 50L, LocalDate.of(2026, 7, 10).atTime(15, 0), "Salón 301"));
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> enJulio.programarSustentacion(
+                7L, 70L, 99L, 50L, LocalDate.of(2026, 7, 10).atTime(15, 0), "Salón 301", pdf("e.pdf")));
         assertEquals("error.dominio.participante.rol_no_permitido", error.getMessage());
+    }
+
+    @Test
+    void elDirectorSolicitaNuevaFechaYElConsejoReprogramaLaSesion() {
+        trabajoEnCurso();
+        ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
+        solicitarSustentacion(enJulio, 1L);
+        enJulio.programarSustentacion(7L, 70L, 99L, 30L, LocalDate.of(2026, 7, 20).atTime(15, 0), "Salón 301",
+                pdf("e.pdf"));
+
+        assertThrows(NoAccessException.class,
+                () -> enJulio.solicitarNuevaFechaSustentacion(7L, 10L, pdf("nueva-fecha.pdf")));
+        TrabajoGrado trabajo = enJulio.solicitarNuevaFechaSustentacion(7L, 1L, pdf("nueva-fecha.pdf"));
+        assertEquals("7/SOLICITUD_NUEVA_FECHA/v1/nueva-fecha.pdf",
+                trabajo.getSustentacion().nuevaFechaPendiente().orElseThrow().rutaSolicitud());
+
+        trabajo = enJulio.resolverNuevaFechaSustentacion(7L, 70L, ResultadoConcepto.APROBADO,
+                LocalDate.of(2026, 8, 3).atTime(9, 0), null, pdf("res-500.pdf"), null);
+        assertEquals(LocalDate.of(2026, 8, 3).atTime(9, 0), trabajo.getSustentacion().sesionActual().fechaHora());
+        assertEquals("Salón 301", trabajo.getSustentacion().sesionActual().salon());
+        assertEquals("7/RESOLUCION/v1/res-500.pdf",
+                trabajo.getSustentacion().getSolicitudesNuevaFecha().get(0).decision().rutaArchivo());
+    }
+
+    @Test
+    void losAjustesAceptanAnexosYLosVerificaElCoordinador() {
+        trabajoEnCurso();
+        ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
+        solicitarSustentacion(enJulio, 1L);
+        enJulio.programarSustentacion(7L, 70L, 99L, 30L, LocalDate.of(2026, 7, 6).atTime(15, 0), "Salón 301",
+                pdf("e.pdf"));
+        enJulio.calificarSustentacion(7L, 99L, Calificacion.APROBADO_CON_OBSERVACIONES, "Ajustar conclusiones",
+                pdf("acta.pdf"));
+
+        TrabajoGrado trabajo = enJulio.radicarAjustesSustentacion(7L, 1L, pdf("ajustes.pdf"),
+                pdf("anexos-ajustes.pdf"));
+        assertEquals("7/ANEXOS/v1/anexos-ajustes.pdf", trabajo.getSustentacion().getRutaAnexosAjustes());
+        assertThrows(NoAccessException.class,
+                () -> enJulio.verificarAjustesSustentacion(7L, 30L, true, null));
+        trabajo = enJulio.verificarAjustesSustentacion(7L, 99L, true, null);
+        assertEquals(EstadoSustentacion.APROBADA, trabajo.getSustentacion().getEstado());
     }
 
     @Test

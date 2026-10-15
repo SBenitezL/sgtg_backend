@@ -156,8 +156,25 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             ProrrogaDTO prorroga, List<SuspensionDTO> suspensiones) {
     }
 
-    public record SesionSustentacionDTO(int numero, List<EvaluadorDTO> jurados, LocalDateTime fechaHora,
-            String salon, LocalDate fechaProgramacion) {
+    /**
+     * @param jurados               los dos jurados; el primero es el coordinador
+     * @param juradoCoordinadorId   usuario del jurado coordinador (califica y registra las decisiones)
+     * @param rutaFormatoE          formato E que adjuntó el Consejo al programar
+     */
+    public record SesionSustentacionDTO(int numero, List<EvaluadorDTO> jurados, Long juradoCoordinadorId,
+            LocalDateTime fechaHora, String salon, LocalDate fechaProgramacion, String rutaFormatoE) {
+    }
+
+    /**
+     * Solicitud del director de una nueva fecha para la sesión.
+     *
+     * @param fechaHoraAnterior fecha y hora de la sesión al solicitar
+     * @param decision          decisión del Consejo, null mientras esté pendiente
+     * @param nuevaFechaHora    fecha y hora aprobadas, null si no se aprobó
+     * @param nuevoSalon        salón aprobado, null si se conservó
+     */
+    public record SolicitudNuevaFechaDTO(int sesion, String rutaSolicitud, LocalDate fechaSolicitud,
+            LocalDateTime fechaHoraAnterior, DecisionDTO decision, LocalDateTime nuevaFechaHora, String nuevoSalon) {
     }
 
     public record CalificacionJuradoDTO(int sesion, Long juradoUsuarioId, String jurado, Calificacion calificacion,
@@ -169,13 +186,20 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             String observaciones, LocalDate fecha) {
     }
 
-    /** @param motivoNoAprobacion motivo del cierre si no se aprobó */
-    public record SustentacionDTO(EstadoSustentacion estado, String rutaDocumentoFinal, String rutaPazYSalvo,
-            String rutaConceptoAsesor, LocalDate fechaSolicitud, List<SesionSustentacionDTO> sesiones,
+    /**
+     * @param rutaMonografia        monografía que acompaña al formato E
+     * @param rutaAnexos            anexos de la solicitud, null si no se adjuntaron
+     * @param rutaAnexosAjustes     anexos de los ajustes, null si no se adjuntaron
+     * @param solicitudesNuevaFecha solicitudes de nueva fecha de la sesión, en orden
+     * @param motivoNoAprobacion    motivo del cierre si no se aprobó
+     */
+    public record SustentacionDTO(EstadoSustentacion estado, String rutaMonografia, String rutaDocumentoFinal,
+            String rutaPazYSalvo, String rutaConceptoAsesor, String rutaAnexos, LocalDate fechaSolicitud,
+            List<SesionSustentacionDTO> sesiones, List<SolicitudNuevaFechaDTO> solicitudesNuevaFecha,
             List<CalificacionJuradoDTO> calificaciones, List<RegistroJuradoDTO> inasistencias,
-            List<RegistroJuradoDTO> verificaciones, String rutaAjustes, LocalDate fechaAjustes,
-            LocalDate fechaLimiteAjustes, LocalDate fechaLimiteSegundaSesion, String rutaVersionDefinitiva,
-            LocalDate fechaVersionDefinitiva, MotivoCierre motivoNoAprobacion) {
+            List<RegistroJuradoDTO> verificaciones, String rutaAjustes, String rutaAnexosAjustes,
+            LocalDate fechaAjustes, LocalDate fechaLimiteAjustes, LocalDate fechaLimiteSegundaSesion,
+            String rutaVersionDefinitiva, LocalDate fechaVersionDefinitiva, MotivoCierre motivoNoAprobacion) {
     }
 
     /** @param decision decisión del Consejo, null mientras esté pendiente */
@@ -277,19 +301,26 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     private static SustentacionDTO sustentacion(Sustentacion s) {
         if (s == null)
             return null;
-        return new SustentacionDTO(s.getEstado(), s.getRutaDocumentoFinal(), s.getRutaPazYSalvo(),
-                s.getRutaConceptoAsesor(), s.getFechaSolicitud(),
+        return new SustentacionDTO(s.getEstado(), s.getRutaMonografia(), s.getRutaDocumentoFinal(),
+                s.getRutaPazYSalvo(), s.getRutaConceptoAsesor(), s.getRutaAnexos(), s.getFechaSolicitud(),
                 s.getSesiones().stream().map(TrabajoGradoDTOResponse::sesion).toList(),
+                s.getSolicitudesNuevaFecha().stream()
+                        .map(n -> new SolicitudNuevaFechaDTO(n.sesion(), n.rutaSolicitud(), n.fechaSolicitud(),
+                                n.fechaHoraAnterior(), n.decision() == null ? null : decision(n.decision()),
+                                n.nuevaFechaHora(), n.nuevoSalon()))
+                        .toList(),
                 s.getCalificaciones().stream().map(TrabajoGradoDTOResponse::calificacion).toList(),
                 s.getInasistencias().stream().map(TrabajoGradoDTOResponse::registro).toList(),
                 s.getVerificaciones().stream().map(TrabajoGradoDTOResponse::registro).toList(),
-                s.getRutaAjustes(), s.getFechaAjustes(), s.getFechaLimiteAjustes(), s.getFechaLimiteSegundaSesion(),
-                s.getRutaVersionDefinitiva(), s.getFechaVersionDefinitiva(), s.getMotivoNoAprobacion());
+                s.getRutaAjustes(), s.getRutaAnexosAjustes(), s.getFechaAjustes(), s.getFechaLimiteAjustes(),
+                s.getFechaLimiteSegundaSesion(), s.getRutaVersionDefinitiva(), s.getFechaVersionDefinitiva(),
+                s.getMotivoNoAprobacion());
     }
 
     private static SesionSustentacionDTO sesion(SesionSustentacion s) {
         return new SesionSustentacionDTO(s.numero(), s.jurados().stream().map(TrabajoGradoDTOResponse::evaluador)
-                .toList(), s.fechaHora(), s.salon(), s.fechaProgramacion());
+                .toList(), s.coordinador().getUsuarioId(), s.fechaHora(), s.salon(), s.fechaProgramacion(),
+                s.rutaFormatoE());
     }
 
     private static CalificacionJuradoDTO calificacion(CalificacionJurado c) {

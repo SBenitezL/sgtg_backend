@@ -13,9 +13,9 @@ import com.sgtg.backend.domain.models.comun.NombrePersona;
 public class Evaluador extends Participante {
     /** Roles del sistema que permiten evaluar un anteproyecto o ser jurado */
     private static final Set<RoleAdmited> ROLES_PERMITIDOS = Set.of(RoleAdmited.DOCENTE, RoleAdmited.EVALUADOR,
-            RoleAdmited.JURADO);
+            RoleAdmited.JURADO, RoleAdmited.JURADO_COORDINADOR);
 
-    /** Crea el evaluador a partir de un usuario con rol DOCENTE, EVALUADOR o JURADO. */
+    /** Crea el evaluador a partir de un usuario con rol DOCENTE, EVALUADOR, JURADO o JURADO_COORDINADOR. */
     public Evaluador(Usuario usuario) {
         super(usuario, ROLES_PERMITIDOS);
     }

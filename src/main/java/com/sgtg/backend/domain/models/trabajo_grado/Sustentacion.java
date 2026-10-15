@@ -1,12 +1,14 @@
 package com.sgtg.backend.domain.models.trabajo_grado;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
+import com.sgtg.backend.domain.models.comun.Decision;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.utils.CheckString;
@@ -14,19 +16,23 @@ import com.sgtg.backend.domain.utils.CheckString;
 /**
  * Etapa de sustentación del trabajo de grado (Arts. 19-25, 46-55).
  * <ol>
- * <li>El director la solicita con el documento final (formato E), el paz y
- * salvo (formato F) y, en práctica profesional, el concepto favorable del
- * asesor.</li>
- * <li>El Consejo de Facultad la programa: dos jurados, fecha, hora y
- * salón.</li>
- * <li>Cada jurado califica (o registra la inasistencia). Si no coinciden,
- * rige la calificación menos favorable.</li>
- * <li>APROBADO: los jurados cargan la versión definitiva (formato H) y el
+ * <li>El director la solicita con la monografía, el documento final (formato
+ * E), el paz y salvo (formato F), en práctica profesional el concepto
+ * favorable del asesor y, si quiere, los anexos.</li>
+ * <li>El Consejo de Facultad la programa: dos jurados (el primero es el
+ * coordinador), fecha, hora, salón y el formato E.</li>
+ * <li>El jurado coordinador califica con el acta (formato G) o registra la
+ * inasistencia; el otro jurado solo consulta.</li>
+ * <li>APROBADO: el coordinador carga la versión definitiva (formato H) y el
  * trabajo finaliza. APROBADO CON OBSERVACIONES: el director radica los ajustes
- * en 10 días hábiles y los jurados los verifican; si no se radican a tiempo o
- * no cumplen, se trata como APLAZADO. APLAZADO o inasistencia: en la primera
- * sesión se programa una segunda en máximo 60 días calendario; en la segunda,
- * el trabajo queda NO APROBADO. NO APROBADO cierra el trabajo.</li>
+ * (y anexos) en 10 días hábiles y el coordinador los verifica; si no se radican
+ * a tiempo o no cumplen, se trata como APLAZADO. APLAZADO o inasistencia: en
+ * la primera sesión se programa una segunda en máximo 60 días calendario; en
+ * la segunda, el trabajo queda NO APROBADO. NO APROBADO cierra el trabajo.</li>
+ * <li>Antes de la fecha de la sesión, el director puede solicitar una nueva
+ * fecha; si el Consejo la aprueba, la sesión se reprograma con los mismos
+ * jurados. Mientras está pendiente no se registra la calificación ni la
+ * inasistencia.</li>
  * </ol>
  *
  * Cada operación que modifica el estado valida todo antes de cambiar algo, y
@@ -41,16 +47,20 @@ public class Sustentacion {
     /** Días calendario para realizar la segunda sesión después de un aplazamiento (Art. 23) */
     public static final int DIAS_SEGUNDA_SESION = 60;
 
+    private final String rutaMonografia;
     private final String rutaDocumentoFinal;
     private final String rutaPazYSalvo;
     private final String rutaConceptoAsesor;
+    private final String rutaAnexos;
     private final LocalDate fechaSolicitud;
     private EstadoSustentacion estado;
     private final List<SesionSustentacion> sesiones;
     private final List<CalificacionJurado> calificaciones;
     private final List<RegistroJurado> inasistencias;
     private final List<RegistroJurado> verificaciones;
+    private final List<SolicitudNuevaFecha> solicitudesNuevaFecha;
     private String rutaAjustes;
+    private String rutaAnexosAjustes;
     private LocalDate fechaAjustes;
     private LocalDate fechaLimiteAjustes;
     private LocalDate fechaLimiteSegundaSesion;
@@ -61,16 +71,20 @@ public class Sustentacion {
 
     /** Reconstruye la sustentación con su estado persistido. */
     Sustentacion(DatosSustentacion datos) {
+        this.rutaMonografia = datos.rutaMonografia();
         this.rutaDocumentoFinal = datos.rutaDocumentoFinal();
         this.rutaPazYSalvo = datos.rutaPazYSalvo();
         this.rutaConceptoAsesor = datos.rutaConceptoAsesor();
+        this.rutaAnexos = datos.rutaAnexos();
         this.fechaSolicitud = datos.fechaSolicitud();
         this.estado = datos.estado();
         this.sesiones = new ArrayList<>(datos.sesiones());
         this.calificaciones = new ArrayList<>(datos.calificaciones());
         this.inasistencias = new ArrayList<>(datos.inasistencias());
         this.verificaciones = new ArrayList<>(datos.verificaciones());
+        this.solicitudesNuevaFecha = new ArrayList<>(datos.solicitudesNuevaFecha());
         this.rutaAjustes = datos.rutaAjustes();
+        this.rutaAnexosAjustes = datos.rutaAnexosAjustes();
         this.fechaAjustes = datos.fechaAjustes();
         this.fechaLimiteAjustes = datos.fechaLimiteAjustes();
         this.fechaLimiteSegundaSesion = datos.fechaLimiteSegundaSesion();
@@ -83,10 +97,13 @@ public class Sustentacion {
     /**
      * Crea la solicitud de sustentación.
      *
+     * @param rutaAnexos             ruta de los anexos, opcional
      * @param requiereConceptoAsesor true en práctica profesional
      */
-    static Sustentacion solicitar(String rutaDocumentoFinal, String rutaPazYSalvo, String rutaConceptoAsesor,
-            LocalDate fecha, boolean requiereConceptoAsesor) {
+    static Sustentacion solicitar(String rutaMonografia, String rutaDocumentoFinal, String rutaPazYSalvo,
+            String rutaConceptoAsesor, String rutaAnexos, LocalDate fecha, boolean requiereConceptoAsesor) {
+        if (CheckString.isBlank(rutaMonografia))
+            throw new ReglaNegocioException("error.dominio.sustentacion.monografia_obligatoria");
         if (CheckString.isBlank(rutaDocumentoFinal))
             throw new ReglaNegocioException("error.dominio.sustentacion.documento_final_obligatorio");
         if (CheckString.isBlank(rutaPazYSalvo))
@@ -96,9 +113,9 @@ public class Sustentacion {
         if (fecha == null)
             throw new ReglaNegocioException("error.dominio.sustentacion.solicitud_incompleta");
         return new Sustentacion(new DatosSustentacion(rutaDocumentoFinal.trim(), rutaPazYSalvo.trim(),
-                CheckString.isBlank(rutaConceptoAsesor) ? null : rutaConceptoAsesor.trim(), fecha,
-                EstadoSustentacion.SOLICITADA, List.of(), List.of(), List.of(), List.of(), null, null, null, null,
-                null, null, null, null));
+                opcional(rutaConceptoAsesor), fecha, EstadoSustentacion.SOLICITADA, List.of(), List.of(), List.of(),
+                List.of(), null, null, null, null, null, null, null, null, rutaMonografia.trim(), opcional(rutaAnexos),
+                null, List.of()));
     }
 
     // ----- Programación -----
@@ -107,7 +124,7 @@ public class Sustentacion {
      * Programa la sesión siguiente: la primera tras la solicitud o la segunda
      * tras un aplazamiento, dentro de los 60 días calendario.
      *
-     * @param sesion sesión con jurados, fecha, hora y salón
+     * @param sesion sesión con jurados, fecha, hora, salón y formato E
      */
     void programar(SesionSustentacion sesion) {
         if (sesion == null)
@@ -122,28 +139,66 @@ public class Sustentacion {
         this.estado = EstadoSustentacion.PROGRAMADA;
     }
 
+    // ----- Nueva fecha de la sesión -----
+
+    /**
+     * Registra la solicitud del director de una nueva fecha para la sesión
+     * programada. Solo antes de la fecha designada y sin otra pendiente.
+     */
+    void solicitarNuevaFecha(String rutaSolicitud, LocalDate fecha) {
+        if (this.estado != EstadoSustentacion.PROGRAMADA)
+            throw new ReglaNegocioException("error.dominio.nueva_fecha.no_permitida");
+        if (fecha == null || !fecha.isBefore(sesionActual().fecha()))
+            throw new ReglaNegocioException("error.dominio.nueva_fecha.fuera_de_plazo");
+        if (nuevaFechaPendiente().isPresent())
+            throw new ReglaNegocioException("error.dominio.nueva_fecha.solicitud_pendiente");
+        SesionSustentacion actual = sesionActual();
+        this.solicitudesNuevaFecha.add(SolicitudNuevaFecha.solicitar(actual.numero(), rutaSolicitud, fecha,
+                actual.fechaHora()));
+    }
+
+    /**
+     * Registra la decisión del Consejo sobre la nueva fecha. Si la aprueba, la
+     * sesión actual se reprograma con la fecha (y salón) indicados.
+     */
+    void resolverNuevaFecha(Decision decision, LocalDateTime nuevaFechaHora, String nuevoSalon) {
+        SolicitudNuevaFecha pendiente = nuevaFechaPendiente()
+                .orElseThrow(() -> new ReglaNegocioException("error.dominio.nueva_fecha.sin_solicitud_pendiente"));
+        SolicitudNuevaFecha resuelta = pendiente.resolver(decision, nuevaFechaHora, nuevoSalon);
+        SesionSustentacion reprogramada = resuelta.fueAprobada()
+                ? sesionActual().reprogramada(nuevaFechaHora, nuevoSalon, decision.fecha())
+                : null;
+        this.solicitudesNuevaFecha.set(this.solicitudesNuevaFecha.size() - 1, resuelta);
+        if (reprogramada != null)
+            this.sesiones.set(this.sesiones.size() - 1, reprogramada);
+    }
+
+    /**
+     * @return la solicitud de nueva fecha pendiente de decisión, si la hay
+     */
+    public Optional<SolicitudNuevaFecha> nuevaFechaPendiente() {
+        return this.solicitudesNuevaFecha.stream().filter(SolicitudNuevaFecha::estaPendiente).findFirst();
+    }
+
     // ----- Calificación e inasistencia -----
 
     /**
-     * Registra la calificación de un jurado. Con las dos, define el resultado
-     * de la sesión con la calificación menos favorable.
+     * Registra la calificación del jurado coordinador, que define el
+     * resultado de la sesión.
      *
-     * @param calificacion calificación del jurado
+     * @param calificacion calificación del coordinador, con el acta
      * @param calendario   calendario para el plazo de los ajustes
      */
     void calificar(CalificacionJurado calificacion, CalendarioHabil calendario) {
         if (calificacion == null || calendario == null)
             throw new ReglaNegocioException("error.dominio.sustentacion.calificacion_incompleta");
-        validarRegistroEnSesion(EstadoSustentacion.PROGRAMADA, calificacion.sesion(), calificacion.jurado(),
+        validarRegistroDelCoordinador(EstadoSustentacion.PROGRAMADA, calificacion.sesion(), calificacion.jurado(),
                 calificacion.fecha(), sesionActual().fecha());
-        List<CalificacionJurado> previas = calificacionesSesionActual();
-        if (previas.stream().anyMatch(c -> c.jurado().esMismaPersona(calificacion.jurado())))
+        validarSinNuevaFechaPendiente();
+        if (!calificacionesSesionActual().isEmpty())
             throw new ReglaNegocioException("error.dominio.sustentacion.calificacion_repetida");
         this.calificaciones.add(calificacion);
-        if (previas.isEmpty())
-            return;
-        Calificacion resultado = calificacion.calificacion().menosFavorable(previas.get(0).calificacion());
-        switch (resultado) {
+        switch (calificacion.calificacion()) {
             case APROBADO -> this.estado = EstadoSustentacion.APROBADA;
             case APROBADO_CON_OBSERVACIONES -> {
                 this.estado = EstadoSustentacion.EN_AJUSTES;
@@ -155,15 +210,16 @@ public class Sustentacion {
     }
 
     /**
-     * Registra la inasistencia a la sesión: en la primera se aplaza; en la
-     * segunda el trabajo queda NO APROBADO. No se permite si un jurado ya
-     * calificó la sesión.
+     * Registra la inasistencia a la sesión (jurado coordinador): en la primera
+     * se aplaza; en la segunda el trabajo queda NO APROBADO. No se permite si
+     * la sesión ya se calificó.
      */
     void registrarInasistencia(RegistroJurado inasistencia) {
         if (inasistencia == null || inasistencia.favorable())
             throw new ReglaNegocioException("error.dominio.sustentacion.registro_incompleto");
-        validarRegistroEnSesion(EstadoSustentacion.PROGRAMADA, inasistencia.sesion(), inasistencia.jurado(),
+        validarRegistroDelCoordinador(EstadoSustentacion.PROGRAMADA, inasistencia.sesion(), inasistencia.jurado(),
                 inasistencia.fecha(), sesionActual().fecha());
+        validarSinNuevaFechaPendiente();
         if (!calificacionesSesionActual().isEmpty())
             throw new ReglaNegocioException("error.dominio.sustentacion.sesion_ya_calificada");
         this.inasistencias.add(inasistencia);
@@ -175,8 +231,10 @@ public class Sustentacion {
     /**
      * Registra los ajustes del director a una sustentación aprobada con
      * observaciones, dentro de los 10 días hábiles.
+     *
+     * @param rutaAnexos ruta de los anexos de los ajustes, opcional
      */
-    void radicarAjustes(String ruta, LocalDate fecha) {
+    void radicarAjustes(String ruta, String rutaAnexos, LocalDate fecha) {
         if (this.estado != EstadoSustentacion.EN_AJUSTES)
             throw new ReglaNegocioException("error.dominio.sustentacion.ajustes_no_permitidos");
         if (CheckString.isBlank(ruta))
@@ -184,27 +242,24 @@ public class Sustentacion {
         if (fecha == null || fecha.isAfter(this.fechaLimiteAjustes))
             throw new ReglaNegocioException("error.dominio.sustentacion.ajustes_fuera_de_plazo");
         this.rutaAjustes = ruta.trim();
+        this.rutaAnexosAjustes = opcional(rutaAnexos);
         this.fechaAjustes = fecha;
         this.estado = EstadoSustentacion.AJUSTES_RADICADOS;
     }
 
     /**
-     * Registra la verificación de un jurado sobre los ajustes. Con las dos: si
-     * ambas cumplen, la sustentación queda aprobada; si alguna no, se trata
-     * como APLAZADO.
+     * Registra la verificación del jurado coordinador sobre los ajustes: si
+     * cumplen, la sustentación queda aprobada; si no, se trata como APLAZADO.
      */
     void verificarAjustes(RegistroJurado verificacion) {
         if (verificacion == null)
             throw new ReglaNegocioException("error.dominio.sustentacion.registro_incompleto");
-        validarRegistroEnSesion(EstadoSustentacion.AJUSTES_RADICADOS, verificacion.sesion(), verificacion.jurado(),
-                verificacion.fecha(), this.fechaAjustes);
-        List<RegistroJurado> previas = verificacionesSesionActual();
-        if (previas.stream().anyMatch(v -> v.jurado().esMismaPersona(verificacion.jurado())))
+        validarRegistroDelCoordinador(EstadoSustentacion.AJUSTES_RADICADOS, verificacion.sesion(),
+                verificacion.jurado(), verificacion.fecha(), this.fechaAjustes);
+        if (!verificacionesSesionActual().isEmpty())
             throw new ReglaNegocioException("error.dominio.sustentacion.verificacion_repetida");
         this.verificaciones.add(verificacion);
-        if (previas.isEmpty())
-            return;
-        if (verificacion.favorable() && previas.get(0).favorable())
+        if (verificacion.favorable())
             this.estado = EstadoSustentacion.APROBADA;
         else
             aplazar(verificacion.fecha(), MotivoCierre.SUSTENTACION_NO_APROBADA);
@@ -213,8 +268,8 @@ public class Sustentacion {
     // ----- Versión definitiva -----
 
     /**
-     * Registra la versión definitiva (formato H) que carga un jurado de la
-     * sustentación aprobada: el trabajo finaliza.
+     * Registra la versión definitiva (formato H) que carga el jurado
+     * coordinador de la sustentación aprobada: el trabajo finaliza.
      */
     void cargarVersionDefinitiva(Evaluador jurado, String ruta, LocalDate fecha) {
         if (this.estado != EstadoSustentacion.APROBADA)
@@ -223,6 +278,8 @@ public class Sustentacion {
             throw new ReglaNegocioException("error.dominio.sustentacion.documento_version_definitiva_obligatorio");
         if (jurado == null || !sesionActual().esJurado(jurado.getUsuarioId()))
             throw new ReglaNegocioException("error.dominio.sustentacion.jurado_no_asignado");
+        if (!sesionActual().esCoordinador(jurado.getUsuarioId()))
+            throw new ReglaNegocioException("error.dominio.sustentacion.solo_coordinador");
         if (fecha == null)
             throw new ReglaNegocioException("error.dominio.sustentacion.registro_incompleto");
         this.rutaVersionDefinitiva = ruta.trim();
@@ -272,15 +329,26 @@ public class Sustentacion {
         this.motivoNoAprobacion = motivo;
     }
 
-    private void validarRegistroEnSesion(EstadoSustentacion esperado, int sesion, Evaluador jurado, LocalDate fecha,
-            LocalDate fechaMinima) {
+    private void validarRegistroDelCoordinador(EstadoSustentacion esperado, int sesion, Evaluador jurado,
+            LocalDate fecha, LocalDate fechaMinima) {
         if (this.estado != esperado)
             throw new ReglaNegocioException("error.dominio.sustentacion.registro_no_permitido");
         SesionSustentacion actual = sesionActual();
         if (sesion != actual.numero() || !actual.esJurado(jurado.getUsuarioId()))
             throw new ReglaNegocioException("error.dominio.sustentacion.jurado_no_asignado");
+        if (!actual.esCoordinador(jurado.getUsuarioId()))
+            throw new ReglaNegocioException("error.dominio.sustentacion.solo_coordinador");
         if (fecha.isBefore(fechaMinima))
             throw new ReglaNegocioException("error.dominio.sustentacion.fecha_registro_invalida");
+    }
+
+    private void validarSinNuevaFechaPendiente() {
+        if (nuevaFechaPendiente().isPresent())
+            throw new ReglaNegocioException("error.dominio.nueva_fecha.solicitud_pendiente");
+    }
+
+    private static String opcional(String ruta) {
+        return CheckString.isBlank(ruta) ? null : ruta.trim();
     }
 
     /**
@@ -327,7 +395,12 @@ public class Sustentacion {
         return new DatosSustentacion(rutaDocumentoFinal, rutaPazYSalvo, rutaConceptoAsesor, fechaSolicitud, estado,
                 sesiones, calificaciones, inasistencias, verificaciones, rutaAjustes, fechaAjustes,
                 fechaLimiteAjustes, fechaLimiteSegundaSesion, rutaVersionDefinitiva, fechaVersionDefinitiva,
-                juradoVersionDefinitiva, motivoNoAprobacion);
+                juradoVersionDefinitiva, motivoNoAprobacion, rutaMonografia, rutaAnexos, rutaAnexosAjustes,
+                solicitudesNuevaFecha);
+    }
+
+    public String getRutaMonografia() {
+        return rutaMonografia;
     }
 
     public String getRutaDocumentoFinal() {
@@ -340,6 +413,10 @@ public class Sustentacion {
 
     public String getRutaConceptoAsesor() {
         return rutaConceptoAsesor;
+    }
+
+    public String getRutaAnexos() {
+        return rutaAnexos;
     }
 
     public LocalDate getFechaSolicitud() {
@@ -366,8 +443,16 @@ public class Sustentacion {
         return Collections.unmodifiableList(verificaciones);
     }
 
+    public List<SolicitudNuevaFecha> getSolicitudesNuevaFecha() {
+        return Collections.unmodifiableList(solicitudesNuevaFecha);
+    }
+
     public String getRutaAjustes() {
         return rutaAjustes;
+    }
+
+    public String getRutaAnexosAjustes() {
+        return rutaAnexosAjustes;
     }
 
     public LocalDate getFechaAjustes() {

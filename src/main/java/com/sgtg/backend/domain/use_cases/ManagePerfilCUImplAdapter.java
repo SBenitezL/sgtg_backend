@@ -27,7 +27,7 @@ public class ManagePerfilCUImplAdapter implements ManagePerfilCUIntPort {
      */
     static final Set<String> ROLES_DOCENTE = Set.of(RoleAdmited.DOCENTE.name(), RoleAdmited.DIRECTOR.name(),
             RoleAdmited.CODIRECTOR.name(), RoleAdmited.EVALUADOR.name(), RoleAdmited.JURADO.name(),
-            RoleAdmited.JEFE_DEP.name());
+            RoleAdmited.JURADO_COORDINADOR.name(), RoleAdmited.JEFE_DEP.name());
     /** Roles que pueden tener perfil de estudiante */
     static final Set<String> ROLES_ESTUDIANTE = Set.of(RoleAdmited.ESTUDIANTE.name());
 

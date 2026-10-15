@@ -170,6 +170,16 @@ public class TrabajoGradoEntity {
 
     // ----- Sustentación (columnas nulas hasta que se solicite) -----
 
+    // Las rutas nuevas son TEXT: la fila de MySQL está cerca de su límite de tamaño
+    @Column(columnDefinition = "TEXT")
+    private String sustentacionRutaMonografia;
+
+    @Column(columnDefinition = "TEXT")
+    private String sustentacionRutaAnexos;
+
+    @Column(columnDefinition = "TEXT")
+    private String sustentacionRutaAnexosAjustes;
+
     @Column(length = 500)
     private String sustentacionRutaDocumentoFinal;
 
@@ -223,6 +233,11 @@ public class TrabajoGradoEntity {
     @CollectionTable(name = "sustentacion_verificaciones", joinColumns = @JoinColumn(name = "trabajo_id"))
     @OrderColumn(name = "orden")
     private List<RegistroJuradoEmbeddable> sustentacionVerificaciones = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "sustentacion_nuevas_fechas", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<SolicitudNuevaFechaEmbeddable> sustentacionSolicitudesNuevaFecha = new ArrayList<>();
 
     // ----- Cancelación -----
 

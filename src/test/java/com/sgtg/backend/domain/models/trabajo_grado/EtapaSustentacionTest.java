@@ -23,11 +23,17 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
+import com.sgtg.backend.domain.models.comun.Decision;
+import com.sgtg.backend.domain.models.comun.Organo;
+import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.services.CalendarioHabilFalso;
 
-/** Solicitud, programación, calificación y cierre de la sustentación (Arts. 19-25, 46-55). */
+/**
+ * Solicitud, programación (con jurado coordinador), nueva fecha, calificación
+ * y cierre de la sustentación (Arts. 19-25, 46-55).
+ */
 class EtapaSustentacionTest {
 
     /** Notificación 20-mar-2026: en investigación se solicita desde el 20-jun y hasta el 20-dic-2026 */
@@ -37,10 +43,13 @@ class EtapaSustentacionTest {
     /** Jueves 20 de agosto de 2026: primera sesión */
     private static final LocalDate SESION = LocalDate.of(2026, 8, 20);
     private static final String DEFINITIVA = "definitivas/2026/tg-7.pdf";
+    private static final String ACTA = "actas/tg-7.pdf";
+    private static final String FORMATO_E = "formatos/e-tg-7.pdf";
 
     private final CalendarioHabil calendario = new CalendarioHabilFalso();
-    private final Evaluador jurado1 = evaluador(30L);
-    private final Evaluador jurado2 = evaluador(31L);
+    /** Jurado coordinador */
+    private final Evaluador coordinador = evaluador(30L);
+    private final Evaluador jurado = evaluador(31L);
     private TrabajoGrado trabajo;
 
     private static void assertRegla(String clave, Executable accion) {
@@ -52,12 +61,19 @@ class EtapaSustentacionTest {
         return fecha.atTime(10, 0);
     }
 
+    /** Trabajo en curso; los evaluadores de su anteproyecto fueron los usuarios 20 y 21. */
     private static TrabajoGrado enCurso(Modalidad modalidad) {
         boolean practica = modalidad == Modalidad.PRACTICA_PROFESIONAL;
+        DatosAnteproyecto anteproyecto = new DatosAnteproyecto(List.of(), List.of(evaluador(20L), evaluador(21L)),
+                List.of(), List.of(), null, null);
         return TrabajoGrado.reconstruir(new DatosTrabajoGrado(7L, modalidad, "Sistema de gestión", OBJETIVOS,
                 List.of(estudiante(10L)), directorPlanta(1L), null, practica ? asesorOrganizacion() : null,
-                practica ? cartaAceptacion() : null, Proceso.EN_CURSO, null, null,
+                practica ? cartaAceptacion() : null, Proceso.EN_CURSO, null, anteproyecto,
                 Ejecucion.iniciar(NOTIFICACION, modalidad).datos(), List.of(), null));
+    }
+
+    private static Decision consejo(ResultadoConcepto resultado, LocalDate fecha) {
+        return new Decision(Organo.CONSEJO_FACULTAD, resultado, null, "resoluciones/nueva-fecha.pdf", null, fecha);
     }
 
     @BeforeEach
@@ -66,38 +82,41 @@ class EtapaSustentacionTest {
     }
 
     private void solicitar() {
-        trabajo.solicitarSustentacion("finales/tg-7.pdf", "paz-y-salvo/tg-7.pdf", null, "D1", dia(SOLICITUD));
+        trabajo.solicitarSustentacion("monografias/tg-7.pdf", "finales/tg-7.pdf", "paz-y-salvo/tg-7.pdf", null,
+                null, "D1", dia(SOLICITUD));
     }
 
     private void programar(LocalDate fecha, LocalDate programacion) {
-        trabajo.programarSustentacion(jurado1, jurado2, fecha.atTime(14, 0), "Salón 301", "CF01",
+        trabajo.programarSustentacion(coordinador, jurado, fecha.atTime(14, 0), "Salón 301", FORMATO_E, "CF01",
                 dia(programacion));
     }
 
-    private void calificar(Evaluador jurado, Calificacion calificacion, LocalDate fecha) {
+    private void calificar(Calificacion calificacion, LocalDate fecha) {
         String observaciones = calificacion == Calificacion.APROBADO ? null : "Observaciones del jurado";
-        trabajo.calificarSustentacion(jurado, calificacion, observaciones, null, dia(fecha), calendario);
+        trabajo.calificarSustentacion(coordinador, calificacion, observaciones, ACTA, dia(fecha), calendario);
     }
 
-    /** Solicitada, programada y calificada en la primera sesión con los resultados dados. */
-    private void primeraSesion(Calificacion primera, Calificacion segunda) {
+    /** Solicitada, programada y calificada por el coordinador en la primera sesión. */
+    private void primeraSesion(Calificacion calificacion) {
         solicitar();
         programar(SESION, PROGRAMACION);
-        calificar(jurado1, primera, SESION);
-        calificar(jurado2, segunda, SESION);
+        calificar(calificacion, SESION);
     }
 
     // ----- Solicitud -----
 
     @Test
     void laSolicitudPasaASustentacionYDetieneElVencimiento() {
-        solicitar();
+        trabajo.solicitarSustentacion("monografias/tg-7.pdf", "finales/tg-7.pdf", "paz-y-salvo/tg-7.pdf", null,
+                "anexos/tg-7.pdf", "D1", dia(SOLICITUD));
 
         assertEquals(Proceso.SUSTENTACION, trabajo.getEtapa());
         Sustentacion sustentacion = trabajo.getSustentacion();
         assertEquals(EstadoSustentacion.SOLICITADA, sustentacion.getEstado());
+        assertEquals("monografias/tg-7.pdf", sustentacion.getRutaMonografia());
         assertEquals("finales/tg-7.pdf", sustentacion.getRutaDocumentoFinal());
         assertEquals("paz-y-salvo/tg-7.pdf", sustentacion.getRutaPazYSalvo());
+        assertEquals("anexos/tg-7.pdf", sustentacion.getRutaAnexos());
         assertEquals("D1", trabajo.getHistorial().get(0).responsable());
         // Con la sustentación iniciada, el fin del plazo ya no cierra el trabajo
         assertFalse(trabajo.verificarVencimientos(dia(LocalDate.of(2027, 1, 15))));
@@ -106,26 +125,29 @@ class EtapaSustentacionTest {
 
     @Test
     void seSolicitaDespuesDeLosMesesMinimosYAntesDelFin() {
-        assertRegla("error.dominio.sustentacion.antes_de_tiempo", () -> trabajo.solicitarSustentacion("f.pdf",
-                "p.pdf", null, "D1", dia(LocalDate.of(2026, 6, 19))));
-        assertRegla("error.dominio.sustentacion.plazo_vencido", () -> trabajo.solicitarSustentacion("f.pdf",
-                "p.pdf", null, "D1", dia(LocalDate.of(2026, 12, 21))));
-        trabajo.solicitarSustentacion("f.pdf", "p.pdf", null, "D1", dia(LocalDate.of(2026, 6, 20)));
+        assertRegla("error.dominio.sustentacion.antes_de_tiempo", () -> trabajo.solicitarSustentacion("m.pdf",
+                "f.pdf", "p.pdf", null, null, "D1", dia(LocalDate.of(2026, 6, 19))));
+        assertRegla("error.dominio.sustentacion.plazo_vencido", () -> trabajo.solicitarSustentacion("m.pdf",
+                "f.pdf", "p.pdf", null, null, "D1", dia(LocalDate.of(2026, 12, 21))));
+        trabajo.solicitarSustentacion("m.pdf", "f.pdf", "p.pdf", null, null, "D1", dia(LocalDate.of(2026, 6, 20)));
         assertEquals(Proceso.SUSTENTACION, trabajo.getEtapa());
+        assertNull(trabajo.getSustentacion().getRutaAnexos());
     }
 
     @Test
-    void exigeDocumentoFinalPazYSalvoYEnPracticaElConceptoDelAsesor() {
+    void exigeMonografiaDocumentoFinalPazYSalvoYEnPracticaElConceptoDelAsesor() {
+        assertRegla("error.dominio.sustentacion.monografia_obligatoria",
+                () -> trabajo.solicitarSustentacion(null, "f.pdf", "p.pdf", null, null, "D1", dia(SOLICITUD)));
         assertRegla("error.dominio.sustentacion.documento_final_obligatorio",
-                () -> trabajo.solicitarSustentacion(" ", "p.pdf", null, "D1", dia(SOLICITUD)));
+                () -> trabajo.solicitarSustentacion("m.pdf", " ", "p.pdf", null, null, "D1", dia(SOLICITUD)));
         assertRegla("error.dominio.sustentacion.paz_y_salvo_obligatorio",
-                () -> trabajo.solicitarSustentacion("f.pdf", null, null, "D1", dia(SOLICITUD)));
+                () -> trabajo.solicitarSustentacion("m.pdf", "f.pdf", null, null, null, "D1", dia(SOLICITUD)));
 
         TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
         LocalDateTime septiembre = dia(LocalDate.of(2026, 9, 21));
         assertRegla("error.dominio.sustentacion.concepto_asesor_obligatorio",
-                () -> practica.solicitarSustentacion("f.pdf", "p.pdf", null, "D1", septiembre));
-        practica.solicitarSustentacion("f.pdf", "p.pdf", "conceptos/asesor.pdf", "D1", septiembre);
+                () -> practica.solicitarSustentacion("m.pdf", "f.pdf", "p.pdf", null, null, "D1", septiembre));
+        practica.solicitarSustentacion("m.pdf", "f.pdf", "p.pdf", "conceptos/asesor.pdf", null, "D1", septiembre);
         assertEquals("conceptos/asesor.pdf", practica.getSustentacion().getRutaConceptoAsesor());
     }
 
@@ -138,7 +160,7 @@ class EtapaSustentacionTest {
     // ----- Programación -----
 
     @Test
-    void elConsejoProgramaJuradosFechaYSalon() {
+    void elConsejoProgramaCoordinadorJuradoFechaSalonYFormatoE() {
         solicitar();
         programar(SESION, PROGRAMACION);
 
@@ -148,43 +170,60 @@ class EtapaSustentacionTest {
         assertEquals(1, sesion.numero());
         assertEquals(SESION.atTime(14, 0), sesion.fechaHora());
         assertEquals("Salón 301", sesion.salon());
+        assertEquals(FORMATO_E, sesion.rutaFormatoE());
+        assertEquals(30L, sesion.coordinador().getUsuarioId());
+        assertTrue(sesion.esCoordinador(30L));
+        assertFalse(sesion.esCoordinador(31L));
         assertTrue(trabajo.esJurado(30L));
         assertTrue(trabajo.participa(31L));
         assertRegla("error.dominio.sustentacion.programacion_no_permitida", () -> programar(SESION, PROGRAMACION));
     }
 
     @Test
-    void laProgramacionValidaJuradosYFecha() {
+    void laProgramacionValidaJuradosFechaYFormatoE() {
         solicitar();
         LocalDateTime fecha = SESION.atTime(14, 0);
-        assertRegla("error.dominio.sustentacion.jurado_con_conflicto", () -> trabajo.programarSustentacion(jurado1,
-                evaluador(1L), fecha, "Salón 301", "CF01", dia(PROGRAMACION)));
-        assertRegla("error.dominio.sustentacion.jurados_repetidos", () -> trabajo.programarSustentacion(jurado1,
-                evaluador(30L), fecha, "Salón 301", "CF01", dia(PROGRAMACION)));
-        assertRegla("error.dominio.sustentacion.jurados_obligatorios", () -> trabajo.programarSustentacion(jurado1,
-                null, fecha, "Salón 301", "CF01", dia(PROGRAMACION)));
+        LocalDateTime ahora = dia(PROGRAMACION);
+        assertRegla("error.dominio.sustentacion.jurado_con_conflicto", () -> trabajo.programarSustentacion(
+                coordinador, evaluador(1L), fecha, "Salón 301", FORMATO_E, "CF01", ahora));
+        assertRegla("error.dominio.sustentacion.jurados_repetidos", () -> trabajo.programarSustentacion(
+                coordinador, evaluador(30L), fecha, "Salón 301", FORMATO_E, "CF01", ahora));
+        assertRegla("error.dominio.sustentacion.jurados_obligatorios", () -> trabajo.programarSustentacion(
+                coordinador, null, fecha, "Salón 301", FORMATO_E, "CF01", ahora));
         assertRegla("error.dominio.sustentacion.programacion_incompleta", () -> trabajo.programarSustentacion(
-                jurado1, jurado2, fecha, " ", "CF01", dia(PROGRAMACION)));
+                coordinador, jurado, fecha, " ", FORMATO_E, "CF01", ahora));
         assertRegla("error.dominio.sustentacion.fecha_sesion_invalida", () -> trabajo.programarSustentacion(
-                jurado1, jurado2, PROGRAMACION.minusDays(1).atTime(14, 0), "Salón 301", "CF01", dia(PROGRAMACION)));
+                coordinador, jurado, PROGRAMACION.minusDays(1).atTime(14, 0), "Salón 301", FORMATO_E, "CF01", ahora));
+        assertRegla("error.dominio.sustentacion.formato_e_obligatorio", () -> trabajo.programarSustentacion(
+                coordinador, jurado, fecha, "Salón 301", null, "CF01", ahora));
         assertEquals(EstadoSustentacion.SOLICITADA, trabajo.getSustentacion().getEstado());
     }
 
-    // ----- Calificación -----
+    /** Los evaluadores del anteproyecto no pueden ser jurados del mismo trabajo (sí de otros). */
+    @Test
+    void losEvaluadoresDelAnteproyectoNoSonJuradosDelMismoTrabajo() {
+        solicitar();
+        LocalDateTime fecha = SESION.atTime(14, 0);
+        assertRegla("error.dominio.sustentacion.jurado_con_conflicto", () -> trabajo.programarSustentacion(
+                evaluador(20L), jurado, fecha, "Salón 301", FORMATO_E, "CF01", dia(PROGRAMACION)));
+        assertRegla("error.dominio.sustentacion.jurado_con_conflicto", () -> trabajo.programarSustentacion(
+                coordinador, evaluador(21L), fecha, "Salón 301", FORMATO_E, "CF01", dia(PROGRAMACION)));
+    }
+
+    // ----- Calificación (solo el coordinador) -----
 
     @Test
-    void ambosApruebanYUnJuradoCargaLaVersionDefinitiva() {
-        solicitar();
-        programar(SESION, PROGRAMACION);
-        calificar(jurado1, Calificacion.APROBADO, SESION);
-        assertEquals(EstadoSustentacion.PROGRAMADA, trabajo.getSustentacion().getEstado());
-        calificar(jurado2, Calificacion.APROBADO, SESION);
+    void elCoordinadorApruebaYCargaLaVersionDefinitiva() {
+        primeraSesion(Calificacion.APROBADO);
         assertEquals(EstadoSustentacion.APROBADA, trabajo.getSustentacion().getEstado());
         assertEquals(Proceso.SUSTENTACION, trabajo.getEtapa());
+        assertEquals(ACTA, trabajo.getSustentacion().getCalificaciones().get(0).rutaActa());
 
         assertRegla("error.dominio.sustentacion.jurado_no_asignado",
                 () -> trabajo.cargarVersionDefinitiva(evaluador(99L), DEFINITIVA, dia(SESION.plusDays(5))));
-        trabajo.cargarVersionDefinitiva(jurado2, DEFINITIVA, dia(SESION.plusDays(5)));
+        assertRegla("error.dominio.sustentacion.solo_coordinador",
+                () -> trabajo.cargarVersionDefinitiva(jurado, DEFINITIVA, dia(SESION.plusDays(5))));
+        trabajo.cargarVersionDefinitiva(coordinador, DEFINITIVA, dia(SESION.plusDays(5)));
 
         assertEquals(Proceso.FINALIZADO, trabajo.getEtapa());
         assertTrue(trabajo.estaCerrado());
@@ -193,68 +232,137 @@ class EtapaSustentacionTest {
         assertEquals(EstadoSustentacion.FINALIZADA, trabajo.getSustentacion().getEstado());
     }
 
-    /** Si los jurados no coinciden, rige la calificación menos favorable. */
+    /** La calificación del coordinador define el resultado de la sesión. */
     @ParameterizedTest
-    @CsvSource({ "APROBADO, APROBADO_CON_OBSERVACIONES, EN_AJUSTES, SUSTENTACION",
-            "APROBADO_CON_OBSERVACIONES, APLAZADO, APLAZADA, APLAZADO",
-            "APROBADO, NO_APROBADO, NO_APROBADA, NO_APROBADO" })
-    void rigeLaCalificacionMenosFavorable(Calificacion primera, Calificacion segunda, EstadoSustentacion estado,
+    @CsvSource({ "APROBADO_CON_OBSERVACIONES, EN_AJUSTES, SUSTENTACION", "APLAZADO, APLAZADA, APLAZADO",
+            "NO_APROBADO, NO_APROBADA, NO_APROBADO" })
+    void laCalificacionDelCoordinadorDefineElResultado(Calificacion calificacion, EstadoSustentacion estado,
             Proceso etapa) {
-        primeraSesion(primera, segunda);
+        primeraSesion(calificacion);
         assertEquals(estado, trabajo.getSustentacion().getEstado());
         assertEquals(etapa, trabajo.getEtapa());
     }
 
     @Test
     void noAprobadoCierraElTrabajo() {
-        primeraSesion(Calificacion.NO_APROBADO, Calificacion.NO_APROBADO);
+        primeraSesion(Calificacion.NO_APROBADO);
         assertEquals(Proceso.NO_APROBADO, trabajo.getEtapa());
         assertEquals(MotivoCierre.SUSTENTACION_NO_APROBADA, trabajo.getMotivoCierre());
-        assertEquals("V31", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
+        assertEquals("V30", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
     }
 
     @Test
-    void laCalificacionValidaJuradoFechaYObservaciones() {
+    void laCalificacionValidaCoordinadorActaFechaYObservaciones() {
         solicitar();
         programar(SESION, PROGRAMACION);
-        assertRegla("error.dominio.sustentacion.jurado_no_asignado",
-                () -> calificar(evaluador(99L), Calificacion.APROBADO, SESION));
+        assertRegla("error.dominio.sustentacion.jurado_no_asignado", () -> trabajo.calificarSustentacion(
+                evaluador(99L), Calificacion.APROBADO, null, ACTA, dia(SESION), calendario));
+        assertRegla("error.dominio.sustentacion.solo_coordinador", () -> trabajo.calificarSustentacion(jurado,
+                Calificacion.APROBADO, null, ACTA, dia(SESION), calendario));
+        assertRegla("error.dominio.sustentacion.acta_obligatoria", () -> trabajo.calificarSustentacion(
+                coordinador, Calificacion.APROBADO, null, null, dia(SESION), calendario));
         assertRegla("error.dominio.sustentacion.fecha_registro_invalida",
-                () -> calificar(jurado1, Calificacion.APROBADO, SESION.minusDays(1)));
+                () -> calificar(Calificacion.APROBADO, SESION.minusDays(1)));
         assertRegla("error.dominio.sustentacion.observaciones_obligatorias", () -> trabajo.calificarSustentacion(
-                jurado1, Calificacion.APLAZADO, " ", null, dia(SESION), calendario));
-        calificar(jurado1, Calificacion.APROBADO, SESION);
-        assertRegla("error.dominio.sustentacion.calificacion_repetida",
-                () -> calificar(jurado1, Calificacion.APROBADO, SESION));
+                coordinador, Calificacion.APLAZADO, " ", ACTA, dia(SESION), calendario));
+        calificar(Calificacion.APROBADO, SESION);
         assertEquals(1, trabajo.getSustentacion().getCalificaciones().size());
+    }
+
+    // ----- Nueva fecha de la sesión -----
+
+    @Test
+    void elDirectorSolicitaNuevaFechaYElConsejoLaAprueba() {
+        solicitar();
+        programar(SESION, PROGRAMACION);
+        trabajo.solicitarNuevaFechaSustentacion("solicitudes/nueva-fecha.pdf", dia(LocalDate.of(2026, 8, 15)));
+
+        SolicitudNuevaFecha pendiente = trabajo.getSustentacion().nuevaFechaPendiente().orElseThrow();
+        assertEquals(SESION.atTime(14, 0), pendiente.fechaHoraAnterior());
+        assertRegla("error.dominio.nueva_fecha.solicitud_pendiente", () -> trabajo
+                .solicitarNuevaFechaSustentacion("otra.pdf", dia(LocalDate.of(2026, 8, 16))));
+        // Mientras el Consejo no decide, el coordinador no califica
+        assertRegla("error.dominio.nueva_fecha.solicitud_pendiente", () -> calificar(Calificacion.APROBADO, SESION));
+        assertRegla("error.dominio.sustentacion.nueva_fecha_obligatoria", () -> trabajo
+                .resolverNuevaFechaSustentacion(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 8, 17)), null,
+                        null));
+
+        LocalDateTime nueva = LocalDate.of(2026, 9, 10).atTime(9, 0);
+        trabajo.resolverNuevaFechaSustentacion(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 8, 17)), nueva,
+                "Auditorio");
+
+        SesionSustentacion sesion = trabajo.getSustentacion().sesionActual();
+        assertEquals(nueva, sesion.fechaHora());
+        assertEquals("Auditorio", sesion.salon());
+        assertEquals(1, sesion.numero());
+        assertEquals(30L, sesion.coordinador().getUsuarioId());
+        assertEquals(EstadoSustentacion.PROGRAMADA, trabajo.getSustentacion().getEstado());
+        assertTrue(trabajo.getSustentacion().nuevaFechaPendiente().isEmpty());
+        // La calificación ahora es desde la nueva fecha
+        assertRegla("error.dominio.sustentacion.fecha_registro_invalida",
+                () -> calificar(Calificacion.APROBADO, SESION));
+        calificar(Calificacion.APROBADO, LocalDate.of(2026, 9, 10));
+        assertEquals(EstadoSustentacion.APROBADA, trabajo.getSustentacion().getEstado());
+    }
+
+    @Test
+    void siElConsejoNoApruebaLaNuevaFechaLaSesionSeMantiene() {
+        solicitar();
+        programar(SESION, PROGRAMACION);
+        trabajo.solicitarNuevaFechaSustentacion("solicitudes/nueva-fecha.pdf", dia(LocalDate.of(2026, 8, 15)));
+        trabajo.resolverNuevaFechaSustentacion(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.NO_APROBADO,
+                null, "resoluciones/r.pdf", "No procede", LocalDate.of(2026, 8, 17)), null, null);
+
+        assertEquals(SESION.atTime(14, 0), trabajo.getSustentacion().sesionActual().fechaHora());
+        SolicitudNuevaFecha resuelta = trabajo.getSustentacion().getSolicitudesNuevaFecha().get(0);
+        assertFalse(resuelta.fueAprobada());
+        assertNull(resuelta.nuevaFechaHora());
+        calificar(Calificacion.APROBADO, SESION);
+    }
+
+    @Test
+    void laNuevaFechaSeSolicitaAntesDeLaSesionYConSuDocumento() {
+        solicitar();
+        assertRegla("error.dominio.nueva_fecha.no_permitida", () -> trabajo
+                .solicitarNuevaFechaSustentacion("s.pdf", dia(LocalDate.of(2026, 8, 5))));
+        programar(SESION, PROGRAMACION);
+        assertRegla("error.dominio.nueva_fecha.fuera_de_plazo",
+                () -> trabajo.solicitarNuevaFechaSustentacion("s.pdf", dia(SESION)));
+        assertRegla("error.dominio.nueva_fecha.documento_obligatorio",
+                () -> trabajo.solicitarNuevaFechaSustentacion(" ", dia(LocalDate.of(2026, 8, 15))));
+        assertRegla("error.dominio.nueva_fecha.sin_solicitud_pendiente", () -> trabajo.resolverNuevaFechaSustentacion(
+                consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 8, 17)), SESION.atTime(9, 0), null));
     }
 
     // ----- Ajustes -----
 
     @Test
-    void conObservacionesElDirectorRadicaAjustesYLosJuradosLosAprueban() {
-        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES, Calificacion.APROBADO);
+    void conObservacionesElDirectorRadicaAjustesYAnexosYElCoordinadorLosAprueba() {
+        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES);
         // 10 días hábiles desde el jueves 20-ago-2026
         assertEquals(LocalDate.of(2026, 9, 3), trabajo.getSustentacion().getFechaLimiteAjustes());
 
-        trabajo.radicarAjustesSustentacion("ajustes/tg-7.pdf", dia(LocalDate.of(2026, 9, 1)));
+        trabajo.radicarAjustesSustentacion("ajustes/tg-7.pdf", "anexos/ajustes-tg-7.pdf",
+                dia(LocalDate.of(2026, 9, 1)));
         assertEquals(EstadoSustentacion.AJUSTES_RADICADOS, trabajo.getSustentacion().getEstado());
-        trabajo.verificarAjustesSustentacion(jurado1, true, null, dia(LocalDate.of(2026, 9, 2)));
-        trabajo.verificarAjustesSustentacion(jurado2, true, null, dia(LocalDate.of(2026, 9, 2)));
+        assertEquals("anexos/ajustes-tg-7.pdf", trabajo.getSustentacion().getRutaAnexosAjustes());
+        assertRegla("error.dominio.sustentacion.solo_coordinador", () -> trabajo
+                .verificarAjustesSustentacion(jurado, true, null, dia(LocalDate.of(2026, 9, 2))));
+        trabajo.verificarAjustesSustentacion(coordinador, true, null, dia(LocalDate.of(2026, 9, 2)));
 
         assertEquals(EstadoSustentacion.APROBADA, trabajo.getSustentacion().getEstado());
-        trabajo.cargarVersionDefinitiva(jurado1, DEFINITIVA, dia(LocalDate.of(2026, 9, 4)));
+        trabajo.cargarVersionDefinitiva(coordinador, DEFINITIVA, dia(LocalDate.of(2026, 9, 4)));
         assertEquals(Proceso.FINALIZADO, trabajo.getEtapa());
     }
 
     @Test
     void siLosAjustesNoCumplenSeAplaza() {
-        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES, Calificacion.APROBADO_CON_OBSERVACIONES);
-        trabajo.radicarAjustesSustentacion("ajustes/tg-7.pdf", dia(LocalDate.of(2026, 9, 1)));
-        trabajo.verificarAjustesSustentacion(jurado1, true, null, dia(LocalDate.of(2026, 9, 2)));
+        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES);
+        trabajo.radicarAjustesSustentacion("ajustes/tg-7.pdf", null, dia(LocalDate.of(2026, 9, 1)));
+        assertNull(trabajo.getSustentacion().getRutaAnexosAjustes());
         assertRegla("error.dominio.sustentacion.observaciones_obligatorias", () -> trabajo
-                .verificarAjustesSustentacion(jurado2, false, null, dia(LocalDate.of(2026, 9, 2))));
-        trabajo.verificarAjustesSustentacion(jurado2, false, "No se corrigió el capítulo 3",
+                .verificarAjustesSustentacion(coordinador, false, null, dia(LocalDate.of(2026, 9, 2))));
+        trabajo.verificarAjustesSustentacion(coordinador, false, "No se corrigió el capítulo 3",
                 dia(LocalDate.of(2026, 9, 2)));
 
         assertEquals(Proceso.APLAZADO, trabajo.getEtapa());
@@ -263,9 +371,9 @@ class EtapaSustentacionTest {
 
     @Test
     void siNoSeRadicanLosAjustesATiempoSeAplaza() {
-        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES, Calificacion.APROBADO);
+        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES);
         assertRegla("error.dominio.sustentacion.ajustes_fuera_de_plazo", () -> trabajo
-                .radicarAjustesSustentacion("ajustes/tg-7.pdf", dia(LocalDate.of(2026, 9, 4))));
+                .radicarAjustesSustentacion("ajustes/tg-7.pdf", null, dia(LocalDate.of(2026, 9, 4))));
 
         assertFalse(trabajo.verificarVencimientos(dia(LocalDate.of(2026, 9, 3))));
         assertTrue(trabajo.verificarVencimientos(dia(LocalDate.of(2026, 9, 4))));
@@ -281,7 +389,7 @@ class EtapaSustentacionTest {
 
     @Test
     void aplazadoSeProgramaUnaSegundaSesionDentroDeSesentaDias() {
-        primeraSesion(Calificacion.APLAZADO, Calificacion.APROBADO);
+        primeraSesion(Calificacion.APLAZADO);
         assertEquals(Proceso.APLAZADO, trabajo.getEtapa());
         // 20-ago-2026 + 60 días
         assertEquals(LocalDate.of(2026, 10, 19), trabajo.getSustentacion().getFechaLimiteSegundaSesion());
@@ -292,17 +400,15 @@ class EtapaSustentacionTest {
         assertEquals(Proceso.SUSTENTACION, trabajo.getEtapa());
         assertEquals(2, trabajo.getSustentacion().sesionActual().numero());
 
-        calificar(jurado1, Calificacion.APROBADO, LocalDate.of(2026, 10, 15));
-        calificar(jurado2, Calificacion.APROBADO, LocalDate.of(2026, 10, 15));
+        calificar(Calificacion.APROBADO, LocalDate.of(2026, 10, 15));
         assertEquals(EstadoSustentacion.APROBADA, trabajo.getSustentacion().getEstado());
     }
 
     @Test
     void unSegundoAplazamientoCierraElTrabajo() {
-        primeraSesion(Calificacion.APLAZADO, Calificacion.APLAZADO);
+        primeraSesion(Calificacion.APLAZADO);
         programar(LocalDate.of(2026, 10, 15), LocalDate.of(2026, 9, 1));
-        calificar(jurado1, Calificacion.APLAZADO, LocalDate.of(2026, 10, 15));
-        calificar(jurado2, Calificacion.APROBADO, LocalDate.of(2026, 10, 15));
+        calificar(Calificacion.APLAZADO, LocalDate.of(2026, 10, 15));
 
         assertEquals(Proceso.NO_APROBADO, trabajo.getEtapa());
         assertEquals(MotivoCierre.SUSTENTACION_NO_APROBADA, trabajo.getMotivoCierre());
@@ -310,7 +416,7 @@ class EtapaSustentacionTest {
 
     @Test
     void sinSegundaSesionEnSesentaDiasQuedaNoAprobadoPorVencimiento() {
-        primeraSesion(Calificacion.APLAZADO, Calificacion.APLAZADO);
+        primeraSesion(Calificacion.APLAZADO);
 
         assertFalse(trabajo.verificarVencimientos(dia(LocalDate.of(2026, 10, 19))));
         assertTrue(trabajo.verificarVencimientos(dia(LocalDate.of(2026, 10, 20))));
@@ -327,12 +433,14 @@ class EtapaSustentacionTest {
         solicitar();
         programar(SESION, PROGRAMACION);
         assertRegla("error.dominio.sustentacion.observaciones_obligatorias",
-                () -> trabajo.registrarInasistencia(jurado1, null, dia(SESION)));
-        trabajo.registrarInasistencia(jurado1, "El estudiante no se presentó", dia(SESION));
+                () -> trabajo.registrarInasistencia(coordinador, null, dia(SESION)));
+        assertRegla("error.dominio.sustentacion.solo_coordinador",
+                () -> trabajo.registrarInasistencia(jurado, "No se presentó", dia(SESION)));
+        trabajo.registrarInasistencia(coordinador, "El estudiante no se presentó", dia(SESION));
         assertEquals(Proceso.APLAZADO, trabajo.getEtapa());
 
         programar(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 9, 1));
-        trabajo.registrarInasistencia(jurado2, "El estudiante no se presentó de nuevo",
+        trabajo.registrarInasistencia(coordinador, "El estudiante no se presentó de nuevo",
                 dia(LocalDate.of(2026, 10, 1)));
 
         assertEquals(Proceso.NO_APROBADO, trabajo.getEtapa());
@@ -344,17 +452,17 @@ class EtapaSustentacionTest {
     void noSeRegistraInasistenciaEnUnaSesionYaCalificada() {
         solicitar();
         programar(SESION, PROGRAMACION);
-        calificar(jurado1, Calificacion.APROBADO, SESION);
-        assertRegla("error.dominio.sustentacion.sesion_ya_calificada",
-                () -> trabajo.registrarInasistencia(jurado2, "No se presentó", dia(SESION)));
+        calificar(Calificacion.APROBADO, SESION);
+        assertRegla("error.dominio.sustentacion.registro_no_permitido",
+                () -> trabajo.registrarInasistencia(coordinador, "No se presentó", dia(SESION)));
     }
 
     // ----- Reconstrucción -----
 
     @Test
     void laSustentacionSeReconstruyeConSuEstado() {
-        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES, Calificacion.APROBADO);
-        trabajo.radicarAjustesSustentacion("ajustes/tg-7.pdf", dia(LocalDate.of(2026, 9, 1)));
+        primeraSesion(Calificacion.APROBADO_CON_OBSERVACIONES);
+        trabajo.radicarAjustesSustentacion("ajustes/tg-7.pdf", "anexos/a.pdf", dia(LocalDate.of(2026, 9, 1)));
 
         DatosSustentacion datos = trabajo.getSustentacion().datos();
         Sustentacion reconstruida = new Sustentacion(datos);
@@ -362,5 +470,6 @@ class EtapaSustentacionTest {
         assertEquals(datos, reconstruida.datos());
         assertEquals(EstadoSustentacion.AJUSTES_RADICADOS, reconstruida.getEstado());
         assertTrue(reconstruida.jurado(31L).isPresent());
+        assertEquals("monografias/tg-7.pdf", reconstruida.getRutaMonografia());
     }
 }

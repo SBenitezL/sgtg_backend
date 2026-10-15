@@ -14,6 +14,10 @@ public enum TipoDocumento {
     REMISION_CONSEJO("C", false),
     INFORME_MENSUAL("D", false),
     DOCUMENTO_FINAL("E", false),
+    /** Monografía del trabajo, que acompaña al formato E en la solicitud de sustentación */
+    MONOGRAFIA(null, false),
+    /** Anexos opcionales (PDF) de la solicitud de sustentación o de los ajustes */
+    ANEXOS(null, false),
     PAZ_Y_SALVO("F", false),
     ACTA_SUSTENTACION("G", false),
     VERSION_DEFINITIVA("H", false),
@@ -28,6 +32,8 @@ public enum TipoDocumento {
     ANOTACIONES_EVALUACION(null, false),
     /** PDF con las notas del director, codirector o asesor al revisar un informe mensual */
     REVISION_INFORME(null, false),
+    /** Solicitud del director de una nueva fecha para la sesión de sustentación programada */
+    SOLICITUD_NUEVA_FECHA(null, false),
     AJUSTES_SUSTENTACION(null, false),
     SOLICITUD_CANCELACION(null, false);
 

@@ -586,14 +586,16 @@ public abstract class TrabajoGrado {
      * modalidad y antes del fin del plazo, sin prórroga ni suspensión
      * pendientes de decisión.
      *
+     * @param rutaMonografia     ruta de la monografía
      * @param rutaDocumentoFinal ruta del documento final (formato E)
      * @param rutaPazYSalvo      ruta del paz y salvo (formato F)
      * @param rutaConceptoAsesor ruta del concepto favorable del asesor; obligatoria en práctica profesional
+     * @param rutaAnexos         ruta de los anexos, opcional
      * @param responsable        código del director
      * @param ahora              fecha y hora de la solicitud
      */
-    public void solicitarSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo, String rutaConceptoAsesor,
-            String responsable, LocalDateTime ahora) {
+    public void solicitarSustentacion(String rutaMonografia, String rutaDocumentoFinal, String rutaPazYSalvo,
+            String rutaConceptoAsesor, String rutaAnexos, String responsable, LocalDateTime ahora) {
         validarEnDesarrollo();
         validarAhora(ahora);
         LocalDate hoy = ahora.toLocalDate();
@@ -603,8 +605,8 @@ public abstract class TrabajoGrado {
             throw new ReglaNegocioException("error.dominio.sustentacion.plazo_vencido");
         if (this.ejecucion.tieneProrrogaPendiente() || this.ejecucion.tieneSuspensionPendiente())
             throw new ReglaNegocioException("error.dominio.sustentacion.decision_pendiente");
-        Sustentacion nueva = Sustentacion.solicitar(rutaDocumentoFinal, rutaPazYSalvo, rutaConceptoAsesor, hoy,
-                getModalidad() == Modalidad.PRACTICA_PROFESIONAL);
+        Sustentacion nueva = Sustentacion.solicitar(rutaMonografia, rutaDocumentoFinal, rutaPazYSalvo,
+                rutaConceptoAsesor, rutaAnexos, hoy, getModalidad() == Modalidad.PRACTICA_PROFESIONAL);
         CambioEtapa cambio = new CambioEtapa(this.etapa, Proceso.SUSTENTACION, ahora, responsable,
                 "Solicitud de sustentación");
         this.sustentacion = nueva;
@@ -612,23 +614,28 @@ public abstract class TrabajoGrado {
     }
 
     /**
-     * Registra la programación del Consejo de Facultad: dos jurados (pueden
-     * ser los evaluadores del anteproyecto, pero no director, codirector,
-     * asesor ni estudiantes), fecha, hora y salón. Programa la primera sesión
-     * o, después de un aplazamiento, la segunda (máximo 60 días calendario).
+     * Registra la programación del Consejo de Facultad: el jurado coordinador
+     * y el otro jurado (ninguno puede ser director, codirector, asesor,
+     * estudiante ni evaluador del anteproyecto de este trabajo), fecha, hora,
+     * salón y el formato E. Programa la primera sesión o, después de un
+     * aplazamiento, la segunda (máximo 60 días calendario).
      *
-     * @param responsable código del usuario del Consejo
-     * @param ahora       fecha y hora del registro
+     * @param coordinador  jurado coordinador: califica y registra las decisiones de la sesión
+     * @param jurado       el otro jurado, que solo consulta
+     * @param rutaFormatoE ruta del formato E que adjunta el Consejo
+     * @param responsable  código del usuario del Consejo
+     * @param ahora        fecha y hora del registro
      */
-    public void programarSustentacion(Evaluador jurado1, Evaluador jurado2, LocalDateTime fechaHora, String salon,
-            String responsable, LocalDateTime ahora) {
+    public void programarSustentacion(Evaluador coordinador, Evaluador jurado, LocalDateTime fechaHora, String salon,
+            String rutaFormatoE, String responsable, LocalDateTime ahora) {
         if ((this.etapa != Proceso.SUSTENTACION && this.etapa != Proceso.APLAZADO) || this.sustentacion == null)
             throw new ReglaNegocioException("error.dominio.trabajo_grado.etapa_invalida");
         validarAhora(ahora);
-        if (Arrays.asList(jurado1, jurado2).stream().filter(Objects::nonNull).anyMatch(this::tieneOtroPapel))
+        if (Arrays.asList(coordinador, jurado).stream().filter(Objects::nonNull)
+                .anyMatch(j -> tieneOtroPapel(j) || esEvaluador(j.getUsuarioId())))
             throw new ReglaNegocioException("error.dominio.sustentacion.jurado_con_conflicto");
         SesionSustentacion sesion = new SesionSustentacion(this.sustentacion.getSesiones().size() + 1,
-                Arrays.asList(jurado1, jurado2), fechaHora, salon, ahora.toLocalDate());
+                Arrays.asList(coordinador, jurado), fechaHora, salon, ahora.toLocalDate(), rutaFormatoE);
         CambioEtapa cambio = this.etapa == Proceso.APLAZADO
                 ? new CambioEtapa(this.etapa, Proceso.SUSTENTACION, ahora, responsable,
                         "Programación de la segunda sesión de sustentación")
@@ -639,14 +646,13 @@ public abstract class TrabajoGrado {
     }
 
     /**
-     * Registra la calificación de un jurado de la sesión actual. Con las dos
-     * calificaciones rige la menos favorable: APROBADO espera la versión
-     * definitiva, APROBADO CON OBSERVACIONES abre 10 días hábiles para los
-     * ajustes, APLAZADO pasa a aplazado (o cierra en la segunda sesión) y NO
-     * APROBADO cierra el trabajo.
+     * Registra la calificación del jurado coordinador de la sesión actual:
+     * APROBADO espera la versión definitiva, APROBADO CON OBSERVACIONES abre
+     * 10 días hábiles para los ajustes, APLAZADO pasa a aplazado (o cierra en
+     * la segunda sesión) y NO APROBADO cierra el trabajo.
      *
-     * @param jurado     jurado que califica
-     * @param rutaActa   ruta del acta de sustentación (formato G), opcional
+     * @param jurado     jurado coordinador que califica
+     * @param rutaActa   ruta del acta de sustentación (formato G), obligatoria
      * @param ahora      fecha y hora de la calificación
      * @param calendario calendario para el plazo de los ajustes
      */
@@ -663,7 +669,7 @@ public abstract class TrabajoGrado {
      * Registra que el estudiante no asistió a la sesión: en la primera se
      * aplaza; en la segunda el trabajo queda NO APROBADO por inasistencia.
      *
-     * @param jurado        jurado que la registra
+     * @param jurado        jurado coordinador que la registra
      * @param observaciones soporte de la inasistencia
      */
     public void registrarInasistencia(Evaluador jurado, String observaciones, LocalDateTime ahora) {
@@ -679,17 +685,17 @@ public abstract class TrabajoGrado {
      * con observaciones, dentro de los 10 días hábiles.
      *
      * @param rutaDocumento ruta del documento con los ajustes
+     * @param rutaAnexos    ruta de los anexos de los ajustes, opcional
      */
-    public void radicarAjustesSustentacion(String rutaDocumento, LocalDateTime ahora) {
+    public void radicarAjustesSustentacion(String rutaDocumento, String rutaAnexos, LocalDateTime ahora) {
         validarEtapaSustentacion();
         validarAhora(ahora);
-        this.sustentacion.radicarAjustes(rutaDocumento, ahora.toLocalDate());
+        this.sustentacion.radicarAjustes(rutaDocumento, rutaAnexos, ahora.toLocalDate());
     }
 
     /**
-     * Registra la verificación de un jurado sobre los ajustes. Si ambos
-     * cumplen, la sustentación queda aprobada; si alguno no, se trata como
-     * APLAZADO.
+     * Registra la verificación del jurado coordinador sobre los ajustes: si
+     * cumplen, la sustentación queda aprobada; si no, se trata como APLAZADO.
      *
      * @param cumple        true si los ajustes cumplen
      * @param observaciones obligatorias si no cumplen
@@ -704,8 +710,8 @@ public abstract class TrabajoGrado {
     }
 
     /**
-     * Registra la versión definitiva (formato H) que carga un jurado de la
-     * sustentación aprobada: el trabajo finaliza.
+     * Registra la versión definitiva (formato H) que carga el jurado
+     * coordinador de la sustentación aprobada: el trabajo finaliza.
      *
      * @param rutaDocumento ruta de la versión definitiva
      */
@@ -714,6 +720,32 @@ public abstract class TrabajoGrado {
         validarAhora(ahora);
         this.sustentacion.cargarVersionDefinitiva(jurado, rutaDocumento, ahora.toLocalDate());
         sincronizarConSustentacion(jurado.getCodigo(), ahora);
+    }
+
+    /**
+     * Registra la solicitud del director de una nueva fecha para la sesión
+     * programada, antes de la fecha designada. Mientras el Consejo no decida,
+     * no se registra la calificación ni la inasistencia.
+     *
+     * @param rutaSolicitud ruta del documento de la solicitud
+     */
+    public void solicitarNuevaFechaSustentacion(String rutaSolicitud, LocalDateTime ahora) {
+        validarEtapaSustentacion();
+        validarAhora(ahora);
+        this.sustentacion.solicitarNuevaFecha(rutaSolicitud, ahora.toLocalDate());
+    }
+
+    /**
+     * Registra la decisión del Consejo sobre la nueva fecha. Si la aprueba, la
+     * sesión se reprograma con los mismos jurados; la etapa no cambia.
+     *
+     * @param decision       decisión del Consejo con la resolución
+     * @param nuevaFechaHora nueva fecha y hora, obligatoria si se aprueba
+     * @param nuevoSalon     salón; si está vacío se conserva el actual
+     */
+    public void resolverNuevaFechaSustentacion(Decision decision, LocalDateTime nuevaFechaHora, String nuevoSalon) {
+        validarEtapaSustentacion();
+        this.sustentacion.resolverNuevaFecha(decision, nuevaFechaHora, nuevoSalon);
     }
 
     /**

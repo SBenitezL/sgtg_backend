@@ -37,7 +37,9 @@ public class RoleEntity {
         EVALUADOR,
         CONSEJO,
         JURADO,
-        DECANATURA
+        DECANATURA,
+        /** Jurado que coordina la sustentación: califica y registra sus decisiones */
+        JURADO_COORDINADOR
     }
 
 }

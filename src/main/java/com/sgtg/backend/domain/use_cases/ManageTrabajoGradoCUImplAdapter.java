@@ -413,40 +413,76 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
-    public TrabajoGrado solicitarSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto documentoFinal,
-            ArchivoAdjunto pazYSalvo, ArchivoAdjunto conceptoAsesor) {
+    public TrabajoGrado solicitarSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto monografia,
+            ArchivoAdjunto documentoFinal, ArchivoAdjunto pazYSalvo, ArchivoAdjunto conceptoAsesor,
+            ArchivoAdjunto anexos) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
-        // Se validan los tres archivos antes de almacenar cualquiera
-        Arrays.asList(documentoFinal, pazYSalvo, conceptoAsesor).stream().filter(this::hayArchivo)
+        // Se validan todos los archivos antes de almacenar cualquiera
+        Arrays.asList(monografia, documentoFinal, pazYSalvo, conceptoAsesor, anexos).stream().filter(this::hayArchivo)
                 .forEach(this::validarPdf);
         List<String> rutas = new ArrayList<>();
+        String rutaMonografia = almacenar(trabajo, trabajoId, TipoDocumento.MONOGRAFIA, monografia, rutas);
         String rutaFinal = almacenar(trabajo, trabajoId, TipoDocumento.DOCUMENTO_FINAL, documentoFinal, rutas);
         String rutaPazYSalvo = almacenar(trabajo, trabajoId, TipoDocumento.PAZ_Y_SALVO, pazYSalvo, rutas);
         String rutaConcepto = almacenar(trabajo, trabajoId, TipoDocumento.CONCEPTO_ASESOR, conceptoAsesor, rutas);
+        String rutaAnexos = almacenar(trabajo, trabajoId, TipoDocumento.ANEXOS, anexos, rutas);
         return conArchivos(rutas, () -> {
-            trabajo.solicitarSustentacion(rutaFinal, rutaPazYSalvo, rutaConcepto, trabajo.getDirector().getCodigo(),
-                    LocalDateTime.now(this.clock));
+            trabajo.solicitarSustentacion(rutaMonografia, rutaFinal, rutaPazYSalvo, rutaConcepto, rutaAnexos,
+                    trabajo.getDirector().getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
         });
     }
 
     @Override
-    public TrabajoGrado programarSustentacion(Long trabajoId, Long usuarioId, Long jurado1Id, Long jurado2Id,
-            LocalDateTime fechaHora, String salon) {
+    public TrabajoGrado programarSustentacion(Long trabajoId, Long usuarioId, Long coordinadorId, Long juradoId,
+            LocalDateTime fechaHora, String salon, ArchivoAdjunto formatoE) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Usuario responsable = cargarUsuario(usuarioId);
-        Evaluador jurado1 = jurado1Id == null ? null : new Evaluador(cargarUsuario(jurado1Id));
-        Evaluador jurado2 = jurado2Id == null ? null : new Evaluador(cargarUsuario(jurado2Id));
-        trabajo.programarSustentacion(jurado1, jurado2, fechaHora, salon, responsable.getCodigo(),
-                LocalDateTime.now(this.clock));
-        return this.trabajoGateway.guardar(trabajo);
+        Evaluador coordinador = coordinadorId == null ? null : new Evaluador(cargarUsuario(coordinadorId));
+        Evaluador jurado = juradoId == null ? null : new Evaluador(cargarUsuario(juradoId));
+        List<String> rutas = new ArrayList<>();
+        String rutaFormatoE = almacenar(trabajo, trabajoId, TipoDocumento.DOCUMENTO_FINAL, formatoE, rutas);
+        TrabajoGrado guardado = conArchivos(rutas, () -> {
+            trabajo.programarSustentacion(coordinador, jurado, fechaHora, salon, rutaFormatoE,
+                    responsable.getCodigo(), LocalDateTime.now(this.clock));
+            return this.trabajoGateway.guardar(trabajo);
+        });
+        this.userGateway.agregarRol(coordinadorId, RoleAdmited.JURADO.name());
+        this.userGateway.agregarRol(coordinadorId, RoleAdmited.JURADO_COORDINADOR.name());
+        this.userGateway.agregarRol(juradoId, RoleAdmited.JURADO.name());
+        return guardado;
+    }
+
+    @Override
+    public TrabajoGrado solicitarNuevaFechaSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto solicitud) {
+        TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        List<String> rutas = new ArrayList<>();
+        String ruta = almacenar(trabajo, trabajoId, TipoDocumento.SOLICITUD_NUEVA_FECHA, solicitud, rutas);
+        return conArchivos(rutas, () -> {
+            trabajo.solicitarNuevaFechaSustentacion(ruta, LocalDateTime.now(this.clock));
+            return this.trabajoGateway.guardar(trabajo);
+        });
+    }
+
+    @Override
+    public TrabajoGrado resolverNuevaFechaSustentacion(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
+            LocalDateTime nuevaFechaHora, String salon, ArchivoAdjunto resolucion, String observaciones) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        cargarUsuario(usuarioId);
+        List<String> rutas = new ArrayList<>();
+        String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
+        return conArchivos(rutas, () -> {
+            trabajo.resolverNuevaFechaSustentacion(decisionConsejo(resultado, ruta, observaciones), nuevaFechaHora,
+                    salon);
+            return this.trabajoGateway.guardar(trabajo);
+        });
     }
 
     @Override
     public TrabajoGrado calificarSustentacion(Long trabajoId, Long usuarioId, Calificacion calificacion,
             String observaciones, ArchivoAdjunto acta) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
-        Evaluador jurado = juradoDe(trabajo, usuarioId);
+        Evaluador jurado = coordinadorDe(trabajo, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.ACTA_SUSTENTACION, acta, rutas);
         return conArchivos(rutas, () -> {
@@ -459,17 +495,21 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     @Override
     public TrabajoGrado registrarInasistencia(Long trabajoId, Long usuarioId, String observaciones) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
-        trabajo.registrarInasistencia(juradoDe(trabajo, usuarioId), observaciones, LocalDateTime.now(this.clock));
+        trabajo.registrarInasistencia(coordinadorDe(trabajo, usuarioId), observaciones,
+                LocalDateTime.now(this.clock));
         return this.trabajoGateway.guardar(trabajo);
     }
 
     @Override
-    public TrabajoGrado radicarAjustesSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto documento) {
+    public TrabajoGrado radicarAjustesSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto documento,
+            ArchivoAdjunto anexos) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        Arrays.asList(documento, anexos).stream().filter(this::hayArchivo).forEach(this::validarPdf);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.AJUSTES_SUSTENTACION, documento, rutas);
+        String rutaAnexos = almacenar(trabajo, trabajoId, TipoDocumento.ANEXOS, anexos, rutas);
         return conArchivos(rutas, () -> {
-            trabajo.radicarAjustesSustentacion(ruta, LocalDateTime.now(this.clock));
+            trabajo.radicarAjustesSustentacion(ruta, rutaAnexos, LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
         });
     }
@@ -478,7 +518,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     public TrabajoGrado verificarAjustesSustentacion(Long trabajoId, Long usuarioId, boolean cumple,
             String observaciones) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
-        trabajo.verificarAjustesSustentacion(juradoDe(trabajo, usuarioId), cumple, observaciones,
+        trabajo.verificarAjustesSustentacion(coordinadorDe(trabajo, usuarioId), cumple, observaciones,
                 LocalDateTime.now(this.clock));
         return this.trabajoGateway.guardar(trabajo);
     }
@@ -486,7 +526,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     @Override
     public TrabajoGrado cargarVersionDefinitiva(Long trabajoId, Long usuarioId, ArchivoAdjunto documento) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
-        Evaluador jurado = juradoDe(trabajo, usuarioId);
+        Evaluador jurado = coordinadorDe(trabajo, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.VERSION_DEFINITIVA, documento, rutas);
         return conArchivos(rutas, () -> {
@@ -597,12 +637,17 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         return trabajo.participa(usuarioId) || tieneRolDeConsultaGeneral(usuarioId);
     }
 
-    /** El jurado de la sesión actual que corresponde al usuario; si no lo es, sin acceso. */
-    private Evaluador juradoDe(TrabajoGrado trabajo, Long usuarioId) {
+    /**
+     * El jurado coordinador de la sesión actual, si es el usuario. Un usuario
+     * que no es jurado, o el jurado que no coordina (solo consulta), no tiene acceso.
+     */
+    private Evaluador coordinadorDe(TrabajoGrado trabajo, Long usuarioId) {
         Optional<Evaluador> jurado = trabajo.getSustentacion() == null ? Optional.empty()
                 : trabajo.getSustentacion().jurado(usuarioId);
         if (jurado.isEmpty())
             this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_jurado");
+        if (!trabajo.getSustentacion().sesionActual().esCoordinador(usuarioId))
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_jurado_coordinador");
         return jurado.get();
     }
 

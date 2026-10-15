@@ -12,7 +12,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Sesión de sustentación con sus dos jurados (columnas jurado1_* y jurado2_*). */
+/**
+ * Sesión de sustentación con sus dos jurados (columnas jurado1_* y jurado2_*).
+ * El jurado 1 es el coordinador.
+ */
 @Embeddable
 @Data
 @NoArgsConstructor
@@ -23,6 +26,9 @@ public class SesionSustentacionEmbeddable {
     private LocalDateTime fechaHora;
     private String salon;
     private LocalDate fechaProgramacion;
+    /** Formato E que adjuntó el Consejo al programar */
+    @Column(length = 1000)
+    private String rutaFormatoE;
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "usuarioId", column = @Column(name = "jurado1_usuario_id")),

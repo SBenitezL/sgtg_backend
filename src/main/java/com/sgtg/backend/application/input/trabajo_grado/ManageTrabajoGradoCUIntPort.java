@@ -231,42 +231,74 @@ public interface ManageTrabajoGradoCUIntPort {
     /**
      * Solicita la sustentación con la fecha actual. Solo el director.
      *
+     * @param monografia     monografía del trabajo
      * @param documentoFinal documento final (formato E)
      * @param pazYSalvo      paz y salvo (formato F)
      * @param conceptoAsesor concepto favorable del asesor; obligatorio en práctica profesional
+     * @param anexos         anexos (PDF), opcional
      */
-    public TrabajoGrado solicitarSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto documentoFinal,
-            ArchivoAdjunto pazYSalvo, ArchivoAdjunto conceptoAsesor);
+    public TrabajoGrado solicitarSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto monografia,
+            ArchivoAdjunto documentoFinal, ArchivoAdjunto pazYSalvo, ArchivoAdjunto conceptoAsesor,
+            ArchivoAdjunto anexos);
 
     /**
      * Programa la sesión de sustentación (la primera o, tras un aplazamiento,
-     * la segunda): jurados, fecha, hora y salón.
+     * la segunda): jurado coordinador, otro jurado, fecha, hora, salón y el
+     * formato E. Asigna el rol JURADO a ambos y JURADO_COORDINADOR al coordinador.
      *
-     * @param usuarioId usuario del Consejo de Facultad que programa
+     * @param usuarioId     usuario del Consejo de Facultad que programa
+     * @param coordinadorId usuario del jurado coordinador
+     * @param juradoId      usuario del otro jurado
+     * @param formatoE      formato E (obligatorio)
      */
-    public TrabajoGrado programarSustentacion(Long trabajoId, Long usuarioId, Long jurado1Id, Long jurado2Id,
-            LocalDateTime fechaHora, String salon);
+    public TrabajoGrado programarSustentacion(Long trabajoId, Long usuarioId, Long coordinadorId, Long juradoId,
+            LocalDateTime fechaHora, String salon, ArchivoAdjunto formatoE);
 
     /**
-     * Registra la calificación de un jurado de la sesión actual, con la fecha actual.
+     * Solicita una nueva fecha para la sesión programada, antes de la fecha
+     * designada. Solo el director.
+     *
+     * @param solicitud documento de la solicitud
+     */
+    public TrabajoGrado solicitarNuevaFechaSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto solicitud);
+
+    /**
+     * Registra la decisión del Consejo sobre la nueva fecha. Si la aprueba,
+     * reprograma la sesión.
+     *
+     * @param nuevaFechaHora nueva fecha y hora; obligatoria si se aprueba
+     * @param salon          nuevo salón; si es vacío se conserva
+     * @param resolucion     resolución del Consejo (obligatoria)
+     */
+    public TrabajoGrado resolverNuevaFechaSustentacion(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
+            LocalDateTime nuevaFechaHora, String salon, ArchivoAdjunto resolucion, String observaciones);
+
+    /**
+     * Registra la calificación de la sesión actual, con la fecha actual. Solo el
+     * jurado coordinador.
      *
      * @param observaciones obligatorias si no es APROBADO
-     * @param acta          archivo del acta de sustentación (formato G), opcional
+     * @param acta          archivo del acta de sustentación (formato G), obligatorio
      */
     public TrabajoGrado calificarSustentacion(Long trabajoId, Long usuarioId, Calificacion calificacion,
             String observaciones, ArchivoAdjunto acta);
 
-    /** Registra la inasistencia del estudiante a la sesión actual. Solo un jurado de la sesión. */
+    /** Registra la inasistencia del estudiante a la sesión actual. Solo el jurado coordinador. */
     public TrabajoGrado registrarInasistencia(Long trabajoId, Long usuarioId, String observaciones);
 
-    /** Radica los ajustes de una sustentación aprobada con observaciones. Solo el director. */
-    public TrabajoGrado radicarAjustesSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
+    /**
+     * Radica los ajustes de una sustentación aprobada con observaciones. Solo el director.
+     *
+     * @param anexos anexos de los ajustes (PDF), opcional
+     */
+    public TrabajoGrado radicarAjustesSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto documento,
+            ArchivoAdjunto anexos);
 
-    /** Registra la verificación de los ajustes. Solo un jurado de la sesión. */
+    /** Registra la verificación de los ajustes. Solo el jurado coordinador. */
     public TrabajoGrado verificarAjustesSustentacion(Long trabajoId, Long usuarioId, boolean cumple,
             String observaciones);
 
-    /** Carga la versión definitiva (formato H) de la sustentación aprobada. Solo un jurado de la sesión. */
+    /** Carga la versión definitiva (formato H) de la sustentación aprobada. Solo el jurado coordinador. */
     public TrabajoGrado cargarVersionDefinitiva(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
 
     /**

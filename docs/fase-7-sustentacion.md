@@ -183,3 +183,32 @@ En total son 140 peticiones, validadas dos veces seguidas contra Docker con MySQ
 
 ### Qué no se prueba en esta fase
 - La cancelación, que se permite desde cualquier etapa no final: Fase 8.
+
+## Actualización 2026-10-13: jurado coordinador, nueva fecha y anexos
+
+Decisiones del usuario al integrar el front (fase 6 del plan de integración):
+
+1. **Solicitud:** el director adjunta la **monografía** (nueva, obligatoria) y el formato E como dos PDF, el paz y salvo, el concepto del asesor en práctica profesional y **anexos** opcionales. Decanatura no registra el paz y salvo.
+2. **Programación:** el Consejo indica el **jurado coordinador** y el otro jurado, la fecha, hora y salón, y adjunta el **formato E (obligatorio)**. Los **evaluadores del anteproyecto no pueden ser jurados del mismo trabajo** (sí de otros). Al programar, ambos reciben el rol `JURADO` y el coordinador además `JURADO_COORDINADOR` (rol nuevo).
+3. **Solo el coordinador** califica (con el **acta formato G obligatoria**), registra la inasistencia, verifica los ajustes y carga la versión definitiva; el otro jurado solo consulta (406 `solo_jurado_coordinador`). Ya no hay dos calificaciones ni regla de "la menos favorable": la del coordinador define el resultado, y una sola verificación aprueba o aplaza.
+4. **Nueva fecha de sustentación:** antes de la fecha designada, el director la solicita con un PDF; el Consejo la decide con la resolución y, si la aprueba, indica la nueva fecha y hora (y opcionalmente otro salón): la sesión se reprograma con los mismos jurados. Mientras está pendiente no se registra la calificación ni la inasistencia.
+5. **Ajustes:** el director puede adjuntar **anexos** (PDF) con los ajustes; las reglas se mantienen.
+
+| Elemento | Cambio |
+|---|---|
+| `TipoDocumento` | Nuevos `MONOGRAFIA`, `ANEXOS`, `SOLICITUD_NUEVA_FECHA` |
+| `RoleAdmited` / `RoleType` | Nuevo `JURADO_COORDINADOR`; `Evaluador` lo acepta |
+| `SesionSustentacion` | `+ rutaFormatoE`; el primer jurado es el coordinador (`coordinador()`, `esCoordinador(id)`, `reprogramada(...)`) |
+| `SolicitudNuevaFecha` (nuevo) | `(sesion, rutaSolicitud, fechaSolicitud, fechaHoraAnterior, decision, nuevaFechaHora, nuevoSalon)` |
+| `Sustentacion` | `solicitar(monografía, E, F, concepto, anexos…)`, `solicitarNuevaFecha`, `resolverNuevaFecha`, `radicarAjustes(ruta, anexos, fecha)`; registros solo del coordinador |
+| `CalificacionJurado` | Acta obligatoria (`acta_obligatoria`) |
+| `Calificacion` | Sin `menosFavorable` |
+| `POST /sustentacion` | Partes `monografia`, `documentoFinal`, `pazYSalvo`, `conceptoAsesor` (PP) y `anexos` (opcional) |
+| `POST /sustentacion/programacion` | Ahora multipart: `datos` `{ juradoCoordinadorId, juradoId, fechaHora, salon }` y `archivo` (formato E) |
+| `POST /sustentacion/nueva-fecha` (nuevo) | Director, parte `archivo` |
+| `POST /sustentacion/nueva-fecha/decisiones-consejo` (nuevo) | `CONSEJO`, `datos` `{ resultado, fechaHora, salon, observaciones }` y `archivo` (resolución) |
+| `POST /sustentacion/ajustes` | Parte opcional `anexos` |
+| Persistencia | Columnas TEXT `sustentacion_ruta_monografia`, `_ruta_anexos`, `_ruta_anexos_ajustes`; `sustentacion_sesiones.ruta_formatoe`; tabla `sustentacion_nuevas_fechas` |
+| Respuesta | `sustentacion` con `rutaMonografia`, `rutaAnexos`, `rutaAnexosAjustes`, `solicitudesNuevaFecha[]`; cada sesión con `juradoCoordinadorId` y `rutaFormatoE` |
+
+Pruebas: `EtapaSustentacionTest` (25), `ManageTrabajoGradoCUImplAdapterTest` (+3), gateway y `FlujoSustentacionIntegracionTest` reescritos. Total del proyecto: 382. Thunder: 199 peticiones.

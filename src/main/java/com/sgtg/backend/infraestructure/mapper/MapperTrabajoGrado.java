@@ -30,6 +30,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Prorroga;
 import com.sgtg.backend.domain.models.trabajo_grado.RegistroJurado;
 import com.sgtg.backend.domain.models.trabajo_grado.SesionSustentacion;
+import com.sgtg.backend.domain.models.trabajo_grado.SolicitudNuevaFecha;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
@@ -54,6 +55,7 @@ import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grad
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.ProrrogaEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.RegistroJuradoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SesionSustentacionEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SolicitudNuevaFechaEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SuspensionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.TrabajoGradoEntity;
 
@@ -170,6 +172,9 @@ public abstract class MapperTrabajoGrado {
     }
 
     private static void copiarSustentacion(Sustentacion s, TrabajoGradoEntity entity) {
+        entity.setSustentacionRutaMonografia(s.getRutaMonografia());
+        entity.setSustentacionRutaAnexos(s.getRutaAnexos());
+        entity.setSustentacionRutaAnexosAjustes(s.getRutaAnexosAjustes());
         entity.setSustentacionRutaDocumentoFinal(s.getRutaDocumentoFinal());
         entity.setSustentacionRutaPazYSalvo(s.getRutaPazYSalvo());
         entity.setSustentacionRutaConceptoAsesor(s.getRutaConceptoAsesor());
@@ -185,8 +190,12 @@ public abstract class MapperTrabajoGrado {
                 s.getJuradoVersionDefinitiva() == null ? null : s.getJuradoVersionDefinitiva().getUsuarioId());
         entity.setSustentacionMotivoNoAprobacion(s.getMotivoNoAprobacion());
         s.getSesiones().forEach(sesion -> entity.getSustentacionSesiones().add(new SesionSustentacionEmbeddable(
-                sesion.numero(), sesion.fechaHora(), sesion.salon(), sesion.fechaProgramacion(),
+                sesion.numero(), sesion.fechaHora(), sesion.salon(), sesion.fechaProgramacion(), sesion.rutaFormatoE(),
                 toEmbeddable(sesion.jurados().get(0)), toEmbeddable(sesion.jurados().get(1)))));
+        s.getSolicitudesNuevaFecha().forEach(n -> entity.getSustentacionSolicitudesNuevaFecha()
+                .add(new SolicitudNuevaFechaEmbeddable(n.sesion(), n.rutaSolicitud(), n.fechaSolicitud(),
+                        n.fechaHoraAnterior(), n.decision() == null ? null : toEmbeddable(n.decision()),
+                        n.nuevaFechaHora(), n.nuevoSalon())));
         s.getCalificaciones().forEach(c -> entity.getSustentacionCalificaciones()
                 .add(new CalificacionJuradoEmbeddable(c.sesion(), c.jurado().getUsuarioId(), c.calificacion(),
                         c.observaciones(), c.rutaActa(), c.fecha())));
@@ -326,7 +335,7 @@ public abstract class MapperTrabajoGrado {
             return null;
         List<SesionSustentacion> sesiones = entity.getSustentacionSesiones().stream()
                 .map(s -> new SesionSustentacion(s.getNumero(), List.of(toDomain(s.getJurado1()), toDomain(s.getJurado2())),
-                        s.getFechaHora(), s.getSalon(), s.getFechaProgramacion()))
+                        s.getFechaHora(), s.getSalon(), s.getFechaProgramacion(), s.getRutaFormatoE()))
                 .toList();
         Long juradoDefinitiva = entity.getSustentacionJuradoVersionDefinitivaId();
         return new DatosSustentacion(entity.getSustentacionRutaDocumentoFinal(),
@@ -343,7 +352,13 @@ public abstract class MapperTrabajoGrado {
                 entity.getSustentacionFechaLimiteAjustes(), entity.getSustentacionFechaLimiteSegundaSesion(),
                 entity.getSustentacionRutaVersionDefinitiva(), entity.getSustentacionFechaVersionDefinitiva(),
                 juradoDefinitiva == null ? null : jurado(sesiones, sesiones.size(), juradoDefinitiva),
-                entity.getSustentacionMotivoNoAprobacion());
+                entity.getSustentacionMotivoNoAprobacion(), entity.getSustentacionRutaMonografia(),
+                entity.getSustentacionRutaAnexos(), entity.getSustentacionRutaAnexosAjustes(),
+                entity.getSustentacionSolicitudesNuevaFecha().stream()
+                        .map(n -> new SolicitudNuevaFecha(n.getSesion(), n.getRutaSolicitud(), n.getFechaSolicitud(),
+                                n.getFechaHoraAnterior(), n.getDecision() == null ? null : toDomain(n.getDecision()),
+                                n.getNuevaFechaHora(), n.getNuevoSalon()))
+                        .toList());
     }
 
     private static RegistroJurado toDomain(RegistroJuradoEmbeddable r, List<SesionSustentacion> sesiones) {
