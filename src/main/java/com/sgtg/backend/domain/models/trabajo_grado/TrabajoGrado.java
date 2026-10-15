@@ -588,14 +588,13 @@ public abstract class TrabajoGrado {
      *
      * @param rutaMonografia     ruta de la monografía
      * @param rutaDocumentoFinal ruta del documento final (formato E)
-     * @param rutaPazYSalvo      ruta del paz y salvo (formato F)
      * @param rutaConceptoAsesor ruta del concepto favorable del asesor; obligatoria en práctica profesional
      * @param rutaAnexos         ruta de los anexos, opcional
      * @param responsable        código del director
      * @param ahora              fecha y hora de la solicitud
      */
-    public void solicitarSustentacion(String rutaMonografia, String rutaDocumentoFinal, String rutaPazYSalvo,
-            String rutaConceptoAsesor, String rutaAnexos, String responsable, LocalDateTime ahora) {
+    public void solicitarSustentacion(String rutaMonografia, String rutaDocumentoFinal, String rutaConceptoAsesor,
+            String rutaAnexos, String responsable, LocalDateTime ahora) {
         validarEnDesarrollo();
         validarAhora(ahora);
         LocalDate hoy = ahora.toLocalDate();
@@ -605,12 +604,29 @@ public abstract class TrabajoGrado {
             throw new ReglaNegocioException("error.dominio.sustentacion.plazo_vencido");
         if (this.ejecucion.tieneProrrogaPendiente() || this.ejecucion.tieneSuspensionPendiente())
             throw new ReglaNegocioException("error.dominio.sustentacion.decision_pendiente");
-        Sustentacion nueva = Sustentacion.solicitar(rutaMonografia, rutaDocumentoFinal, rutaPazYSalvo,
-                rutaConceptoAsesor, rutaAnexos, hoy, getModalidad() == Modalidad.PRACTICA_PROFESIONAL);
+        Sustentacion nueva = Sustentacion.solicitar(rutaMonografia, rutaDocumentoFinal, rutaConceptoAsesor,
+                rutaAnexos, hoy, getModalidad() == Modalidad.PRACTICA_PROFESIONAL);
         CambioEtapa cambio = new CambioEtapa(this.etapa, Proceso.SUSTENTACION, ahora, responsable,
                 "Solicitud de sustentación");
         this.sustentacion = nueva;
         aplicarCambio(cambio);
+    }
+
+    /**
+     * Registra la revisión del paz y salvo (formato F) de Decanatura sobre la
+     * sustentación solicitada: lo aprueba o no, siempre con el documento. Sin
+     * paz y salvo aprobado el Consejo no programa la sustentación.
+     *
+     * @param rutaDocumento ruta del formato F
+     * @param aprobado      true si el estudiante está a paz y salvo
+     * @param observaciones motivo de la no aprobación (obligatorio si no lo aprueba)
+     * @param ahora         fecha y hora de la revisión
+     */
+    public void revisarPazYSalvo(String rutaDocumento, boolean aprobado, String observaciones, LocalDateTime ahora) {
+        validarEtapa(Proceso.SUSTENTACION);
+        validarAhora(ahora);
+        this.sustentacion.revisarPazYSalvo(
+                new RevisionPazYSalvo(rutaDocumento, aprobado, observaciones, ahora.toLocalDate()));
     }
 
     /**
@@ -833,6 +849,30 @@ public abstract class TrabajoGrado {
             aplicarCambio(cambio);
             this.motivoCierre = MotivoCierre.CANCELACION_DIRECTOR;
         }
+    }
+
+    /** Etapas en las que el director puede anular el trabajo: antes de la aprobación del Consejo. */
+    private static final java.util.Set<Proceso> ETAPAS_ANULABLES = java.util.EnumSet.of(Proceso.PROPUESTA,
+            Proceso.ANTEPROYECTO, Proceso.EVALUACION, Proceso.APROBACION_CONSEJO);
+
+    /**
+     * Anula el trabajo por decisión del director (borrado lógico): el trabajo se
+     * cierra como CANCELADO y queda archivado. Solo antes de que el Consejo
+     * apruebe el anteproyecto; después se usa la cancelación con decisión del
+     * Consejo.
+     *
+     * @param justificacion motivo de la anulación (obligatorio)
+     * @param responsable   código del director
+     * @param ahora         fecha y hora de la anulación
+     */
+    public void anular(String justificacion, String responsable, LocalDateTime ahora) {
+        if (!ETAPAS_ANULABLES.contains(this.etapa))
+            throw new ReglaNegocioException("error.dominio.anulacion.etapa_invalida");
+        if (CheckString.isBlank(justificacion))
+            throw new ReglaNegocioException("error.dominio.anulacion.justificacion_obligatoria");
+        if (ahora == null)
+            throw new ReglaNegocioException("error.dominio.trabajo_grado.fecha_obligatoria");
+        cerrar(MotivoCierre.ANULACION_DIRECTOR, responsable, ahora, justificacion.trim());
     }
 
     /**

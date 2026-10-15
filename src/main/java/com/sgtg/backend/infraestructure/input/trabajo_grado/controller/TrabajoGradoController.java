@@ -28,6 +28,8 @@ import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntP
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ActualizarPropuestaDTORequest;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AnulacionDTORequest;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.RevisionPazYSalvoDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AsignarEvaluadoresDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.CalificacionSustentacionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ConceptoEvaluadorDTORequest;
@@ -101,11 +103,21 @@ public class TrabajoGradoController {
      * etapa, todos los trabajos. Solo para los roles de consulta general.
      */
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('COMITE', 'JEFE_DEP', 'CONSEJO', 'ADMINISTRADOR')")
+    @PreAuthorize("hasAnyAuthority('COMITE', 'JEFE_DEP', 'CONSEJO', 'ADMINISTRADOR', 'DECANATURA')")
     public ResponseEntity<List<TrabajoGradoDTOResponse>> listar(@RequestParam(required = false) Proceso etapa) {
         List<TrabajoGrado> trabajos = etapa == null ? manageTrabajoGrado.listarTodos()
                 : manageTrabajoGrado.listarPorEtapa(etapa);
         return ResponseEntity.ok(trabajos.stream().map(TrabajoGradoDTOResponse::desde).toList());
+    }
+
+    /**
+     * Estudiantes que se pueden elegir para un trabajo nuevo: sin otro trabajo
+     * activo y sin un trabajo aprobado.
+     */
+    @GetMapping("/estudiantes-disponibles")
+    @PreAuthorize("hasAnyAuthority('DOCENTE', 'DIRECTOR', 'ADMINISTRADOR')")
+    public ResponseEntity<List<Long>> estudiantesDisponibles() {
+        return ResponseEntity.ok(manageTrabajoGrado.estudiantesDisponibles());
     }
 
     @GetMapping("/{trabajoId}")
@@ -322,20 +334,33 @@ public class TrabajoGradoController {
 
     /**
      * Solicita la sustentación con la monografía, el documento final (formato
-     * E), el paz y salvo (formato F), en práctica profesional el concepto del
-     * asesor y, opcionalmente, los anexos (PDF). Solo el director.
+     * E), en práctica profesional el concepto del asesor y, opcionalmente, los
+     * anexos (PDF). Solo el director. El paz y salvo lo revisa Decanatura después.
      */
     @PostMapping(value = "/{trabajoId}/sustentacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarSustentacion(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId,
             @RequestPart(value = "monografia", required = false) MultipartFile monografia,
             @RequestPart(value = "documentoFinal", required = false) MultipartFile documentoFinal,
-            @RequestPart(value = "pazYSalvo", required = false) MultipartFile pazYSalvo,
             @RequestPart(value = "conceptoAsesor", required = false) MultipartFile conceptoAsesor,
             @RequestPart(value = "anexos", required = false) MultipartFile anexos) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.solicitarSustentacion(trabajoId,
-                usuario.getCusuari(), adjunto(monografia), adjunto(documentoFinal), adjunto(pazYSalvo),
-                adjunto(conceptoAsesor), adjunto(anexos))));
+                usuario.getCusuari(), adjunto(monografia), adjunto(documentoFinal), adjunto(conceptoAsesor),
+                adjunto(anexos))));
+    }
+
+    /**
+     * Revisión del paz y salvo de Decanatura: {@code datos} (aprobado y
+     * observaciones) y el formato F en la parte {@code archivo}, obligatorio
+     * tanto si lo aprueba como si no.
+     */
+    @PostMapping(value = "/{trabajoId}/sustentacion/paz-y-salvo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('DECANATURA')")
+    public ResponseEntity<TrabajoGradoDTOResponse> revisarPazYSalvo(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long trabajoId, @Valid @RequestPart("datos") RevisionPazYSalvoDTORequest request,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.revisarPazYSalvo(trabajoId,
+                usuario.getCusuari(), request.aprobado(), request.observaciones(), adjunto(archivo))));
     }
 
     /**
@@ -431,6 +456,17 @@ public class TrabajoGradoController {
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado
                 .cargarVersionDefinitiva(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+    }
+
+    /**
+     * Anula el trabajo (borrado lógico): queda cerrado y archivado en el
+     * historial. Solo el director, en propuesta o anteproyecto.
+     */
+    @PostMapping("/{trabajoId}/anulacion")
+    public ResponseEntity<TrabajoGradoDTOResponse> anular(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long trabajoId, @Valid @RequestBody AnulacionDTORequest request) {
+        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
+                manageTrabajoGrado.anular(trabajoId, usuario.getCusuari(), request.justificacion())));
     }
 
     /** Solicita la cancelación del trabajo con el formato adjunto. Solo el director. */

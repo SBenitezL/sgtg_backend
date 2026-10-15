@@ -239,6 +239,11 @@ public class TrabajoGradoEntity {
     @OrderColumn(name = "orden")
     private List<SolicitudNuevaFechaEmbeddable> sustentacionSolicitudesNuevaFecha = new ArrayList<>();
 
+    @ElementCollection
+    @CollectionTable(name = "sustentacion_paz_y_salvo", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<RevisionPazYSalvoEmbeddable> sustentacionRevisionesPazYSalvo = new ArrayList<>();
+
     // ----- Cancelación -----
 
     @ElementCollection

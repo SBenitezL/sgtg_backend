@@ -53,6 +53,13 @@
       "containerId": "",
       "created": "2026-10-06T02:28:11.000Z",
       "sortNum": 70000
+    },
+    {
+      "_id": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "8. Anulación y notificaciones",
+      "containerId": "",
+      "created": "2026-10-14T00:00:00.000Z",
+      "sortNum": 80000
     }
   ],
   "requests": [
@@ -3403,7 +3410,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"titulo\": \"Práctica en desarrollo de software\",\n  \"objetivos\": [\n    \"Apoyar el desarrollo de un sistema de información\"\n  ],\n  \"estudianteId\": \"{{estudianteId}}\",\n  \"asesor\": {\n    \"codigo\": \"{{#number}}\",\n    \"primerNombre\": \"Asesor\",\n    \"primerApellido\": \"Empresa\",\n    \"email\": \"asesor.{{#guid}}@empresa.com\",\n    \"organizacion\": \"Empresa S.A.S.\",\n    \"externo\": true\n  }\n}"
+            "value": "{\n  \"titulo\": \"Práctica en desarrollo de software\",\n  \"objetivos\": [\n    \"Apoyar el desarrollo de un sistema de información\"\n  ],\n  \"estudianteId\": \"{{estudiante2Id}}\",\n  \"asesor\": {\n    \"codigo\": \"{{#number}}\",\n    \"primerNombre\": \"Asesor\",\n    \"primerApellido\": \"Empresa\",\n    \"email\": \"asesor.{{#guid}}@empresa.com\",\n    \"organizacion\": \"Empresa S.A.S.\",\n    \"externo\": true\n  }\n}"
           }
         ],
         "files": [
@@ -3506,7 +3513,12 @@
             "value": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 03\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-comite.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -5646,7 +5658,7 @@
       ],
       "body": {
         "type": "json",
-        "raw": "{\n  \"titulo\": \"Otro trabajo\",\n  \"objetivos\": [\n    \"Objetivo\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "raw": "{\n  \"titulo\": \"Otro trabajo\",\n  \"objetivos\": [\n    \"Objetivo\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudiante3Id}}\"\n  ]\n}",
         "form": []
       },
       "auth": {
@@ -5822,10 +5834,6 @@
           {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
-          },
-          {
-            "name": "pazYSalvo",
-            "value": "archivos/paz-y-salvo.pdf"
           }
         ]
       },
@@ -5872,10 +5880,6 @@
           {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
-          },
-          {
-            "name": "pazYSalvo",
-            "value": "archivos/paz-y-salvo.pdf"
           }
         ]
       },
@@ -6174,7 +6178,7 @@
       ],
       "body": {
         "type": "json",
-        "raw": "{\n  \"titulo\": \"Plataforma de seguimiento de sustentaciones\",\n  \"objetivos\": [\n    \"Registrar el proceso de sustentación\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "raw": "{\n  \"titulo\": \"Plataforma de seguimiento de sustentaciones\",\n  \"objetivos\": [\n    \"Registrar el proceso de sustentación\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudiante4Id}}\"\n  ]\n}",
         "form": []
       },
       "auth": {
@@ -6263,7 +6267,12 @@
             "value": "{\n  \"resultado\": \"APROBADO\"\n}"
           }
         ],
-        "files": []
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-comite.pdf"
+          }
+        ]
       },
       "auth": {
         "type": "bearer",
@@ -6550,52 +6559,6 @@
       "docs": "En investigación la sustentación se solicita desde el tercer mes tras la notificación. Guarda la fecha simulada en {{hoy}}."
     },
     {
-      "_id": "e7b64747-fb27-407a-9b95-6e7f62ecbae0",
-      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
-      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. Sustentación sin paz y salvo (400)",
-      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion",
-      "method": "POST",
-      "sortNum": 1175000,
-      "created": "2026-10-06T02:28:11.000Z",
-      "modified": "2026-10-06T02:28:11.000Z",
-      "headers": [],
-      "tests": [
-        {
-          "type": "res-code",
-          "custom": "",
-          "action": "equal",
-          "value": "400"
-        },
-        {
-          "type": "json-query",
-          "custom": "json.message",
-          "action": "contains",
-          "value": "El paz y salvo es obligatorio."
-        }
-      ],
-      "body": {
-        "type": "formdata",
-        "raw": "",
-        "form": [],
-        "files": [
-          {
-            "name": "monografia",
-            "value": "archivos/monografia.pdf"
-          },
-          {
-            "name": "documentoFinal",
-            "value": "archivos/documento-final.pdf"
-          }
-        ]
-      },
-      "auth": {
-        "type": "bearer",
-        "bearer": "{{docenteToken}}"
-      },
-      "docs": "Ya cumplidos los meses mínimos: la solicitud sin el paz y salvo (Formato F) se rechaza."
-    },
-    {
       "_id": "ee6717a8-e621-44f3-a0fa-932712893251",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
@@ -6618,10 +6581,6 @@
           {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
-          },
-          {
-            "name": "pazYSalvo",
-            "value": "archivos/paz-y-salvo.pdf"
           }
         ]
       },
@@ -6695,10 +6654,6 @@
           {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
-          },
-          {
-            "name": "pazYSalvo",
-            "value": "archivos/paz-y-salvo.pdf"
           },
           {
             "name": "anexos",
@@ -7600,10 +7555,6 @@
           {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
-          },
-          {
-            "name": "pazYSalvo",
-            "value": "archivos/paz-y-salvo.pdf"
           }
         ]
       },
@@ -7655,10 +7606,6 @@
           {
             "name": "documentoFinal",
             "value": "archivos/documento-final.pdf"
-          },
-          {
-            "name": "pazYSalvo",
-            "value": "archivos/paz-y-salvo.pdf"
           },
           {
             "name": "conceptoAsesor",
@@ -8094,7 +8041,7 @@
       ],
       "body": {
         "type": "json",
-        "raw": "{\n  \"titulo\": \"Repositorio de trabajos de grado\",\n  \"objetivos\": [\n    \"Publicar los trabajos de grado finalizados\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "raw": "{\n  \"titulo\": \"Repositorio de trabajos de grado\",\n  \"objetivos\": [\n    \"Publicar los trabajos de grado finalizados\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudiante3Id}}\"\n  ]\n}",
         "form": []
       },
       "auth": {
@@ -8549,6 +8496,1475 @@
         "bearer": "{{docenteToken}}"
       },
       "docs": "El trabajo de la carpeta 6 (escenario A) está FINALIZADO."
+    },
+    {
+      "_id": "58d6d9a1-0b92-474a-addb-c82be6c9cb48",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Crear trabajo para anular",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
+      "method": "POST",
+      "sortNum": 1520000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{trabajo4Id}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Repositorio de trabajos de grado\",\n  \"objetivos\": [\n    \"Publicar los trabajos de grado finalizados\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Trabajo en propuesta que el director anulará (borrado lógico)."
+    },
+    {
+      "_id": "94a4b8e6-07ab-4798-b500-78ae7326ddd7",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Solo el director anula (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo4Id}}/anulacion",
+      "method": "POST",
+      "sortNum": 1530000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"justificacion\": \"x\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "468dfda4-48d0-4eb2-9524-71a6b9456747",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Anulación sin justificación (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo4Id}}/anulacion",
+      "method": "POST",
+      "sortNum": 1540000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"justificacion\": \" \"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "f8f12b67-7ff5-48e0-9fef-f43f57c14254",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Director anula el trabajo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo4Id}}/anulacion",
+      "method": "POST",
+      "sortNum": 1550000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.etapa",
+          "action": "equal",
+          "value": "CANCELADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.motivoCierre",
+          "action": "equal",
+          "value": "ANULACION_DIRECTOR"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[0].origen",
+          "action": "equal",
+          "value": "PROPUESTA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.historial[0].observacion",
+          "action": "equal",
+          "value": "Cambio de modalidad"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"justificacion\": \"Cambio de modalidad\"\n}",
+        "form": []
+      },
+      "docs": "El trabajo queda CANCELADO y archivado en el historial; la justificación queda en el historial de etapas."
+    },
+    {
+      "_id": "ea4dea19-31de-4dfa-a7d6-6f45ea8709e5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Un trabajo anulado no se vuelve a anular (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo4Id}}/anulacion",
+      "method": "POST",
+      "sortNum": 1560000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El trabajo de grado solo se puede anular en propuesta o anteproyecto, antes de la aprobación del Consejo de Facultad; después se debe solicitar la cancelación."
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"justificacion\": \"Otra vez\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "a8326665-07f3-4f77-8341-faf73b389b6b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Un trabajo finalizado no se anula (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/anulacion",
+      "method": "POST",
+      "sortNum": 1570000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El trabajo de grado solo se puede anular en propuesta o anteproyecto, antes de la aprobación del Consejo de Facultad; después se debe solicitar la cancelación."
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"justificacion\": \"x\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "d5fe8966-5967-4582-b48d-cdf105363a29",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Estudiante consulta su buzón",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones",
+      "method": "GET",
+      "sortNum": 1580000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].titulo",
+          "action": "equal",
+          "value": "Trabajo de grado anulado"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].trabajoId",
+          "action": "equal",
+          "value": "{{trabajo4Id}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].etapa",
+          "action": "equal",
+          "value": "CANCELADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].leida",
+          "action": "equal",
+          "value": "false"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json[0].id",
+          "action": "setto",
+          "value": "{{notificacionId}}"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      },
+      "docs": "Las notificaciones las genera el backend en cada operación; quien realiza la acción no las recibe."
+    },
+    {
+      "_id": "523b7639-fe94-4a35-803f-72cabb31181b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "El director no recibe sus propias acciones",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones",
+      "method": "GET",
+      "sortNum": 1590000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json[0].titulo",
+          "action": "notequal",
+          "value": "Trabajo de grado anulado"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "26424cb7-a44b-4971-b0c3-f93338f37b33",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "El Comité recibió las propuestas radicadas",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones",
+      "method": "GET",
+      "sortNum": 1600000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-body",
+          "custom": "",
+          "action": "contains",
+          "value": "Propuesta radicada"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      }
+    },
+    {
+      "_id": "d382da6a-7880-4b68-a5f9-fbedf2c3457c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Una notificación ajena no se marca (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/{{notificacionId}}/leida",
+      "method": "PATCH",
+      "sortNum": 1610000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "c1173f6d-010a-4445-8237-700e2740a5b6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Estudiante marca la notificación como leída",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/{{notificacionId}}/leida",
+      "method": "PATCH",
+      "sortNum": 1620000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.leida",
+          "action": "equal",
+          "value": "true"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "1eba020e-799e-4ac6-906e-7b7eedbbe080",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Estudiante marca todas como leídas",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/leidas",
+      "method": "PATCH",
+      "sortNum": 1630000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "204"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "26e6a82a-1f37-4292-a914-faaa92df08b0",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Una notificación ajena no se elimina (406)",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/{{notificacionId}}",
+      "method": "DELETE",
+      "sortNum": 1640000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "406"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "de0716f7-46b7-449a-905e-c127ec3a6338",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Estudiante elimina la notificación",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/{{notificacionId}}",
+      "method": "DELETE",
+      "sortNum": 1650000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "204"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "ff0c1789-7af1-410b-9720-83416e916eaf",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Notificación inexistente (404)",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/{{notificacionId}}/leida",
+      "method": "PATCH",
+      "sortNum": 1660000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "404"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "170a39a5-6de7-4649-8211-18bed48de742",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "Estudiante vacía su buzón",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones",
+      "method": "DELETE",
+      "sortNum": 1670000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "204"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "573a4002-fa74-451b-9124-5595c5276627",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
+      "name": "El buzón queda vacío",
+      "url": "{{baseUrl}}/api/v1/sgtg/notificaciones",
+      "method": "GET",
+      "sortNum": 1680000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.length",
+          "action": "equal",
+          "value": "0"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "70dd56bd-84df-42a6-8b58-74905e2b71b6",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear estudiante 2",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 60200,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "ESTUDIANTE"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{estudiante2Id}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{estudiante2Email}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{estudiante2Codigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{estudiante2Documento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"E-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"e.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Estudiante\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "Un estudiante solo puede tener un trabajo activo: cada flujo usa su propio estudiante."
+    },
+    {
+      "_id": "80d7a9e7-b263-44c7-ba9e-9344c736565d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Perfil estudiante 2",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/estudiantes/{{estudiante2Id}}",
+      "method": "PUT",
+      "sortNum": 150200,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"programaId\": \"{{programaId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "76f2ce39-a4cd-4443-984b-bf871fd3adb2",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear estudiante 3",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 60300,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "ESTUDIANTE"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{estudiante3Id}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{estudiante3Email}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{estudiante3Codigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{estudiante3Documento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"E-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"e.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Estudiante\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "Un estudiante solo puede tener un trabajo activo: cada flujo usa su propio estudiante."
+    },
+    {
+      "_id": "8915570b-3817-4c35-a467-45e5a63d2c3b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Perfil estudiante 3",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/estudiantes/{{estudiante3Id}}",
+      "method": "PUT",
+      "sortNum": 150300,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"programaId\": \"{{programaId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "39fc856e-adad-47ac-b6f7-98a0055d2a94",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear estudiante 4",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 60400,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "ESTUDIANTE"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{estudiante4Id}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{estudiante4Email}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{estudiante4Codigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{estudiante4Documento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"E-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"e.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Estudiante\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "Un estudiante solo puede tener un trabajo activo: cada flujo usa su propio estudiante."
+    },
+    {
+      "_id": "b24c5fe2-9bfa-4dd5-af3c-ace43a92516b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Perfil estudiante 4",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/estudiantes/{{estudiante4Id}}",
+      "method": "PUT",
+      "sortNum": 150400,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"programaId\": \"{{programaId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "59abc78f-63a0-4de5-82d6-246e898e8999",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear estudiante 5",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 60500,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "ESTUDIANTE"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{estudiante5Id}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{estudiante5Email}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{estudiante5Codigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{estudiante5Documento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"E-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"e.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Estudiante\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"ESTUDIANTE\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      },
+      "docs": "Un estudiante solo puede tener un trabajo activo: cada flujo usa su propio estudiante."
+    },
+    {
+      "_id": "bdfee032-b9e7-435b-89b1-1ccba9508fe9",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Perfil estudiante 5",
+      "url": "{{baseUrl}}/api/v1/sgtg/perfiles/estudiantes/{{estudiante5Id}}",
+      "method": "PUT",
+      "sortNum": 150500,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"programaId\": \"{{programaId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "905a54c1-b077-418a-a700-d2c5d54dfee8",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Crear usuario de Decanatura",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 115000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.roles[0]",
+          "action": "equal",
+          "value": "DECANATURA"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.tipoDocumento",
+          "action": "equal",
+          "value": "CC"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.primerNombre",
+          "action": "equal",
+          "value": "Usuario"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{decanaturaId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{decanaturaEmail}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.codigo",
+          "action": "setto",
+          "value": "{{decanaturaCodigo}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.numeroDocumento",
+          "action": "setto",
+          "value": "{{decanaturaDocumento}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"K-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"k.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Consejo\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"DECANATURA\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "5948f5c9-9481-44ec-8035-727978192b6d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "41a1c334-3947-4be4-9b54-a1be6e8667cf",
+      "name": "Login Decanatura",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 159000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{decanaturaToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{decanaturaEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "1b18d043-df50-42e2-a92a-f73e0ef6acd7",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
+      "name": "Comité: respuesta sin documento (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta/decisiones",
+      "method": "POST",
+      "sortNum": 199000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La respuesta del Comité de Programa a la propuesta debe incluir el documento de respuesta (PDF)."
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"NO_APROBADO\",\n  \"acta\": \"Acta 01\",\n  \"observaciones\": \"Precisar los objetivos\"\n}"
+          }
+        ],
+        "files": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      },
+      "docs": "La respuesta del Comité al formato A exige el documento de respuesta, apruebe o no."
+    },
+    {
+      "_id": "02b5706f-23a7-4bea-8143-588fa89fb900",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Un estudiante con un trabajo activo no entra en otro (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/investigacion",
+      "method": "POST",
+      "sortNum": 965000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "Uno de los estudiantes ya tiene un trabajo de grado activo; un estudiante solo puede tener uno a la vez."
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"T\",\n  \"objetivos\": [\n    \"O\"\n  ],\n  \"estudiantesIds\": [\n    \"{{estudianteId}}\"\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      }
+    },
+    {
+      "_id": "37c260c2-fc94-4ad7-a347-5b843c0ed549",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Docente consulta los estudiantes disponibles",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/estudiantes-disponibles",
+      "method": "GET",
+      "sortNum": 966000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-body",
+          "custom": "",
+          "action": "contains",
+          "value": "{{estudiante5Id}}"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Estudiantes sin trabajo activo ni aprobado (el estudiante 5 no participa en ninguno)."
+    },
+    {
+      "_id": "4ee2d751-2fe1-49ba-b799-464d19173149",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Estudiante no consulta los disponibles (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/estudiantes-disponibles",
+      "method": "GET",
+      "sortNum": 967000,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{estudianteToken}}"
+      }
+    },
+    {
+      "_id": "df34eaf2-316a-4175-89b7-685cdf813b39",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Sin paz y salvo aprobado no se programa (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/programacion",
+      "method": "POST",
+      "sortNum": 1180100,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "La sustentación no se puede programar hasta que Decanatura apruebe el paz y salvo."
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"juradoCoordinadorId\": \"{{juradoId}}\",\n  \"juradoId\": \"{{jurado2Id}}\",\n  \"fechaHora\": \"2099-01-15T14:00:00\",\n  \"salon\": \"Salón 301\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/formato-e.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
+    },
+    {
+      "_id": "71c3263f-ca42-4a31-807a-7cd834c0e81d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Solo Decanatura revisa el paz y salvo (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/paz-y-salvo",
+      "method": "POST",
+      "sortNum": 1180200,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"aprobado\": true\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{docenteToken}}"
+      },
+      "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
+    },
+    {
+      "_id": "b35aae1b-bc65-4a1b-b345-27dffcd76ec9",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. No aprobar exige observaciones (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/paz-y-salvo",
+      "method": "POST",
+      "sortNum": 1180300,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "Si el paz y salvo no se aprueba, las observaciones son obligatorias."
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"aprobado\": false\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{decanaturaToken}}"
+      },
+      "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
+    },
+    {
+      "_id": "5075e903-708d-4742-b3da-907cc3a61087",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Decanatura no aprueba el paz y salvo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/paz-y-salvo",
+      "method": "POST",
+      "sortNum": 1180400,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.revisionesPazYSalvo[0].aprobado",
+          "action": "equal",
+          "value": "false"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.revisionesPazYSalvo[0].observaciones",
+          "action": "equal",
+          "value": "Deuda en biblioteca"
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"aprobado\": false,\n  \"observaciones\": \"Deuda en biblioteca\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{decanaturaToken}}"
+      },
+      "docs": "Decanatura carga el formato F también cuando no lo aprueba; luego puede revisarlo de nuevo."
+    },
+    {
+      "_id": "8cdbb6ef-4674-49cc-9c58-498a0defec98",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "A. Decanatura aprueba el paz y salvo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/paz-y-salvo",
+      "method": "POST",
+      "sortNum": 1180500,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.revisionesPazYSalvo[1].aprobado",
+          "action": "equal",
+          "value": "true"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.rutaPazYSalvo",
+          "action": "regex",
+          "value": "^{{trabajo2Id}}/TI-F/v\\d+/paz-y-salvo\\.pdf$"
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"aprobado\": true\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{decanaturaToken}}"
+      },
+      "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
+    },
+    {
+      "_id": "ae79c539-bbce-4471-8773-04a5e4fecc5a",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
+      "name": "B. Decanatura aprueba el paz y salvo de la práctica",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/paz-y-salvo",
+      "method": "POST",
+      "sortNum": 1310500,
+      "created": "2026-10-14T00:00:00.000Z",
+      "modified": "2026-10-14T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.sustentacion.revisionesPazYSalvo[0].aprobado",
+          "action": "equal",
+          "value": "true"
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"aprobado\": true\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/paz-y-salvo.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{decanaturaToken}}"
+      },
+      "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
     }
   ],
   "ref": "SGTG"

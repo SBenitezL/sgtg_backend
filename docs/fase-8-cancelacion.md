@@ -23,6 +23,9 @@ Artículos de la Resolución 231 de 2020 que cubre: **26 y 56**.
 
 `MotivoCierre.CANCELACION_ESTUDIANTE` se conserva en el enum, pero no se usa, porque solo el director solicita.
 
+Antes de la aprobación del Consejo el director también puede **anular** el trabajo sin decisión del Consejo (motivo
+`ANULACION_DIRECTOR`); ver [notificaciones-y-anulacion.md](notificaciones-y-anulacion.md).
+
 ## Clases del dominio
 
 ### `Cancelacion` (record)

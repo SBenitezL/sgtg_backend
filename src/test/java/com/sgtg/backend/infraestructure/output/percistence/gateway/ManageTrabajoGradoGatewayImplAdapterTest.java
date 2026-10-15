@@ -86,7 +86,7 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         guardado.radicarPropuesta("1/v2.pdf", LUNES.plusDays(7),
                 new CalendarioHabilFalso());
         guardado.registrarDecisionComite(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, "Acta 2",
-                null, null, LUNES.plusDays(9)), "C001", LUNES.plusDays(9).atTime(9, 0));
+                "actas/2026/acta-02.pdf", null, LUNES.plusDays(9)), "C001", LUNES.plusDays(9).atTime(9, 0));
         gateway.guardar(guardado);
 
         TrabajoGrado leido = gateway.buscarPorId(guardado.getId());
@@ -108,7 +108,7 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         assertEquals(2, leido.getPropuesta().getDecisiones().size());
         assertEquals(ResultadoConcepto.NO_APROBADO, leido.getPropuesta().getDecisiones().get(0).resultado());
         assertEquals("actas/2026/acta-01.pdf", leido.getPropuesta().getDecisiones().get(0).rutaArchivo());
-        assertNull(leido.getPropuesta().getDecisiones().get(1).rutaArchivo());
+        assertEquals("actas/2026/acta-02.pdf", leido.getPropuesta().getDecisiones().get(1).rutaArchivo());
         assertEquals("Estudiante Prueba", leido.getEstudiantes().get(0).getNombreCompleto());
         assertEquals(1, leido.getHistorial().size());
         assertEquals(Proceso.ANTEPROYECTO, leido.getHistorial().get(0).destino());
@@ -125,7 +125,7 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
                 List.of(estudiante(estudianteId)), director(directorId, TipoVinculacion.PLANTA), null, null));
         trabajo.radicarPropuesta("1/p.pdf", LUNES, new CalendarioHabilFalso());
         trabajo.registrarDecisionComite(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, "Acta 1",
-                null, null, LUNES), "C001", LUNES.atTime(9, 0));
+                "actas/acta-01.pdf", null, LUNES), "C001", LUNES.atTime(9, 0));
         return gateway.guardar(trabajo);
     }
 
@@ -218,8 +218,8 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         TrabajoGrado trabajo = gateway.guardar(new PracticaProfesional(null, "Práctica", List.of("Objetivo"),
                 estudiante(10L), director(1L, TipoVinculacion.PLANTA), null, externo, carta));
         trabajo.radicarPropuesta("1/p.pdf", LUNES, calendario);
-        trabajo.registrarDecisionComite(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, null, null,
-                null, LUNES), "C001", LUNES.atTime(9, 0));
+        trabajo.registrarDecisionComite(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, null,
+                "actas/acta.pdf", null, LUNES), "C001", LUNES.atTime(9, 0));
         trabajo.radicarAnteproyecto("1/a.pdf", "D1", LUNES.atTime(10, 0), calendario);
         trabajo.asignarEvaluadores(evaluador(20L), evaluador(21L), "J60", LUNES.atTime(11, 0), calendario);
         trabajo.registrarConceptoEvaluador(new Concepto(evaluador(20L), ResultadoConcepto.APROBADO, null, LUNES),
@@ -304,8 +304,11 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
                 "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0));
         // Sustentación: nueva fecha negada, primera sesión aplazada; en la segunda, inasistencia
         LocalDate julio = LocalDate.of(2026, 7, 1);
-        trabajo.solicitarSustentacion("monografias/tg.pdf", "finales/tg.pdf", "paz-y-salvo/tg.pdf", null,
+        trabajo.solicitarSustentacion("monografias/tg.pdf", "finales/tg.pdf", null,
                 "anexos/tg.pdf", "D1", julio.atTime(9, 0));
+        // Decanatura no aprueba el paz y salvo y luego lo aprueba
+        trabajo.revisarPazYSalvo("paz-y-salvo/f-1.pdf", false, "Deuda en biblioteca", julio.atTime(10, 0));
+        trabajo.revisarPazYSalvo("paz-y-salvo/tg.pdf", true, null, julio.atTime(11, 0));
         trabajo.programarSustentacion(evaluador(30L), evaluador(40L), julio.plusDays(9).atTime(14, 0), "Salón 301",
                 "formatos/e-1.pdf", "CF01", julio.plusDays(1).atTime(9, 0));
         trabajo.solicitarNuevaFechaSustentacion("solicitudes/nueva-fecha.pdf", julio.plusDays(2).atTime(9, 0));
@@ -326,6 +329,9 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         Sustentacion sustentacion = leido.getSustentacion();
         assertEquals(EstadoSustentacion.NO_APROBADA, sustentacion.getEstado());
         assertEquals("paz-y-salvo/tg.pdf", sustentacion.getRutaPazYSalvo());
+        assertEquals(List.of(false, true), sustentacion.getRevisionesPazYSalvo().stream()
+                .map(r -> r.aprobado()).toList());
+        assertEquals("Deuda en biblioteca", sustentacion.getRevisionesPazYSalvo().get(0).observaciones());
         assertEquals("monografias/tg.pdf", sustentacion.getRutaMonografia());
         assertEquals("anexos/tg.pdf", sustentacion.getRutaAnexos());
         assertEquals(2, sustentacion.getSesiones().size());

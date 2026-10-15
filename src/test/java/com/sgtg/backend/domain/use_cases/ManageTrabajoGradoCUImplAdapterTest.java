@@ -2,6 +2,7 @@ package com.sgtg.backend.domain.use_cases;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,6 +35,7 @@ import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
 import com.sgtg.backend.domain.models.Usuario;
 import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
+import com.sgtg.backend.domain.models.notificacion.EventoTrabajoGrado;
 import com.sgtg.backend.domain.models.participantes.Departamento;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
@@ -76,6 +78,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     private ManageUserGatewayIntPort userGateway;
     private ManagePerfilGatewayIntPort perfilGateway;
     private ManageArchivoGatewayIntPort archivoGateway;
+    private NotificadorTrabajoGrado notificador;
     private ManageTrabajoGradoCUImplAdapter casoDeUso;
 
     private static Usuario usuario(long id, RoleAdmited... roles) {
@@ -90,8 +93,9 @@ class ManageTrabajoGradoCUImplAdapterTest {
         userGateway = mock(ManageUserGatewayIntPort.class);
         perfilGateway = mock(ManagePerfilGatewayIntPort.class);
         archivoGateway = mock(ManageArchivoGatewayIntPort.class);
+        notificador = mock(NotificadorTrabajoGrado.class);
         casoDeUso = new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
-                new CalendarioHabilFalso(), RELOJ, new ExceptionFormatterImplAdapter());
+                new CalendarioHabilFalso(), RELOJ, new ExceptionFormatterImplAdapter(), notificador);
 
         // Director (1), estudiante (10), miembro del comité (50) y usuario sin relación (99)
         when(userGateway.findById(1L)).thenReturn(usuario(1L, RoleAdmited.DOCENTE));
@@ -252,7 +256,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
     private TrabajoGrado trabajoEnAnteproyecto() {
         trabajoGuardado();
         casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
-        return casoDeUso.registrarDecisionComite(7L, 50L, ResultadoConcepto.APROBADO, "Acta 1", null, null, null);
+        return casoDeUso.registrarDecisionComite(7L, 50L, ResultadoConcepto.APROBADO, "Acta 1", pdf("acta-1.pdf"), null,
+                null);
     }
 
     @Test
@@ -533,7 +538,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 perfilGateway, archivoGateway, new CalendarioHabilFalso(),
                 Clock.fixed(LocalDate.of(2027, 1, 1).atTime(0, 5).atZone(ZoneId.of("America/Bogota")).toInstant(),
                         ZoneId.of("America/Bogota")),
-                new ExceptionFormatterImplAdapter());
+                new ExceptionFormatterImplAdapter(), notificador);
 
         assertEquals(1, enEnero.verificarVencimientos());
         assertEquals(Proceso.EN_CURSO, suspendido.getEtapa());
@@ -544,13 +549,19 @@ class ManageTrabajoGradoCUImplAdapterTest {
         return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
                 new CalendarioHabilFalso(), Clock.fixed(fecha.atTime(10, 0).atZone(ZoneId.of("America/Bogota"))
                         .toInstant(), ZoneId.of("America/Bogota")),
-                new ExceptionFormatterImplAdapter());
+                new ExceptionFormatterImplAdapter(), notificador);
     }
 
-    /** Solicita la sustentación con monografía, formato E y paz y salvo (sin anexos). */
+    /** Solicita la sustentación con monografía y formato E (sin anexos). */
     private TrabajoGrado solicitarSustentacion(ManageTrabajoGradoCUImplAdapter casoDeUso, long usuarioId) {
-        return casoDeUso.solicitarSustentacion(7L, usuarioId, pdf("monografia.pdf"), pdf("formato-e.pdf"),
-                pdf("paz-y-salvo.pdf"), null, null);
+        return casoDeUso.solicitarSustentacion(7L, usuarioId, pdf("monografia.pdf"), pdf("formato-e.pdf"), null,
+                null);
+    }
+
+    /** Decanatura (usuario 80) aprueba el paz y salvo. */
+    private TrabajoGrado aprobarPazYSalvo(ManageTrabajoGradoCUImplAdapter casoDeUso) {
+        when(userGateway.findById(80L)).thenReturn(usuario(80L, RoleAdmited.DECANATURA));
+        return casoDeUso.revisarPazYSalvo(7L, 80L, true, null, pdf("paz-y-salvo.pdf"));
     }
 
     @Test
@@ -563,10 +574,16 @@ class ManageTrabajoGradoCUImplAdapterTest {
 
         ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
         assertThrows(NoAccessException.class, () -> solicitarSustentacion(enJulio, 10L));
-        TrabajoGrado trabajo = enJulio.solicitarSustentacion(7L, 1L, pdf("monografia.pdf"), pdf("formato-e.pdf"),
-                pdf("paz-y-salvo.pdf"), null, pdf("anexos.pdf"));
+        TrabajoGrado trabajo = enJulio.solicitarSustentacion(7L, 1L, pdf("monografia.pdf"), pdf("formato-e.pdf"), null, pdf("anexos.pdf"));
         assertEquals("7/MONOGRAFIA/v1/monografia.pdf", trabajo.getSustentacion().getRutaMonografia());
         assertEquals("7/ANEXOS/v1/anexos.pdf", trabajo.getSustentacion().getRutaAnexos());
+        assertNull(trabajo.getSustentacion().getRutaPazYSalvo());
+        // Sin paz y salvo aprobado no se programa; Decanatura lo aprueba
+        ReglaNegocioException sinPaz = assertThrows(ReglaNegocioException.class, () -> enJulio.programarSustentacion(
+                7L, 70L, 99L, 30L, LocalDate.of(2026, 7, 6).atTime(15, 0), "Salón 301", pdf("formato-e-consejo.pdf")));
+        assertEquals("error.dominio.sustentacion.paz_y_salvo_pendiente", sinPaz.getMessage());
+        trabajo = aprobarPazYSalvo(enJulio);
+        assertEquals("7/TI-F/v1/paz-y-salvo.pdf", trabajo.getSustentacion().getRutaPazYSalvo());
 
         // El Consejo programa al coordinador 99 (DOCENTE) y al jurado 30 (JURADO) con el formato E
         trabajo = enJulio.programarSustentacion(7L, 70L, 99L, 30L, LocalDate.of(2026, 7, 6).atTime(15, 0),
@@ -622,6 +639,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoEnCurso();
         ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
         solicitarSustentacion(enJulio, 1L);
+        aprobarPazYSalvo(enJulio);
         enJulio.programarSustentacion(7L, 70L, 99L, 30L, LocalDate.of(2026, 7, 20).atTime(15, 0), "Salón 301",
                 pdf("e.pdf"));
 
@@ -644,6 +662,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoEnCurso();
         ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
         solicitarSustentacion(enJulio, 1L);
+        aprobarPazYSalvo(enJulio);
         enJulio.programarSustentacion(7L, 70L, 99L, 30L, LocalDate.of(2026, 7, 6).atTime(15, 0), "Salón 301",
                 pdf("e.pdf"));
         enJulio.calificarSustentacion(7L, 99L, Calificacion.APROBADO_CON_OBSERVACIONES, "Ajustar conclusiones",
@@ -800,5 +819,127 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void trabajoInexistente() {
         assertThrows(EntityNotFoundException.class, () -> casoDeUso.consultar(404L, 1L));
+    }
+
+    // ----- Fase 7: anulación, consulta de Decanatura y notificaciones -----
+
+    @Test
+    void soloElDirectorAnulaYSeNotifica() {
+        TrabajoGrado trabajo = trabajoGuardado();
+        assertThrows(NoAccessException.class, () -> casoDeUso.anular(7L, 10L, "x"));
+
+        TrabajoGrado anulado = casoDeUso.anular(7L, 1L, " Sin financiación ");
+
+        assertEquals(Proceso.CANCELADO, anulado.getEtapa());
+        assertEquals(MotivoCierre.ANULACION_DIRECTOR, anulado.getMotivoCierre());
+        verify(notificador).notificar(trabajo, EventoTrabajoGrado.TRABAJO_ANULADO, 1L, "Sin financiación");
+    }
+
+    @Test
+    void cadaOperacionNotificaSuHechoConElActor() {
+        TrabajoGrado trabajo = trabajoGuardado();
+        verify(notificador).notificar(trabajo, EventoTrabajoGrado.TRABAJO_REGISTRADO, 1L, null);
+
+        casoDeUso.radicarPropuesta(7L, 1L, pdf("propuesta.pdf"));
+        verify(notificador).notificar(trabajo, EventoTrabajoGrado.PROPUESTA_RADICADA, 1L, null);
+
+        casoDeUso.registrarDecisionComite(7L, 50L, ResultadoConcepto.APROBADO, "Acta 1", pdf("acta.pdf"), null,
+                null);
+        verify(notificador).notificar(trabajo, EventoTrabajoGrado.DECISION_COMITE, 50L, "aprobado");
+    }
+
+    @Test
+    void siLaOperacionFallaNoSeNotifica() {
+        trabajoGuardado();
+        // Sin documento el dominio rechaza la radicación
+        assertThrows(ReglaNegocioException.class, () -> casoDeUso.radicarPropuesta(7L, 1L, null));
+        verify(notificador, never()).notificar(any(), eq(EventoTrabajoGrado.PROPUESTA_RADICADA), any(), any());
+    }
+
+    @Test
+    void decanaturaConsultaCualquierTrabajo() {
+        trabajoGuardado();
+        when(userGateway.findById(80L)).thenReturn(usuario(80L, RoleAdmited.DECANATURA));
+        assertEquals("Título", casoDeUso.consultar(7L, 80L).getTitulo());
+    }
+
+    @Test
+    void laTareaDiariaAvisaLosPlazosDeLosTrabajosActivos() {
+        TrabajoGrado trabajo = trabajoGuardado();
+        when(trabajoGateway.listarPorEtapa(Proceso.PROPUESTA)).thenReturn(List.of(trabajo));
+
+        casoDeUso.verificarVencimientos();
+
+        verify(notificador).avisarPlazos(trabajo, LocalDate.of(2026, 3, 2));
+    }
+
+    // ----- Un trabajo activo por estudiante -----
+
+    /** Trabajo del estudiante 10 en la etapa dada (con su motivo de cierre si es final). */
+    private TrabajoGrado trabajoDelEstudianteEn(Proceso etapa) {
+        TrabajoGrado otro = casoDeUso.crear(1L, investigacion());
+        if (etapa == Proceso.CANCELADO)
+            otro.anular("Cambio de modalidad", "D1", LocalDate.of(2026, 3, 2).atTime(10, 0));
+        else if (etapa != Proceso.PROPUESTA)
+            otro = TrabajoGrado.reconstruir(new DatosTrabajoGrado(8L, Modalidad.TRABAJO_DE_INVESTIGACION, "Otro",
+                    List.of("Objetivo"), otro.getEstudiantes(), otro.getDirector(), null, null, null, etapa, null, null,
+                    null, List.of(), null));
+        return otro;
+    }
+
+    @Test
+    void unEstudianteConUnTrabajoActivoNoEntraEnOtro() {
+        List<TrabajoGrado> otros = List.of(trabajoDelEstudianteEn(Proceso.EN_CURSO));
+        when(trabajoGateway.listarPorParticipante(10L)).thenReturn(otros);
+        BusinessRuleException error = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.crear(1L, investigacion()));
+        assertEquals("error.trabajo_grado.estudiante_con_trabajo_activo", error.getBusinessRule());
+    }
+
+    @Test
+    void unEstudianteQueYaAproboNoEntraEnOtro() {
+        List<TrabajoGrado> otros = List.of(trabajoDelEstudianteEn(Proceso.FINALIZADO));
+        when(trabajoGateway.listarPorParticipante(10L)).thenReturn(otros);
+        BusinessRuleException error = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.crear(1L, investigacion()));
+        assertEquals("error.trabajo_grado.estudiante_con_trabajo_aprobado", error.getBusinessRule());
+    }
+
+    @Test
+    void conUnTrabajoAnuladoONoAprobadoSiPuedeEntrarEnOtro() {
+        List<TrabajoGrado> otros = List.of(trabajoDelEstudianteEn(Proceso.CANCELADO),
+                trabajoDelEstudianteEn(Proceso.NO_APROBADO));
+        when(trabajoGateway.listarPorParticipante(10L)).thenReturn(otros);
+        assertEquals(Proceso.PROPUESTA, casoDeUso.crear(1L, investigacion()).getEtapa());
+    }
+
+    @Test
+    void siElEstudianteSoloDirigeOtroTrabajoNoCuenta() {
+        // El usuario 10 aparece en un trabajo activo, pero no como estudiante (ej. un trabajo ajeno)
+        TrabajoGrado ajeno = mock(TrabajoGrado.class);
+        when(ajeno.esEstudiante(10L)).thenReturn(false);
+        when(trabajoGateway.listarPorParticipante(10L)).thenReturn(List.of(ajeno));
+        assertEquals(Proceso.PROPUESTA, casoDeUso.crear(1L, investigacion()).getEtapa());
+    }
+
+    @Test
+    void losEstudiantesDisponiblesExcluyenLosActivosYLosAprobados() {
+        when(userGateway.listar()).thenReturn(List.of(usuario(10L, RoleAdmited.ESTUDIANTE),
+                usuario(11L, RoleAdmited.ESTUDIANTE), usuario(12L, RoleAdmited.ESTUDIANTE),
+                usuario(13L, RoleAdmited.ESTUDIANTE), usuario(1L, RoleAdmited.DOCENTE)));
+        Estudiante e11 = new Estudiante(11L, "E11", new NombrePersona("Once", null, "Prueba", null), "e11@u.co",
+                ING_SISTEMAS);
+        Estudiante e12 = new Estudiante(12L, "E12", new NombrePersona("Doce", null, "Prueba", null), "e12@u.co",
+                ING_SISTEMAS);
+        Estudiante e13 = new Estudiante(13L, "E13", new NombrePersona("Trece", null, "Prueba", null), "e13@u.co",
+                ING_SISTEMAS);
+        Director director = trabajoDelEstudianteEn(Proceso.PROPUESTA).getDirector();
+        java.util.function.BiFunction<Estudiante, Proceso, TrabajoGrado> trabajo = (estudiante, etapa) -> TrabajoGrado
+                .reconstruir(new DatosTrabajoGrado(9L, Modalidad.TRABAJO_DE_INVESTIGACION, "T", List.of("O"),
+                        List.of(estudiante), director, null, null, null, etapa, null, null, null, List.of(), null));
+        when(trabajoGateway.listarTodos()).thenReturn(List.of(trabajo.apply(e11, Proceso.EN_CURSO),
+                trabajo.apply(e12, Proceso.FINALIZADO), trabajo.apply(e13, Proceso.NO_APROBADO)));
+
+        assertEquals(List.of(10L, 13L), casoDeUso.estudiantesDisponibles());
     }
 }

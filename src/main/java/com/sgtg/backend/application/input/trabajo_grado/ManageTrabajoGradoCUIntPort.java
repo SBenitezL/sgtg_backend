@@ -65,6 +65,12 @@ public interface ManageTrabajoGradoCUIntPort {
     public List<TrabajoGrado> listarTodos();
 
     /**
+     * @return los usuarios estudiantes (activos) que pueden participar en un trabajo
+     *         nuevo: sin un trabajo activo y sin un trabajo aprobado (FINALIZADO)
+     */
+    public List<Long> estudiantesDisponibles();
+
+    /**
      * Radica una versión de la propuesta. Solo el director del trabajo.
      *
      * @param documento archivo de la propuesta (formato A)
@@ -233,13 +239,19 @@ public interface ManageTrabajoGradoCUIntPort {
      *
      * @param monografia     monografía del trabajo
      * @param documentoFinal documento final (formato E)
-     * @param pazYSalvo      paz y salvo (formato F)
      * @param conceptoAsesor concepto favorable del asesor; obligatorio en práctica profesional
      * @param anexos         anexos (PDF), opcional
      */
     public TrabajoGrado solicitarSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto monografia,
-            ArchivoAdjunto documentoFinal, ArchivoAdjunto pazYSalvo, ArchivoAdjunto conceptoAsesor,
+            ArchivoAdjunto documentoFinal, ArchivoAdjunto conceptoAsesor,
             ArchivoAdjunto anexos);
+
+    /**
+     * Revisión del paz y salvo (formato F) de Decanatura: lo aprueba o no, siempre
+     * con el documento; si no lo aprueba, con observaciones.
+     */
+    public TrabajoGrado revisarPazYSalvo(Long trabajoId, Long usuarioId, boolean aprobado, String observaciones,
+            ArchivoAdjunto formatoF);
 
     /**
      * Programa la sesión de sustentación (la primera o, tras un aplazamiento,
@@ -300,6 +312,14 @@ public interface ManageTrabajoGradoCUIntPort {
 
     /** Carga la versión definitiva (formato H) de la sustentación aprobada. Solo el jurado coordinador. */
     public TrabajoGrado cargarVersionDefinitiva(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
+
+    /**
+     * Anulación del director (borrado lógico): el trabajo se cierra y queda en
+     * el historial. Solo en propuesta o anteproyecto.
+     *
+     * @param justificacion motivo de la anulación (obligatorio)
+     */
+    public TrabajoGrado anular(Long trabajoId, Long usuarioId, String justificacion);
 
     /**
      * Solicita la cancelación del trabajo con la fecha actual. Solo el director.

@@ -180,4 +180,52 @@ class EtapaCancelacionTest {
         assertEquals(List.of(negada, pendiente), reconstruido.getCancelaciones());
         assertEquals(pendiente, reconstruido.cancelacionPendiente().get());
     }
+
+    // ----- Anulación del director (borrado lógico) -----
+
+    @Test
+    void elDirectorAnulaEnPropuestaYElTrabajoQuedaArchivado() {
+        trabajo.anular("  Los estudiantes cambiaron de modalidad ", "D001", dia(LUNES));
+
+        assertEquals(Proceso.CANCELADO, trabajo.getEtapa());
+        assertEquals(MotivoCierre.ANULACION_DIRECTOR, trabajo.getMotivoCierre());
+        assertTrue(trabajo.estaCerrado());
+        CambioEtapa cambio = trabajo.getHistorial().get(0);
+        assertEquals(Proceso.PROPUESTA, cambio.origen());
+        assertEquals("D001", cambio.responsable());
+        assertEquals("Los estudiantes cambiaron de modalidad", cambio.observacion());
+        assertTrue(trabajo.getCancelaciones().isEmpty());
+    }
+
+    @Test
+    void tambienSeAnulaEnAnteproyecto() {
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
+        trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.APROBADO, LUNES.plusDays(3)), "C001",
+                dia(LUNES.plusDays(3)));
+
+        trabajo.anular("Sin financiación", "D001", dia(LUNES.plusDays(4)));
+
+        assertEquals(Proceso.CANCELADO, trabajo.getEtapa());
+        assertEquals(Proceso.ANTEPROYECTO, trabajo.getHistorial().get(1).origen());
+    }
+
+    @Test
+    void laAnulacionExigeJustificacion() {
+        assertRegla("error.dominio.anulacion.justificacion_obligatoria", () -> trabajo.anular(" ", "D001", dia(LUNES)));
+        assertRegla("error.dominio.anulacion.justificacion_obligatoria", () -> trabajo.anular(null, "D001", dia(LUNES)));
+        assertEquals(Proceso.PROPUESTA, trabajo.getEtapa());
+    }
+
+    @Test
+    void enCursoOCerradoNoSeAnula() {
+        TrabajoGrado enCurso = TrabajoGrado.reconstruir(new DatosTrabajoGrado(7L, Modalidad.TRABAJO_DE_INVESTIGACION,
+                "Sistema de gestión", OBJETIVOS, List.of(estudiante(10L)), directorPlanta(1L), null, null, null,
+                Proceso.EN_CURSO, null, null,
+                Ejecucion.iniciar(LocalDate.of(2026, 3, 20), Modalidad.TRABAJO_DE_INVESTIGACION).datos(), List.of(),
+                null));
+        assertRegla("error.dominio.anulacion.etapa_invalida", () -> enCurso.anular("x", "D001", dia(LUNES)));
+
+        trabajo.anular("Primera", "D001", dia(LUNES));
+        assertRegla("error.dominio.anulacion.etapa_invalida", () -> trabajo.anular("Otra", "D001", dia(LUNES)));
+    }
 }

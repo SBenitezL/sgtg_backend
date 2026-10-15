@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +29,7 @@ import com.sgtg.backend.domain.models.comun.Decision;
 import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.models.comun.Organo;
 import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
+import com.sgtg.backend.domain.models.notificacion.EventoTrabajoGrado;
 import com.sgtg.backend.domain.models.participantes.Asesor;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
@@ -56,7 +58,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     /** Roles que pueden consultar cualquier trabajo de grado sin participar en él */
     private static final Set<String> ROLES_CONSULTA_GENERAL = Set.of(RoleAdmited.COMITE.name(),
-            RoleAdmited.JEFE_DEP.name(), RoleAdmited.CONSEJO.name(), RoleAdmited.ADMINISTRADOR.name());
+            RoleAdmited.JEFE_DEP.name(), RoleAdmited.CONSEJO.name(), RoleAdmited.ADMINISTRADOR.name(),
+            RoleAdmited.DECANATURA.name());
 
     /** Firma con la que inicia todo archivo PDF */
     private static final byte[] FIRMA_PDF = "%PDF-".getBytes(StandardCharsets.US_ASCII);
@@ -68,11 +71,12 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     private final CalendarioHabil calendario;
     private final Clock clock;
     private final ExceptionFormatterIntPort exceptionFormatter;
+    private final NotificadorTrabajoGrado notificador;
 
     public ManageTrabajoGradoCUImplAdapter(ManageTrabajoGradoGatewayIntPort trabajoGateway,
             ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
             ManageArchivoGatewayIntPort archivoGateway, CalendarioHabil calendario, Clock clock,
-            ExceptionFormatterIntPort exceptionFormatter) {
+            ExceptionFormatterIntPort exceptionFormatter, NotificadorTrabajoGrado notificador) {
         this.trabajoGateway = trabajoGateway;
         this.userGateway = userGateway;
         this.perfilGateway = perfilGateway;
@@ -80,6 +84,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         this.calendario = calendario;
         this.clock = clock;
         this.exceptionFormatter = exceptionFormatter;
+        this.notificador = notificador;
     }
 
     @Override
@@ -90,13 +95,15 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Director codirector = datos.codirectorId() == null ? null
                 : cargarDirector(datos.codirectorId(), "error.trabajo_grado.codirector_sin_perfil");
         List<Estudiante> estudiantes = cargarEstudiantes(datos.estudiantesIds());
+        validarDisponibilidad(estudiantes);
         Asesor asesor = crearAsesor(datos.asesor());
 
         if (datos.modalidad() == Modalidad.TRABAJO_DE_INVESTIGACION) {
             TrabajoGrado investigacion = new TrabajoInvestigacion(null, datos.titulo(), datos.objetivos(),
                     estudiantes, director, codirector, asesor);
             investigacion.describir(datos.descripcion(), datos.lineaInvestigacion());
-            return asignarRolesDeDireccion(this.trabajoGateway.guardar(investigacion));
+            return registrado(asignarRolesDeDireccion(this.trabajoGateway.guardar(investigacion)),
+                    directorUsuarioId);
         }
 
         if (estudiantes.size() > 1)
@@ -119,11 +126,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
             return this.trabajoGateway.guardar(nueva);
         });
         if (!(guardado instanceof PracticaProfesional practica))
-            return asignarRolesDeDireccion(guardado);
+            return registrado(asignarRolesDeDireccion(guardado), directorUsuarioId);
         String rutaDefinitiva = this.archivoGateway.reubicar(rutaTemporal, practica.getId(),
                 TipoDocumento.CARTA_ACEPTACION.carpeta(Modalidad.PRACTICA_PROFESIONAL));
         practica.reubicarCartaAceptacion(rutaDefinitiva);
-        return asignarRolesDeDireccion(this.trabajoGateway.guardar(practica));
+        return registrado(asignarRolesDeDireccion(this.trabajoGateway.guardar(practica)), directorUsuarioId);
     }
 
     /**
@@ -188,14 +195,50 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
+    public List<Long> estudiantesDisponibles() {
+        java.util.Set<Long> ocupados = new java.util.HashSet<>();
+        for (TrabajoGrado trabajo : this.trabajoGateway.listarTodos())
+            if (trabajo.getEtapa() == Proceso.FINALIZADO || !trabajo.estaCerrado())
+                trabajo.getEstudiantes().forEach(estudiante -> ocupados.add(estudiante.getUsuarioId()));
+        return this.userGateway.listar().stream()
+                .filter(Usuario::isActivo)
+                .filter(usuario -> usuario.getRole() != null && usuario.getRole().stream()
+                        .anyMatch(rol -> RoleAdmited.ESTUDIANTE.name().equals(rol.getTrole())))
+                .map(Usuario::getCusuari)
+                .filter(id -> !ocupados.contains(id))
+                .toList();
+    }
+
+    /**
+     * Un estudiante solo puede tener un trabajo de grado activo, sin importar la
+     * modalidad, y quien ya aprobó uno (FINALIZADO) no participa en otro. Sí puede
+     * participar quien tuvo un trabajo no aprobado, cancelado o anulado.
+     */
+    private void validarDisponibilidad(List<Estudiante> estudiantes) {
+        for (Estudiante estudiante : estudiantes) {
+            Long id = estudiante.getUsuarioId();
+            for (TrabajoGrado trabajo : this.trabajoGateway.listarPorParticipante(id)) {
+                if (!trabajo.esEstudiante(id))
+                    continue;
+                if (trabajo.getEtapa() == Proceso.FINALIZADO)
+                    this.exceptionFormatter
+                            .returnResponseBusinessRuleViolated("error.trabajo_grado.estudiante_con_trabajo_aprobado");
+                if (!trabajo.estaCerrado())
+                    this.exceptionFormatter
+                            .returnResponseBusinessRuleViolated("error.trabajo_grado.estudiante_con_trabajo_activo");
+            }
+        }
+    }
+
+    @Override
     public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.PROPUESTA, documento, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.radicarPropuesta(ruta, hoy(), this.calendario);
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.PROPUESTA_RADICADA, usuarioId, null);
     }
 
     @Override
@@ -205,12 +248,12 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Usuario responsable = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.ACTA_COMITE, soporte, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             Decision decision = new Decision(Organo.COMITE_PROGRAMA, resultado, acta, ruta, observaciones,
                     fecha == null ? hoy() : fecha);
             trabajo.registrarDecisionComite(decision, responsable.getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.DECISION_COMITE, usuarioId, texto(resultado));
     }
 
     @Override
@@ -218,11 +261,14 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.ANTEPROYECTO, documento, rutas);
-        return conArchivos(rutas, () -> {
+        TrabajoGrado guardado = conArchivos(rutas, () -> {
             trabajo.radicarAnteproyecto(ruta, trabajo.getDirector().getCodigo(), LocalDateTime.now(this.clock),
                     this.calendario);
             return this.trabajoGateway.guardar(trabajo);
         });
+        return notificar(guardado, guardado.getEtapa() == Proceso.EVALUACION
+                ? EventoTrabajoGrado.ANTEPROYECTO_CORREGIDO : EventoTrabajoGrado.ANTEPROYECTO_RADICADO,
+                usuarioId, null);
     }
 
     @Override
@@ -238,7 +284,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         // Rol de contexto: los evaluadores acceden a "Evaluar anteproyecto"
         this.userGateway.agregarRol(evaluador1Id, RoleAdmited.EVALUADOR.name());
         this.userGateway.agregarRol(evaluador2Id, RoleAdmited.EVALUADOR.name());
-        return guardado;
+        return notificar(guardado, EventoTrabajoGrado.EVALUADORES_ASIGNADOS, usuarioId, null);
     }
 
     @Override
@@ -252,12 +298,12 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.EVALUACION_ANTEPROYECTO, formato, rutas);
         String rutaAnotaciones = almacenar(trabajo, trabajoId, TipoDocumento.ANOTACIONES_EVALUACION, anotaciones,
                 rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             Concepto concepto = new Concepto(evaluador.get(), resultado, observaciones, hoy());
             trabajo.registrarConceptoEvaluador(concepto, ruta, rutaAnotaciones, LocalDateTime.now(this.clock),
                     this.calendario);
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.CONCEPTO_EVALUADOR, usuarioId, texto(resultado));
     }
 
     @Override
@@ -267,10 +313,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         validarJefeDelDepartamento(trabajo, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.REMISION_CONSEJO, formatoC, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.remitirAnteproyectoAlConsejo(ruta, jefe.getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.ANTEPROYECTO_REMITIDO, usuarioId, null);
     }
 
     /** El Departamento al que está adscrito el director es el que asigna evaluadores y remite (Art. 13). */
@@ -289,11 +335,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Usuario responsable = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.registrarDecisionConsejo(decisionConsejo(resultado, ruta, observaciones),
                     responsable.getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.DECISION_CONSEJO_ANTEPROYECTO, usuarioId, texto(resultado));
     }
 
     @Override
@@ -301,7 +347,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
             List<String> objetivos, String justificacion) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         trabajo.solicitarCambioObjetivos(titulo, objetivos, justificacion, hoy());
-        return this.trabajoGateway.guardar(trabajo);
+        return notificar(this.trabajoGateway.guardar(trabajo), EventoTrabajoGrado.CAMBIO_OBJETIVOS_SOLICITADO, usuarioId, null);
     }
 
     @Override
@@ -310,10 +356,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.resolverCambioObjetivos(decisionConsejo(resultado, ruta, observaciones));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.CAMBIO_OBJETIVOS_RESUELTO, usuarioId, texto(resultado));
     }
 
     @Override
@@ -327,10 +373,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Usuario usuario = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.INFORME_MENSUAL, documento, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.registrarInformeMensual(ruta, hoy(), usuario.getCodigo(), observaciones);
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.INFORME_RADICADO, usuarioId, String.valueOf(trabajo.getEjecucion().getInformesMensuales().size()));
     }
 
     @Override
@@ -345,10 +391,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
                 .filter(parte -> parte != null && !parte.isBlank()).toList());
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.REVISION_INFORME, notas, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.revisarInformeMensual(numero, new RevisionInforme(usuarioId, nombre, observaciones, ruta, hoy()));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.INFORME_REVISADO, usuarioId, String.valueOf(numero));
     }
 
     @Override
@@ -356,10 +402,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.SOLICITUD_PRORROGA, solicitud, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.solicitarProrroga(meses, ruta, hoy());
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.PRORROGA_SOLICITADA, usuarioId, null);
     }
 
     @Override
@@ -369,11 +415,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Usuario responsable = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.resolverProrroga(decisionConsejo(resultado, ruta, observaciones), responsable.getCodigo(),
                     LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.PRORROGA_RESUELTA, usuarioId, texto(resultado));
     }
 
     @Override
@@ -381,10 +427,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.SOLICITUD_SUSPENSION, solicitud, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.solicitarSuspension(ruta, hoy());
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.SUSPENSION_SOLICITADA, usuarioId, null);
     }
 
     @Override
@@ -394,11 +440,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Usuario responsable = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.resolverSuspension(decisionConsejo(resultado, ruta, observaciones), responsable.getCodigo(),
                     LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.SUSPENSION_RESUELTA, usuarioId, texto(resultado));
     }
 
     @Override
@@ -406,31 +452,43 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.REANUDACION, documento, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.reanudar(ruta, trabajo.getDirector().getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.TRABAJO_REANUDADO, usuarioId, null);
     }
 
     @Override
     public TrabajoGrado solicitarSustentacion(Long trabajoId, Long usuarioId, ArchivoAdjunto monografia,
-            ArchivoAdjunto documentoFinal, ArchivoAdjunto pazYSalvo, ArchivoAdjunto conceptoAsesor,
-            ArchivoAdjunto anexos) {
+            ArchivoAdjunto documentoFinal, ArchivoAdjunto conceptoAsesor, ArchivoAdjunto anexos) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         // Se validan todos los archivos antes de almacenar cualquiera
-        Arrays.asList(monografia, documentoFinal, pazYSalvo, conceptoAsesor, anexos).stream().filter(this::hayArchivo)
+        Arrays.asList(monografia, documentoFinal, conceptoAsesor, anexos).stream().filter(this::hayArchivo)
                 .forEach(this::validarPdf);
         List<String> rutas = new ArrayList<>();
         String rutaMonografia = almacenar(trabajo, trabajoId, TipoDocumento.MONOGRAFIA, monografia, rutas);
         String rutaFinal = almacenar(trabajo, trabajoId, TipoDocumento.DOCUMENTO_FINAL, documentoFinal, rutas);
-        String rutaPazYSalvo = almacenar(trabajo, trabajoId, TipoDocumento.PAZ_Y_SALVO, pazYSalvo, rutas);
         String rutaConcepto = almacenar(trabajo, trabajoId, TipoDocumento.CONCEPTO_ASESOR, conceptoAsesor, rutas);
         String rutaAnexos = almacenar(trabajo, trabajoId, TipoDocumento.ANEXOS, anexos, rutas);
-        return conArchivos(rutas, () -> {
-            trabajo.solicitarSustentacion(rutaMonografia, rutaFinal, rutaPazYSalvo, rutaConcepto, rutaAnexos,
+        return notificar(conArchivos(rutas, () -> {
+            trabajo.solicitarSustentacion(rutaMonografia, rutaFinal, rutaConcepto, rutaAnexos,
                     trabajo.getDirector().getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.SUSTENTACION_SOLICITADA, usuarioId, null);
+    }
+
+    @Override
+    public TrabajoGrado revisarPazYSalvo(Long trabajoId, Long usuarioId, boolean aprobado, String observaciones,
+            ArchivoAdjunto formatoF) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        cargarUsuario(usuarioId);
+        List<String> rutas = new ArrayList<>();
+        String ruta = almacenar(trabajo, trabajoId, TipoDocumento.PAZ_Y_SALVO, formatoF, rutas);
+        return notificar(conArchivos(rutas, () -> {
+            trabajo.revisarPazYSalvo(ruta, aprobado, observaciones, LocalDateTime.now(this.clock));
+            return this.trabajoGateway.guardar(trabajo);
+        }), aprobado ? EventoTrabajoGrado.PAZ_Y_SALVO_APROBADO : EventoTrabajoGrado.PAZ_Y_SALVO_NO_APROBADO, usuarioId,
+                observaciones == null ? "" : observaciones.trim());
     }
 
     @Override
@@ -450,7 +508,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         this.userGateway.agregarRol(coordinadorId, RoleAdmited.JURADO.name());
         this.userGateway.agregarRol(coordinadorId, RoleAdmited.JURADO_COORDINADOR.name());
         this.userGateway.agregarRol(juradoId, RoleAdmited.JURADO.name());
-        return guardado;
+        return notificar(guardado, EventoTrabajoGrado.SUSTENTACION_PROGRAMADA, usuarioId,
+                fechaHora.format(FORMATO_FECHA_HORA) + " en " + salon);
     }
 
     @Override
@@ -458,10 +517,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.SOLICITUD_NUEVA_FECHA, solicitud, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.solicitarNuevaFechaSustentacion(ruta, LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.NUEVA_FECHA_SOLICITADA, usuarioId, null);
     }
 
     @Override
@@ -471,11 +530,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.resolverNuevaFechaSustentacion(decisionConsejo(resultado, ruta, observaciones), nuevaFechaHora,
                     salon);
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.NUEVA_FECHA_RESUELTA, usuarioId, texto(resultado));
     }
 
     @Override
@@ -485,11 +544,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Evaluador jurado = coordinadorDe(trabajo, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.ACTA_SUSTENTACION, acta, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.calificarSustentacion(jurado, calificacion, observaciones, ruta, LocalDateTime.now(this.clock),
                     this.calendario);
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.SUSTENTACION_CALIFICADA, usuarioId, texto(calificacion));
     }
 
     @Override
@@ -497,7 +556,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         trabajo.registrarInasistencia(coordinadorDe(trabajo, usuarioId), observaciones,
                 LocalDateTime.now(this.clock));
-        return this.trabajoGateway.guardar(trabajo);
+        return notificar(this.trabajoGateway.guardar(trabajo), EventoTrabajoGrado.INASISTENCIA_REGISTRADA, usuarioId, null);
     }
 
     @Override
@@ -508,10 +567,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.AJUSTES_SUSTENTACION, documento, rutas);
         String rutaAnexos = almacenar(trabajo, trabajoId, TipoDocumento.ANEXOS, anexos, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.radicarAjustesSustentacion(ruta, rutaAnexos, LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.AJUSTES_RADICADOS, usuarioId, null);
     }
 
     @Override
@@ -520,7 +579,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         trabajo.verificarAjustesSustentacion(coordinadorDe(trabajo, usuarioId), cumple, observaciones,
                 LocalDateTime.now(this.clock));
-        return this.trabajoGateway.guardar(trabajo);
+        return notificar(this.trabajoGateway.guardar(trabajo), EventoTrabajoGrado.AJUSTES_VERIFICADOS, usuarioId, cumple ? "cumplen" : "no cumplen");
     }
 
     @Override
@@ -529,10 +588,18 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Evaluador jurado = coordinadorDe(trabajo, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.VERSION_DEFINITIVA, documento, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.cargarVersionDefinitiva(jurado, ruta, LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.VERSION_DEFINITIVA_CARGADA, usuarioId, null);
+    }
+
+    @Override
+    public TrabajoGrado anular(Long trabajoId, Long usuarioId, String justificacion) {
+        TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        trabajo.anular(justificacion, trabajo.getDirector().getCodigo(), LocalDateTime.now(this.clock));
+        return notificar(this.trabajoGateway.guardar(trabajo), EventoTrabajoGrado.TRABAJO_ANULADO, usuarioId,
+                justificacion.trim());
     }
 
     @Override
@@ -540,10 +607,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.SOLICITUD_CANCELACION, solicitud, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.solicitarCancelacion(ruta, hoy());
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.CANCELACION_SOLICITADA, usuarioId, null);
     }
 
     @Override
@@ -553,11 +620,11 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Usuario responsable = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
-        return conArchivos(rutas, () -> {
+        return notificar(conArchivos(rutas, () -> {
             trabajo.resolverCancelacion(decisionConsejo(resultado, ruta, observaciones), responsable.getCodigo(),
                     LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        });
+        }), EventoTrabajoGrado.CANCELACION_RESUELTA, usuarioId, texto(resultado));
     }
 
     @Override
@@ -568,11 +635,15 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
                 Proceso.APLAZADO)) {
             for (TrabajoGrado trabajo : this.trabajoGateway.listarPorEtapa(etapa)) {
                 if (trabajo.verificarVencimientos(ahora)) {
-                    this.trabajoGateway.guardar(trabajo);
+                    this.notificador.notificarCambioDelSistema(this.trabajoGateway.guardar(trabajo));
                     actualizados++;
                 }
             }
         }
+        // Avisos de plazos por vencer (después de los cierres, para no avisar a un trabajo cerrado)
+        for (Proceso etapa : List.of(Proceso.PROPUESTA, Proceso.EVALUACION, Proceso.EN_CURSO, Proceso.PRORROGA))
+            this.trabajoGateway.listarPorEtapa(etapa)
+                    .forEach(trabajo -> this.notificador.avisarPlazos(trabajo, ahora.toLocalDate()));
         return actualizados;
     }
 
@@ -625,6 +696,24 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         String normalizada = ruta.replace('\\', '/');
         return normalizada.startsWith(trabajoId + "/")
                 && Arrays.stream(normalizada.split("/")).noneMatch(".."::equals);
+    }
+
+    // ----- Notificaciones -----
+
+    private static final DateTimeFormatter FORMATO_FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy 'a las' HH:mm");
+
+    private TrabajoGrado notificar(TrabajoGrado trabajo, EventoTrabajoGrado evento, Long actorId, String detalle) {
+        this.notificador.notificar(trabajo, evento, actorId, detalle);
+        return trabajo;
+    }
+
+    private TrabajoGrado registrado(TrabajoGrado trabajo, Long directorUsuarioId) {
+        return notificar(trabajo, EventoTrabajoGrado.TRABAJO_REGISTRADO, directorUsuarioId, null);
+    }
+
+    /** Resultado de una decisión o calificación para el texto de la notificación. */
+    private static String texto(Enum<?> resultado) {
+        return resultado == null ? "" : resultado.name().replace('_', ' ').toLowerCase(Locale.ROOT);
     }
 
     // ----- Apoyo -----

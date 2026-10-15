@@ -212,3 +212,7 @@ Decisiones del usuario al integrar el front (fase 6 del plan de integración):
 | Respuesta | `sustentacion` con `rutaMonografia`, `rutaAnexos`, `rutaAnexosAjustes`, `solicitudesNuevaFecha[]`; cada sesión con `juradoCoordinadorId` y `rutaFormatoE` |
 
 Pruebas: `EtapaSustentacionTest` (25), `ManageTrabajoGradoCUImplAdapterTest` (+3), gateway y `FlujoSustentacionIntegracionTest` reescritos. Total del proyecto: 382. Thunder: 199 peticiones.
+
+## Actualización 2026-10-14: paz y salvo de Decanatura
+El director ya no adjunta el paz y salvo a la solicitud: lo revisa Decanatura (lo aprueba o no, siempre con el formato
+F) y el Consejo no programa sin paz y salvo aprobado. Detalle en [ajustes-2026-10-14.md](ajustes-2026-10-14.md).

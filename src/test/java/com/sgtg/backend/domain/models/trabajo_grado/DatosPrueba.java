@@ -67,6 +67,6 @@ final class DatosPrueba {
 
     static Decision decisionComite(ResultadoConcepto resultado, LocalDate fecha) {
         String observaciones = resultado == ResultadoConcepto.APROBADO ? null : "Precisar los objetivos";
-        return new Decision(Organo.COMITE_PROGRAMA, resultado, "Acta 01", null, observaciones, fecha);
+        return new Decision(Organo.COMITE_PROGRAMA, resultado, "Acta 01", "actas/acta-01.pdf", observaciones, fecha);
     }
 }

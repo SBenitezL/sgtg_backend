@@ -10,7 +10,7 @@ import com.sgtg.backend.domain.models.participantes.Evaluador;
  * Estado persistido de la sustentación, usado para reconstruirla.
  *
  * @param rutaDocumentoFinal       ruta del documento final (formato E)
- * @param rutaPazYSalvo            ruta del paz y salvo (formato F)
+ * @param rutaPazYSalvo            ruta del paz y salvo aprobado por Decanatura, null mientras no lo apruebe
  * @param rutaConceptoAsesor       ruta del concepto favorable del asesor, solo práctica profesional
  * @param fechaSolicitud           fecha de la solicitud
  * @param estado                   estado actual
@@ -30,6 +30,7 @@ import com.sgtg.backend.domain.models.participantes.Evaluador;
  * @param rutaAnexos               ruta de los anexos de la solicitud, null si no se adjuntaron
  * @param rutaAnexosAjustes        ruta de los anexos de los ajustes, null si no se adjuntaron
  * @param solicitudesNuevaFecha    solicitudes de nueva fecha de sesión, en orden
+ * @param revisionesPazYSalvo      revisiones del paz y salvo de Decanatura, en orden
  */
 public record DatosSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo, String rutaConceptoAsesor,
         LocalDate fechaSolicitud, EstadoSustentacion estado, List<SesionSustentacion> sesiones,
@@ -38,16 +39,17 @@ public record DatosSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo,
         LocalDate fechaLimiteAjustes, LocalDate fechaLimiteSegundaSesion, String rutaVersionDefinitiva,
         LocalDate fechaVersionDefinitiva, Evaluador juradoVersionDefinitiva, MotivoCierre motivoNoAprobacion,
         String rutaMonografia, String rutaAnexos, String rutaAnexosAjustes,
-        List<SolicitudNuevaFecha> solicitudesNuevaFecha) {
+        List<SolicitudNuevaFecha> solicitudesNuevaFecha, List<RevisionPazYSalvo> revisionesPazYSalvo) {
 
     public DatosSustentacion {
-        if (rutaDocumentoFinal == null || rutaPazYSalvo == null || fechaSolicitud == null || estado == null)
+        if (rutaDocumentoFinal == null || fechaSolicitud == null || estado == null)
             throw new ReglaNegocioException("error.dominio.sustentacion.solicitud_incompleta");
         sesiones = sesiones == null ? List.of() : List.copyOf(sesiones);
         calificaciones = calificaciones == null ? List.of() : List.copyOf(calificaciones);
         inasistencias = inasistencias == null ? List.of() : List.copyOf(inasistencias);
         verificaciones = verificaciones == null ? List.of() : List.copyOf(verificaciones);
         solicitudesNuevaFecha = solicitudesNuevaFecha == null ? List.of() : List.copyOf(solicitudesNuevaFecha);
+        revisionesPazYSalvo = revisionesPazYSalvo == null ? List.of() : List.copyOf(revisionesPazYSalvo);
     }
 
     /** Estado sin monografía, anexos ni solicitudes de nueva fecha (compatibilidad). */
@@ -60,6 +62,6 @@ public record DatosSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo,
         this(rutaDocumentoFinal, rutaPazYSalvo, rutaConceptoAsesor, fechaSolicitud, estado, sesiones, calificaciones,
                 inasistencias, verificaciones, rutaAjustes, fechaAjustes, fechaLimiteAjustes, fechaLimiteSegundaSesion,
                 rutaVersionDefinitiva, fechaVersionDefinitiva, juradoVersionDefinitiva, motivoNoAprobacion, null, null,
-                null, List.of());
+                null, List.of(), List.of());
     }
 }

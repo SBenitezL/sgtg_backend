@@ -192,6 +192,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
      * @param rutaAnexosAjustes     anexos de los ajustes, null si no se adjuntaron
      * @param solicitudesNuevaFecha solicitudes de nueva fecha de la sesión, en orden
      * @param motivoNoAprobacion    motivo del cierre si no se aprobó
+     * @param revisionesPazYSalvo   revisiones del paz y salvo de Decanatura; {@code rutaPazYSalvo} es el aprobado
      */
     public record SustentacionDTO(EstadoSustentacion estado, String rutaMonografia, String rutaDocumentoFinal,
             String rutaPazYSalvo, String rutaConceptoAsesor, String rutaAnexos, LocalDate fechaSolicitud,
@@ -199,7 +200,11 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             List<CalificacionJuradoDTO> calificaciones, List<RegistroJuradoDTO> inasistencias,
             List<RegistroJuradoDTO> verificaciones, String rutaAjustes, String rutaAnexosAjustes,
             LocalDate fechaAjustes, LocalDate fechaLimiteAjustes, LocalDate fechaLimiteSegundaSesion,
-            String rutaVersionDefinitiva, LocalDate fechaVersionDefinitiva, MotivoCierre motivoNoAprobacion) {
+            String rutaVersionDefinitiva, LocalDate fechaVersionDefinitiva, MotivoCierre motivoNoAprobacion,
+            List<RevisionPazYSalvoDTO> revisionesPazYSalvo) {
+    }
+
+    public record RevisionPazYSalvoDTO(String rutaDocumento, boolean aprobado, String observaciones, LocalDate fecha) {
     }
 
     /** @param decision decisión del Consejo, null mientras esté pendiente */
@@ -314,7 +319,9 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 s.getVerificaciones().stream().map(TrabajoGradoDTOResponse::registro).toList(),
                 s.getRutaAjustes(), s.getRutaAnexosAjustes(), s.getFechaAjustes(), s.getFechaLimiteAjustes(),
                 s.getFechaLimiteSegundaSesion(), s.getRutaVersionDefinitiva(), s.getFechaVersionDefinitiva(),
-                s.getMotivoNoAprobacion());
+                s.getMotivoNoAprobacion(), s.getRevisionesPazYSalvo().stream()
+                        .map(r -> new RevisionPazYSalvoDTO(r.rutaDocumento(), r.aprobado(), r.observaciones(), r.fecha()))
+                        .toList());
     }
 
     private static SesionSustentacionDTO sesion(SesionSustentacion s) {

@@ -14,7 +14,9 @@ public enum MotivoCierre {
     /** Cancelación solicitada por el estudiante (Art. 26). */
     CANCELACION_ESTUDIANTE(Proceso.CANCELADO),
     /** Cancelación solicitada por el director (Art. 26). */
-    CANCELACION_DIRECTOR(Proceso.CANCELADO);
+    CANCELACION_DIRECTOR(Proceso.CANCELADO),
+    /** Anulación del director antes de la aprobación del Consejo (borrado lógico: el trabajo se archiva). */
+    ANULACION_DIRECTOR(Proceso.CANCELADO);
 
     private final Proceso etapaCierre;
 

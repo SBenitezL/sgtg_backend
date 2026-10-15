@@ -69,7 +69,8 @@ public class Propuesta {
 
     /**
      * Registra el concepto del Comité de Programa sobre la versión en revisión:
-     * la propuesta pasa a APROBADO o NO_APROBADO según el resultado.
+     * la propuesta pasa a APROBADO o NO_APROBADO según el resultado. El
+     * documento de respuesta del Comité es obligatorio en ambos casos.
      *
      * @param decision decisión del Comité: APROBADO o NO_APROBADO
      */
@@ -78,6 +79,8 @@ public class Propuesta {
             throw new ReglaNegocioException("error.dominio.propuesta.datos_incompletos");
         if (!decision.emitidaPor(Organo.COMITE_PROGRAMA))
             throw new ReglaNegocioException("error.dominio.propuesta.organo_invalido");
+        if (decision.rutaArchivo() == null)
+            throw new ReglaNegocioException("error.dominio.propuesta.documento_respuesta_obligatorio");
         if (getEstado() != Estado.EN_REVISION)
             throw new ReglaNegocioException("error.dominio.propuesta.decision_no_permitida");
         if (decision.fecha().isBefore(this.versionActual().get().fechaCarga()))

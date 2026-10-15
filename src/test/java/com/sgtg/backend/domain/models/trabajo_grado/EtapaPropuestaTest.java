@@ -156,6 +156,17 @@ class EtapaPropuestaTest {
     }
 
     @Test
+    void laRespuestaDelComiteExigeElDocumento() {
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
+        for (ResultadoConcepto resultado : new ResultadoConcepto[] { ResultadoConcepto.APROBADO,
+                ResultadoConcepto.NO_APROBADO })
+            assertRegla("error.dominio.propuesta.documento_respuesta_obligatorio", () -> trabajo.registrarDecisionComite(
+                    new Decision(Organo.COMITE_PROGRAMA, resultado, "Acta 01", null, "Obs", LUNES.plusDays(1)), "C001",
+                    ahora));
+        assertEquals(Estado.EN_REVISION, trabajo.getPropuesta().getEstado());
+    }
+
+    @Test
     void noSeRadicaMientrasHayUnaVersionPendienteDeConcepto() {
         trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
         assertRegla("error.dominio.propuesta.radicacion_no_permitida",

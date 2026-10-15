@@ -45,6 +45,7 @@ class EtapaSustentacionTest {
     private static final String DEFINITIVA = "definitivas/2026/tg-7.pdf";
     private static final String ACTA = "actas/tg-7.pdf";
     private static final String FORMATO_E = "formatos/e-tg-7.pdf";
+    private static final String PAZ_Y_SALVO = "paz-y-salvo/tg-7.pdf";
 
     private final CalendarioHabil calendario = new CalendarioHabilFalso();
     /** Jurado coordinador */
@@ -81,9 +82,11 @@ class EtapaSustentacionTest {
         trabajo = enCurso(Modalidad.TRABAJO_DE_INVESTIGACION);
     }
 
+    /** Solicitada por el director, con el paz y salvo aprobado por Decanatura. */
     private void solicitar() {
-        trabajo.solicitarSustentacion("monografias/tg-7.pdf", "finales/tg-7.pdf", "paz-y-salvo/tg-7.pdf", null,
+        trabajo.solicitarSustentacion("monografias/tg-7.pdf", "finales/tg-7.pdf", null,
                 null, "D1", dia(SOLICITUD));
+        trabajo.revisarPazYSalvo(PAZ_Y_SALVO, true, null, dia(SOLICITUD));
     }
 
     private void programar(LocalDate fecha, LocalDate programacion) {
@@ -107,7 +110,7 @@ class EtapaSustentacionTest {
 
     @Test
     void laSolicitudPasaASustentacionYDetieneElVencimiento() {
-        trabajo.solicitarSustentacion("monografias/tg-7.pdf", "finales/tg-7.pdf", "paz-y-salvo/tg-7.pdf", null,
+        trabajo.solicitarSustentacion("monografias/tg-7.pdf", "finales/tg-7.pdf", null,
                 "anexos/tg-7.pdf", "D1", dia(SOLICITUD));
 
         assertEquals(Proceso.SUSTENTACION, trabajo.getEtapa());
@@ -115,7 +118,8 @@ class EtapaSustentacionTest {
         assertEquals(EstadoSustentacion.SOLICITADA, sustentacion.getEstado());
         assertEquals("monografias/tg-7.pdf", sustentacion.getRutaMonografia());
         assertEquals("finales/tg-7.pdf", sustentacion.getRutaDocumentoFinal());
-        assertEquals("paz-y-salvo/tg-7.pdf", sustentacion.getRutaPazYSalvo());
+        // El paz y salvo lo revisa Decanatura después
+        assertNull(sustentacion.getRutaPazYSalvo());
         assertEquals("anexos/tg-7.pdf", sustentacion.getRutaAnexos());
         assertEquals("D1", trabajo.getHistorial().get(0).responsable());
         // Con la sustentación iniciada, el fin del plazo ya no cierra el trabajo
@@ -126,28 +130,26 @@ class EtapaSustentacionTest {
     @Test
     void seSolicitaDespuesDeLosMesesMinimosYAntesDelFin() {
         assertRegla("error.dominio.sustentacion.antes_de_tiempo", () -> trabajo.solicitarSustentacion("m.pdf",
-                "f.pdf", "p.pdf", null, null, "D1", dia(LocalDate.of(2026, 6, 19))));
+                "f.pdf", null, null, "D1", dia(LocalDate.of(2026, 6, 19))));
         assertRegla("error.dominio.sustentacion.plazo_vencido", () -> trabajo.solicitarSustentacion("m.pdf",
-                "f.pdf", "p.pdf", null, null, "D1", dia(LocalDate.of(2026, 12, 21))));
-        trabajo.solicitarSustentacion("m.pdf", "f.pdf", "p.pdf", null, null, "D1", dia(LocalDate.of(2026, 6, 20)));
+                "f.pdf", null, null, "D1", dia(LocalDate.of(2026, 12, 21))));
+        trabajo.solicitarSustentacion("m.pdf", "f.pdf", null, null, "D1", dia(LocalDate.of(2026, 6, 20)));
         assertEquals(Proceso.SUSTENTACION, trabajo.getEtapa());
         assertNull(trabajo.getSustentacion().getRutaAnexos());
     }
 
     @Test
-    void exigeMonografiaDocumentoFinalPazYSalvoYEnPracticaElConceptoDelAsesor() {
+    void exigeMonografiaDocumentoFinalYEnPracticaElConceptoDelAsesor() {
         assertRegla("error.dominio.sustentacion.monografia_obligatoria",
-                () -> trabajo.solicitarSustentacion(null, "f.pdf", "p.pdf", null, null, "D1", dia(SOLICITUD)));
+                () -> trabajo.solicitarSustentacion(null, "f.pdf", null, null, "D1", dia(SOLICITUD)));
         assertRegla("error.dominio.sustentacion.documento_final_obligatorio",
-                () -> trabajo.solicitarSustentacion("m.pdf", " ", "p.pdf", null, null, "D1", dia(SOLICITUD)));
-        assertRegla("error.dominio.sustentacion.paz_y_salvo_obligatorio",
-                () -> trabajo.solicitarSustentacion("m.pdf", "f.pdf", null, null, null, "D1", dia(SOLICITUD)));
+                () -> trabajo.solicitarSustentacion("m.pdf", " ", null, null, "D1", dia(SOLICITUD)));
 
         TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
         LocalDateTime septiembre = dia(LocalDate.of(2026, 9, 21));
         assertRegla("error.dominio.sustentacion.concepto_asesor_obligatorio",
-                () -> practica.solicitarSustentacion("m.pdf", "f.pdf", "p.pdf", null, null, "D1", septiembre));
-        practica.solicitarSustentacion("m.pdf", "f.pdf", "p.pdf", "conceptos/asesor.pdf", null, "D1", septiembre);
+                () -> practica.solicitarSustentacion("m.pdf", "f.pdf", null, null, "D1", septiembre));
+        practica.solicitarSustentacion("m.pdf", "f.pdf", "conceptos/asesor.pdf", null, "D1", septiembre);
         assertEquals("conceptos/asesor.pdf", practica.getSustentacion().getRutaConceptoAsesor());
     }
 
@@ -155,6 +157,47 @@ class EtapaSustentacionTest {
     void noSeSolicitaConUnaProrrogaPendiente() {
         trabajo.solicitarProrroga(2, "solicitudes/prorroga.pdf", LocalDate.of(2026, 7, 1));
         assertRegla("error.dominio.sustentacion.decision_pendiente", this::solicitar);
+    }
+
+    // ----- Paz y salvo (Decanatura) -----
+
+    @Test
+    void sinPazYSalvoAprobadoNoSeProgramaYDecanaturaPuedeNoAprobarlo() {
+        trabajo.solicitarSustentacion("m.pdf", "f.pdf", null, null, "D1", dia(SOLICITUD));
+        assertRegla("error.dominio.sustentacion.paz_y_salvo_pendiente", () -> programar(SESION, PROGRAMACION));
+
+        trabajo.revisarPazYSalvo("paz/f-1.pdf", false, " Deuda en biblioteca ", dia(SOLICITUD.plusDays(1)));
+        assertNull(trabajo.getSustentacion().getRutaPazYSalvo());
+        assertRegla("error.dominio.sustentacion.paz_y_salvo_pendiente", () -> programar(SESION, PROGRAMACION));
+
+        trabajo.revisarPazYSalvo("paz/f-2.pdf", true, null, dia(SOLICITUD.plusDays(2)));
+        assertEquals("paz/f-2.pdf", trabajo.getSustentacion().getRutaPazYSalvo());
+        assertEquals("Deuda en biblioteca", trabajo.getSustentacion().getRevisionesPazYSalvo().get(0).observaciones());
+        programar(SESION, PROGRAMACION);
+        assertEquals(EstadoSustentacion.PROGRAMADA, trabajo.getSustentacion().getEstado());
+    }
+
+    @Test
+    void laRevisionDelPazYSalvoExigeDocumentoYSiNoSeApruebaObservaciones() {
+        trabajo.solicitarSustentacion("m.pdf", "f.pdf", null, null, "D1", dia(SOLICITUD));
+        assertRegla("error.dominio.sustentacion.paz_y_salvo_obligatorio",
+                () -> trabajo.revisarPazYSalvo(" ", true, null, dia(SOLICITUD)));
+        assertRegla("error.dominio.sustentacion.paz_y_salvo_obligatorio",
+                () -> trabajo.revisarPazYSalvo(null, false, "Deuda", dia(SOLICITUD)));
+        assertRegla("error.dominio.sustentacion.paz_y_salvo_observaciones_obligatorias",
+                () -> trabajo.revisarPazYSalvo("paz/f.pdf", false, " ", dia(SOLICITUD)));
+        assertRegla("error.dominio.sustentacion.paz_y_salvo_fecha_invalida",
+                () -> trabajo.revisarPazYSalvo("paz/f.pdf", true, null, dia(SOLICITUD.minusDays(1))));
+        assertTrue(trabajo.getSustentacion().getRevisionesPazYSalvo().isEmpty());
+    }
+
+    @Test
+    void unPazYSalvoAprobadoNoSeVuelveARevisarYSoloSeRevisaEnSustentacion() {
+        assertRegla("error.dominio.trabajo_grado.etapa_invalida",
+                () -> trabajo.revisarPazYSalvo("paz/f.pdf", true, null, dia(SOLICITUD)));
+        solicitar();
+        assertRegla("error.dominio.sustentacion.paz_y_salvo_no_permitido",
+                () -> trabajo.revisarPazYSalvo("paz/otro.pdf", true, null, dia(SOLICITUD)));
     }
 
     // ----- Programación -----

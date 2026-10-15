@@ -196,6 +196,7 @@ class FlujoSustentacionIntegracionTest {
         long evaluador1Id = crearUsuario("V", "EVALUADOR");
         long evaluador2Id = crearUsuario("W", "DOCENTE");
         crearUsuario("F", "CONSEJO");
+        crearUsuario("K", "DECANATURA");
         perfilDocente(docenteId);
         perfilDocente(jefeId);
         enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
@@ -208,7 +209,8 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(status().isCreated()), "$.id");
         subir(TRABAJOS + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
                 .andExpect(status().isOk());
-        subir(TRABAJOS + trabajoId + "/propuesta/decisiones", login("C"), Map.of("resultado", "APROBADO"))
+        subir(TRABAJOS + trabajoId + "/propuesta/decisiones", login("C"), Map.of("resultado", "APROBADO"),
+                archivo("acta.pdf"))
                 .andExpect(status().isOk());
         subir(TRABAJOS + trabajoId + "/anteproyecto", docente, null, archivo("anteproyecto.pdf"))
                 .andExpect(status().isOk());
@@ -244,8 +246,7 @@ class FlujoSustentacionIntegracionTest {
 
     /** Partes de la solicitud de sustentación (sin anexos). */
     private static MockMultipartFile[] solicitud() {
-        return new MockMultipartFile[] { pdf("monografia", "monografia.pdf"), pdf("documentoFinal", "tg.pdf"),
-                pdf("pazYSalvo", "paz-y-salvo.pdf") };
+        return new MockMultipartFile[] { pdf("monografia", "monografia.pdf"), pdf("documentoFinal", "tg.pdf") };
     }
 
     private static Map<String, Object> programacion(long coordinadorId, long juradoId, String fechaHora,
@@ -270,21 +271,50 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(jsonPath("$.message").value(
                         "La sustentación solo puede solicitarse después de los meses mínimos de ejecución de la modalidad."));
 
-        // 6 de julio: el director la solicita con monografía, formato E, paz y salvo y anexos
+        // 6 de julio: el director la solicita con monografía, formato E y anexos (sin paz y salvo)
         reloj.fijar(LocalDate.of(2026, 7, 6));
         subir(sustentacion, login("E"), null, solicitud()).andExpect(status().isNotAcceptable());
-        subir(sustentacion, docente, null, pdf("documentoFinal", "tg.pdf"), pdf("pazYSalvo", "paz-y-salvo.pdf"))
+        subir(sustentacion, docente, null, pdf("documentoFinal", "tg.pdf"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("La monografía es obligatoria."));
         subir(sustentacion, docente, null, pdf("monografia", "monografia.pdf"), pdf("documentoFinal", "tg.pdf"),
-                pdf("pazYSalvo", "paz-y-salvo.pdf"), pdf("anexos", "anexos.pdf"))
+                pdf("anexos", "anexos.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("SUSTENTACION"))
                 .andExpect(jsonPath("$.sustentacion.estado").value("SOLICITADA"))
                 .andExpect(jsonPath("$.sustentacion.rutaMonografia").value(trabajoId + "/MONOGRAFIA/v1/monografia.pdf"))
                 .andExpect(jsonPath("$.sustentacion.rutaDocumentoFinal").value(trabajoId + "/TI-E/v1/tg.pdf"))
-                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").value(trabajoId + "/TI-F/v1/paz-y-salvo.pdf"))
+                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").doesNotExist())
                 .andExpect(jsonPath("$.sustentacion.rutaAnexos").value(trabajoId + "/ANEXOS/v1/anexos.pdf"));
+
+        // Decanatura revisa el paz y salvo: siempre con el formato F; si no lo aprueba, con observaciones
+        String decanatura = login("K");
+        String pazYSalvo = sustentacion + "/paz-y-salvo";
+        Map<String, Object> programar = programacion(coordinadorId, juradoId, "2026-07-15T14:00:00", "Salón 301");
+        subir(pazYSalvo, docente, Map.of("aprobado", true), archivo("f.pdf")).andExpect(status().isForbidden());
+        subir(pazYSalvo, decanatura, Map.of("aprobado", false))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "El paz y salvo (formato F) es obligatorio, tanto si se aprueba como si no."));
+        subir(pazYSalvo, decanatura, Map.of("aprobado", false), archivo("f.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Si el paz y salvo no se aprueba, las observaciones son obligatorias."));
+        subir(pazYSalvo, decanatura, Map.of("aprobado", false, "observaciones", "Deuda en biblioteca"),
+                archivo("f-1.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sustentacion.revisionesPazYSalvo[0].aprobado").value(false))
+                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").doesNotExist());
+        // Sin paz y salvo aprobado el Consejo no programa
+        subir(sustentacion + "/programacion", consejo, programar, archivo("formato-e.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "La sustentación no se puede programar hasta que Decanatura apruebe el paz y salvo."));
+        subir(pazYSalvo, decanatura, Map.of("aprobado", true), archivo("paz-y-salvo.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sustentacion.revisionesPazYSalvo[1].aprobado").value(true))
+                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").value(trabajoId + "/TI-F/v2/paz-y-salvo.pdf"));
+        // Aprobado no se vuelve a revisar
+        subir(pazYSalvo, decanatura, Map.of("aprobado", true), archivo("otro.pdf")).andExpect(status().isBadRequest());
 
         // El Consejo programa con el formato E: un evaluador del anteproyecto no puede ser jurado del mismo trabajo
         Map<String, Object> datos = programacion(coordinadorId, juradoId, "2026-07-15T14:00:00", "Salón 301");
@@ -379,6 +409,8 @@ class FlujoSustentacionIntegracionTest {
         String sustentacion = TRABAJOS + trabajoId + "/sustentacion";
         reloj.fijar(LocalDate.of(2026, 7, 6));
         subir(sustentacion, login("D"), null, solicitud()).andExpect(status().isOk());
+        subir(sustentacion + "/paz-y-salvo", login("K"), Map.of("aprobado", true), archivo("f.pdf"))
+                .andExpect(status().isOk());
         subir(sustentacion + "/programacion", consejo,
                 programacion(coordinadorId, juradoId, "2026-07-06T16:00:00", "Salón 301"), archivo("e.pdf"))
                 .andExpect(status().isOk());

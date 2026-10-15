@@ -17,10 +17,12 @@ import com.sgtg.backend.domain.utils.CheckString;
  * Etapa de sustentación del trabajo de grado (Arts. 19-25, 46-55).
  * <ol>
  * <li>El director la solicita con la monografía, el documento final (formato
- * E), el paz y salvo (formato F), en práctica profesional el concepto
- * favorable del asesor y, si quiere, los anexos.</li>
- * <li>El Consejo de Facultad la programa: dos jurados (el primero es el
- * coordinador), fecha, hora, salón y el formato E.</li>
+ * E), en práctica profesional el concepto favorable del asesor y, si quiere,
+ * los anexos.</li>
+ * <li>Decanatura revisa el paz y salvo (formato F): lo aprueba o no, siempre
+ * con el documento; si no lo aprueba, puede revisarlo de nuevo más adelante.</li>
+ * <li>Con el paz y salvo aprobado, el Consejo de Facultad la programa: dos
+ * jurados (el primero es el coordinador), fecha, hora, salón y el formato E.</li>
  * <li>El jurado coordinador califica con el acta (formato G) o registra la
  * inasistencia; el otro jurado solo consulta.</li>
  * <li>APROBADO: el coordinador carga la versión definitiva (formato H) y el
@@ -49,7 +51,7 @@ public class Sustentacion {
 
     private final String rutaMonografia;
     private final String rutaDocumentoFinal;
-    private final String rutaPazYSalvo;
+    private String rutaPazYSalvo;
     private final String rutaConceptoAsesor;
     private final String rutaAnexos;
     private final LocalDate fechaSolicitud;
@@ -59,6 +61,7 @@ public class Sustentacion {
     private final List<RegistroJurado> inasistencias;
     private final List<RegistroJurado> verificaciones;
     private final List<SolicitudNuevaFecha> solicitudesNuevaFecha;
+    private final List<RevisionPazYSalvo> revisionesPazYSalvo;
     private String rutaAjustes;
     private String rutaAnexosAjustes;
     private LocalDate fechaAjustes;
@@ -83,6 +86,7 @@ public class Sustentacion {
         this.inasistencias = new ArrayList<>(datos.inasistencias());
         this.verificaciones = new ArrayList<>(datos.verificaciones());
         this.solicitudesNuevaFecha = new ArrayList<>(datos.solicitudesNuevaFecha());
+        this.revisionesPazYSalvo = new ArrayList<>(datos.revisionesPazYSalvo());
         this.rutaAjustes = datos.rutaAjustes();
         this.rutaAnexosAjustes = datos.rutaAnexosAjustes();
         this.fechaAjustes = datos.fechaAjustes();
@@ -100,22 +104,43 @@ public class Sustentacion {
      * @param rutaAnexos             ruta de los anexos, opcional
      * @param requiereConceptoAsesor true en práctica profesional
      */
-    static Sustentacion solicitar(String rutaMonografia, String rutaDocumentoFinal, String rutaPazYSalvo,
-            String rutaConceptoAsesor, String rutaAnexos, LocalDate fecha, boolean requiereConceptoAsesor) {
+    static Sustentacion solicitar(String rutaMonografia, String rutaDocumentoFinal, String rutaConceptoAsesor,
+            String rutaAnexos, LocalDate fecha, boolean requiereConceptoAsesor) {
         if (CheckString.isBlank(rutaMonografia))
             throw new ReglaNegocioException("error.dominio.sustentacion.monografia_obligatoria");
         if (CheckString.isBlank(rutaDocumentoFinal))
             throw new ReglaNegocioException("error.dominio.sustentacion.documento_final_obligatorio");
-        if (CheckString.isBlank(rutaPazYSalvo))
-            throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_obligatorio");
         if (requiereConceptoAsesor && CheckString.isBlank(rutaConceptoAsesor))
             throw new ReglaNegocioException("error.dominio.sustentacion.concepto_asesor_obligatorio");
         if (fecha == null)
             throw new ReglaNegocioException("error.dominio.sustentacion.solicitud_incompleta");
-        return new Sustentacion(new DatosSustentacion(rutaDocumentoFinal.trim(), rutaPazYSalvo.trim(),
+        return new Sustentacion(new DatosSustentacion(rutaDocumentoFinal.trim(), null,
                 opcional(rutaConceptoAsesor), fecha, EstadoSustentacion.SOLICITADA, List.of(), List.of(), List.of(),
                 List.of(), null, null, null, null, null, null, null, null, rutaMonografia.trim(), opcional(rutaAnexos),
-                null, List.of()));
+                null, List.of(), List.of()));
+    }
+
+    // ----- Paz y salvo -----
+
+    /**
+     * Registra la revisión del paz y salvo de Decanatura. Solo mientras la
+     * sustentación espera la programación y el paz y salvo no esté aprobado.
+     */
+    void revisarPazYSalvo(RevisionPazYSalvo revision) {
+        if (revision == null)
+            throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_obligatorio");
+        if (this.estado != EstadoSustentacion.SOLICITADA || pazYSalvoAprobado())
+            throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_no_permitido");
+        if (revision.fecha().isBefore(this.fechaSolicitud))
+            throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_fecha_invalida");
+        this.revisionesPazYSalvo.add(revision);
+        if (revision.aprobado())
+            this.rutaPazYSalvo = revision.rutaDocumento();
+    }
+
+    /** @return true si Decanatura aprobó el paz y salvo */
+    public boolean pazYSalvoAprobado() {
+        return this.rutaPazYSalvo != null;
     }
 
     // ----- Programación -----
@@ -131,6 +156,8 @@ public class Sustentacion {
             throw new ReglaNegocioException("error.dominio.sustentacion.programacion_incompleta");
         if (this.estado != EstadoSustentacion.SOLICITADA && this.estado != EstadoSustentacion.APLAZADA)
             throw new ReglaNegocioException("error.dominio.sustentacion.programacion_no_permitida");
+        if (!pazYSalvoAprobado())
+            throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_pendiente");
         if (sesion.numero() != this.sesiones.size() + 1)
             throw new ReglaNegocioException("error.dominio.sustentacion.programacion_no_permitida");
         if (this.estado == EstadoSustentacion.APLAZADA && sesion.fecha().isAfter(this.fechaLimiteSegundaSesion))
@@ -396,7 +423,11 @@ public class Sustentacion {
                 sesiones, calificaciones, inasistencias, verificaciones, rutaAjustes, fechaAjustes,
                 fechaLimiteAjustes, fechaLimiteSegundaSesion, rutaVersionDefinitiva, fechaVersionDefinitiva,
                 juradoVersionDefinitiva, motivoNoAprobacion, rutaMonografia, rutaAnexos, rutaAnexosAjustes,
-                solicitudesNuevaFecha);
+                solicitudesNuevaFecha, revisionesPazYSalvo);
+    }
+
+    public List<RevisionPazYSalvo> getRevisionesPazYSalvo() {
+        return Collections.unmodifiableList(revisionesPazYSalvo);
     }
 
     public String getRutaMonografia() {

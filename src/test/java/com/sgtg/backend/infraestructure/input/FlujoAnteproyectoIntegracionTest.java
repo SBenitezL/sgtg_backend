@@ -168,7 +168,7 @@ class FlujoAnteproyectoIntegracionTest {
         subir(TRABAJOS + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
                 .andExpect(status().isOk());
         subir(TRABAJOS + trabajoId + "/propuesta/decisiones", login("C"),
-                Map.of("resultado", "APROBADO", "acta", "Acta 01"))
+                Map.of("resultado", "APROBADO", "acta", "Acta 01"), archivo("acta-01.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"));
         return trabajoId;

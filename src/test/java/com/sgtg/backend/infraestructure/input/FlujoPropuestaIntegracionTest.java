@@ -1,8 +1,10 @@
 package com.sgtg.backend.infraestructure.input;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -185,8 +187,14 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.propuesta.versiones[0].formato").value("TI-A"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/propuesta.pdf"));
 
-        // El comité no la aprueba: sigue en propuesta y se radica una nueva versión
+        // El comité no la aprueba: sigue en propuesta y se radica una nueva versión. Sin el
+        // documento de respuesta no se registra la decisión
         String comite = login(correo("C"), CLAVE);
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", comite,
+                Map.of("resultado", "NO_APROBADO", "acta", "Acta 01", "observaciones", "Precisar"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "La respuesta del Comité de Programa a la propuesta debe incluir el documento de respuesta (PDF)."));
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", comite,
                 Map.of("resultado", "NO_APROBADO", "acta", "Acta 01", "observaciones", "Precisar los objetivos"),
                 archivo("acta-01.pdf"))
@@ -204,7 +212,7 @@ class FlujoPropuestaIntegracionTest {
 
         // El comité aprueba: el trabajo pasa a anteproyecto
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", comite,
-                Map.of("resultado", "APROBADO", "acta", "Acta 02"))
+                Map.of("resultado", "APROBADO", "acta", "Acta 02"), archivo("acta-02.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
@@ -327,5 +335,109 @@ class FlujoPropuestaIntegracionTest {
         enviar(post(API + "/usuarios"), admin, repetido)
                 .andExpect(status().isNotAcceptable())
                 .andExpect(jsonPath("$.errorCode").value("GC-0002"));
+    }
+
+    @Test
+    void notificacionesDelBuzonYAnulacionDelDirector() throws Exception {
+        long docenteId = crearUsuario("D", "DOCENTE");
+        long estudianteId = crearUsuario("E", "ESTUDIANTE");
+        crearUsuario("C", "COMITE");
+        crearUsuario("K", "DECANATURA");
+        enviar(put(API + "/perfiles/docentes/" + docenteId), admin,
+                Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamentoId)).andExpect(status().isOk());
+        enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
+                .andExpect(status().isOk());
+        String docente = login(correo("D"), CLAVE);
+        String estudiante = login(correo("E"), CLAVE);
+        String comite = login(correo("C"), CLAVE);
+        long trabajoId = id(enviar(post(API + "/trabajos-grado/investigacion"), docente,
+                Map.of("titulo", "Sistema de alertas", "objetivos", List.of("Objetivo general"),
+                        "estudiantesIds", List.of(estudianteId)))
+                .andExpect(status().isCreated()), "$.id");
+
+        // El estudiante recibe el registro; el director, que lo hizo, no
+        enviar(get(API + "/notificaciones"), estudiante, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].titulo").value("Trabajo de grado registrado"))
+                .andExpect(jsonPath("$[0].trabajoId").value(trabajoId))
+                .andExpect(jsonPath("$[0].etapa").value("PROPUESTA"))
+                .andExpect(jsonPath("$[0].leida").value(false));
+        enviar(get(API + "/notificaciones"), docente, null).andExpect(jsonPath("$.length()").value(0));
+
+        // La radicación llega al Comité, que la marca como leída
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
+                .andExpect(status().isOk());
+        long notificacionId = id(enviar(get(API + "/notificaciones"), comite, null)
+                .andExpect(jsonPath("$[0].titulo").value("Propuesta radicada"))
+                .andExpect(jsonPath("$[0].mensaje", containsString("\"Sistema de alertas\""))), "$[0].id");
+        enviar(patch(API + "/notificaciones/" + notificacionId + "/leida"), estudiante, null)
+                .andExpect(status().isNotAcceptable());
+        enviar(patch(API + "/notificaciones/" + notificacionId + "/leida"), comite, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.leida").value(true));
+
+        // Decanatura consulta todos los trabajos (estadísticas e historial)
+        String decanatura = login(correo("K"), CLAVE);
+        enviar(get(API + "/trabajos-grado"), decanatura, null).andExpect(status().isOk());
+        enviar(get(API + "/trabajos-grado/" + trabajoId), decanatura, null).andExpect(status().isOk());
+
+        // Solo el director anula, con justificación: el trabajo queda cancelado y archivado
+        enviar(post(API + "/trabajos-grado/" + trabajoId + "/anulacion"), estudiante,
+                Map.of("justificacion", "x")).andExpect(status().isNotAcceptable());
+        enviar(post(API + "/trabajos-grado/" + trabajoId + "/anulacion"), docente, Map.of("justificacion", " "))
+                .andExpect(status().isBadRequest());
+        enviar(post(API + "/trabajos-grado/" + trabajoId + "/anulacion"), docente,
+                Map.of("justificacion", "Los estudiantes cambiaron de modalidad"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.etapa").value("CANCELADO"))
+                .andExpect(jsonPath("$.motivoCierre").value("ANULACION_DIRECTOR"))
+                .andExpect(jsonPath("$.historial[0].origen").value("PROPUESTA"))
+                .andExpect(jsonPath("$.historial[0].observacion").value("Los estudiantes cambiaron de modalidad"));
+        enviar(post(API + "/trabajos-grado/" + trabajoId + "/anulacion"), docente,
+                Map.of("justificacion", "Otra vez")).andExpect(status().isBadRequest());
+        enviar(get(API + "/notificaciones"), estudiante, null)
+                .andExpect(jsonPath("$[0].titulo").value("Trabajo de grado anulado"))
+                .andExpect(jsonPath("$[0].etapa").value("CANCELADO"));
+
+        // El usuario marca todas como leídas y vacía su buzón
+        enviar(patch(API + "/notificaciones/leidas"), estudiante, null).andExpect(status().isNoContent());
+        enviar(get(API + "/notificaciones"), estudiante, null)
+                .andExpect(jsonPath("$[*].leida", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is(true))));
+        enviar(delete(API + "/notificaciones"), estudiante, null).andExpect(status().isNoContent());
+        enviar(get(API + "/notificaciones"), estudiante, null).andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void unEstudianteSoloTieneUnTrabajoActivo() throws Exception {
+        long docenteId = crearUsuario("D", "DOCENTE");
+        long estudianteId = crearUsuario("E", "ESTUDIANTE");
+        enviar(put(API + "/perfiles/docentes/" + docenteId), admin,
+                Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamentoId)).andExpect(status().isOk());
+        enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
+                .andExpect(status().isOk());
+        String docente = login(correo("D"), CLAVE);
+        Map<String, Object> datos = Map.of("titulo", "Primero", "objetivos", List.of("Objetivo"),
+                "estudiantesIds", List.of(estudianteId));
+        long primero = id(enviar(post(API + "/trabajos-grado/investigacion"), docente, datos)
+                .andExpect(status().isCreated()), "$.id");
+        String disponibles = API + "/trabajos-grado/estudiantes-disponibles";
+        enviar(get(disponibles), docente, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem((int) estudianteId))));
+
+        // Con un trabajo activo no se elige para otro (ni en otra modalidad)
+        enviar(post(API + "/trabajos-grado/investigacion"), docente, datos)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Uno de los estudiantes ya tiene un trabajo de grado activo; un "
+                        + "estudiante solo puede tener uno a la vez."));
+
+        // Anulado el primero, vuelve a estar disponible
+        enviar(post(API + "/trabajos-grado/" + primero + "/anulacion"), docente,
+                Map.of("justificacion", "Cambio de tema")).andExpect(status().isOk());
+        enviar(get(disponibles), docente, null).andExpect(jsonPath("$", org.hamcrest.Matchers.hasItem((int) estudianteId)));
+        enviar(post(API + "/trabajos-grado/investigacion"), docente, datos).andExpect(status().isCreated());
+
+        // Un estudiante no consulta los disponibles
+        enviar(get(disponibles), login(correo("E"), CLAVE), null).andExpect(status().isForbidden());
     }
 }

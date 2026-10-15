@@ -36,6 +36,10 @@ import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageArchivoGatewayIntPort;
 import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.use_cases.ManageTrabajoGradoCUImplAdapter;
+import com.sgtg.backend.domain.use_cases.ManageNotificacionCUImplAdapter;
+import com.sgtg.backend.domain.use_cases.NotificadorTrabajoGrado;
+import com.sgtg.backend.application.input.notificacion.ManageNotificacionCUIntPort;
+import com.sgtg.backend.application.output.ManageNotificacionGatewayIntPort;
 import com.sgtg.backend.infraestructure.output.auth.AuthService;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.UserRepository;
 
@@ -115,12 +119,24 @@ public class ApplicationConfig {
     }
 
     @Bean
+    public NotificadorTrabajoGrado notificadorTrabajoGrado(ManageNotificacionGatewayIntPort notificacionGateway,
+            ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway, Clock clock) {
+        return new NotificadorTrabajoGrado(notificacionGateway, userGateway, perfilGateway, clock);
+    }
+
+    @Bean
     public ManageTrabajoGradoCUIntPort manageTrabajoGradoCUIntPort(ManageTrabajoGradoGatewayIntPort trabajoGateway,
             ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
             ManageArchivoGatewayIntPort archivoGateway, CalendarioHabil calendario, Clock clock,
-            ExceptionFormatterIntPort exceptionFormatter) {
+            ExceptionFormatterIntPort exceptionFormatter, NotificadorTrabajoGrado notificador) {
         return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
-                calendario, clock, exceptionFormatter);
+                calendario, clock, exceptionFormatter, notificador);
+    }
+
+    @Bean
+    public ManageNotificacionCUIntPort manageNotificacionCUIntPort(
+            ManageNotificacionGatewayIntPort notificacionGateway, ExceptionFormatterIntPort exceptionFormatter) {
+        return new ManageNotificacionCUImplAdapter(notificacionGateway, exceptionFormatter);
     }
 
 }
