@@ -259,7 +259,7 @@ public class RestApiException {
      * un usuario intenta acceder a un recurso para el cual no tiene permisos. Este
      * método captura la excepción, crea un objeto Error con detalles específicos
      * sobre el error de acceso denegado y devuelve una respuesta con un código de
-     * estado HTTP 406 (Not Acceptable).
+     * estado HTTP 403 (Forbidden).
      * 
      * @param req    El objeto HttpServletRequest que contiene detalles de la
      *               solicitud que causó la excepción.
@@ -267,7 +267,7 @@ public class RestApiException {
      * @param locale El objeto Locale que representa la configuración regional del
      *               cliente, utilizado para localizar mensajes de error.
      * @return Una ResponseEntity que contiene un objeto Error con detalles del
-     *         error y un código de estado HTTP 406 (Not Acceptable).
+     *         error y un código de estado HTTP 403 (Forbidden).
      */
     @ExceptionHandler(NoAccessException.class)
     public ResponseEntity<Error> handleNoAccessException(final HttpServletRequest req,
@@ -277,9 +277,9 @@ public class RestApiException {
                         String.format("%s, %s",
                                 ErrorCode.NO_ACCESS.getMessageKey(),
                                 mensaje(ex.getMessage(), locale)),
-                        HttpStatus.NOT_ACCEPTABLE.value())
+                        HttpStatus.FORBIDDEN.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
-        return new ResponseEntity<>(error, HttpStatus.NOT_ACCEPTABLE);
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(BadFormatException.class)

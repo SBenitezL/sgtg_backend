@@ -127,7 +127,7 @@ El método privado `cerrar(motivo, responsable, ahora, observacion)` lo reutiliz
   - La verificación diaria cierra el trabajo vencido, guarda solo ese y deja el vigente.
 - **`ManageTrabajoGradoGatewayImplAdapterTest` (+1):** una práctica en curso guarda y recupera un cambio no aprobado, uno pendiente (objetivos en JSON) y dos informes.
 - **`FlujoAnteproyectoIntegracionTest`:** después de la aprobación del Consejo, se prueba por HTTP:
-  - Solicitud del director (un estudiante recibe 406).
+  - Solicitud del director (un estudiante recibe 403).
   - Decisión del Consejo (un docente recibe 403).
   - Que el cambio se haga una sola vez.
   - Informes solo en práctica profesional.
@@ -166,11 +166,11 @@ Cambios:
 | `RevisionInforme` (nuevo) | `(revisorUsuarioId, revisor, observaciones, rutaArchivo, fecha)`; exige observaciones o archivo (`revision_vacia`). |
 | `Ejecucion.revisarInformeMensual(numero, revision)` | `no_encontrado`, `revision_repetida`, `fecha_revision_invalida`. |
 | `TrabajoGrado` | Se quitó `solo_practica`; `registrarInformeMensual(ruta, hoy, radicadoPor, observaciones)` y `revisarInformeMensual(numero, revision)`. |
-| Caso de uso | Radica: estudiante, o director en práctica profesional (`solo_radicador_informe`, 406). Revisa: director, codirector o asesor (`solo_revisor_informe`, 406). |
+| Caso de uso | Radica: estudiante, o director en práctica profesional (`solo_radicador_informe`, 403). Revisa: director, codirector o asesor (`solo_revisor_informe`, 403). |
 | `POST /{id}/informes-mensuales` | Parte `archivo` (formato D) y parte opcional `datos` `{ "observaciones": "..." }`. |
 | `POST /{id}/informes-mensuales/{numero}/revisiones` (nuevo) | Partes opcionales `datos` `{ "observaciones": "..." }` y `archivo` (notas); al menos una. |
 | Persistencia | `InformeMensualEmbeddable` + `radicadoPor`, `observaciones`; tabla `ejecucion_informes_revisiones` (`RevisionInformeEmbeddable`). |
 | Respuesta | `informesMensuales[]` incluye `radicadoPor`, `observaciones` y `revisiones[]`. |
 
-Thunder (carpeta 5): en investigación el director recibe 406; la estudiante radica con observaciones; la
-estudiante no revisa (406); el director revisa con notas sin cambiar la etapa; una sola revisión por revisor (400).
+Thunder (carpeta 5): en investigación el director recibe 403; la estudiante radica con observaciones; la
+estudiante no revisa (403); el director revisa con notas sin cambiar la etapa; una sola revisión por revisor (400).

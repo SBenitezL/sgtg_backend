@@ -273,7 +273,7 @@ class FlujoSustentacionIntegracionTest {
 
         // 6 de julio: el director la solicita con monografía, formato E y anexos (sin paz y salvo)
         reloj.fijar(LocalDate.of(2026, 7, 6));
-        subir(sustentacion, login("E"), null, solicitud()).andExpect(status().isNotAcceptable());
+        subir(sustentacion, login("E"), null, solicitud()).andExpect(status().isForbidden());
         subir(sustentacion, docente, null, pdf("documentoFinal", "tg.pdf"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("La monografía es obligatoria."));
@@ -357,8 +357,8 @@ class FlujoSustentacionIntegracionTest {
         String calificaciones = sustentacion + "/calificaciones";
         Map<String, Object> conObservaciones = Map.of("calificacion", "APROBADO_CON_OBSERVACIONES", "observaciones",
                 "Ajustar conclusiones");
-        subir(calificaciones, docente, conObservaciones, archivo("acta.pdf")).andExpect(status().isNotAcceptable());
-        subir(calificaciones, jurado, conObservaciones, archivo("acta.pdf")).andExpect(status().isNotAcceptable());
+        subir(calificaciones, docente, conObservaciones, archivo("acta.pdf")).andExpect(status().isForbidden());
+        subir(calificaciones, jurado, conObservaciones, archivo("acta.pdf")).andExpect(status().isForbidden());
         subir(calificaciones, coordinador, conObservaciones)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("El acta de sustentación (formato G) es obligatoria."));
@@ -378,14 +378,14 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(jsonPath("$.sustentacion.rutaAnexosAjustes")
                         .value(trabajoId + "/ANEXOS/v2/anexos-ajustes.pdf"));
         enviar(post(sustentacion + "/ajustes/verificaciones"), jurado, Map.of("cumple", true))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         enviar(post(sustentacion + "/ajustes/verificaciones"), coordinador, Map.of("cumple", true))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.estado").value("APROBADA"));
 
         // El coordinador carga la versión definitiva: el trabajo finaliza
         subir(sustentacion + "/version-definitiva", jurado, null, archivo("tg.pdf"))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         subir(sustentacion + "/version-definitiva", coordinador, null, archivo("tg.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("FINALIZADO"))
@@ -417,7 +417,7 @@ class FlujoSustentacionIntegracionTest {
 
         // El otro jurado no registra la inasistencia; el coordinador sí
         enviar(post(sustentacion + "/inasistencia"), login("Y"), Map.of("observaciones", "No se presentó"))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         enviar(post(sustentacion + "/inasistencia"), login("X"), Map.of("observaciones", "No se presentó"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("APLAZADO"))

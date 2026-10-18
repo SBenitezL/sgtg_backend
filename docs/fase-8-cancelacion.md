@@ -87,7 +87,7 @@ Métodos: `solicitar(...)`, `resolver(decision)`, `estaPendiente()` y `fueAproba
 - **`ManageTrabajoGradoCUImplAdapterTest` (+1):** solo el director solicita; el Consejo aprueba con la fecha del reloj.
 - **`ManageTrabajoGradoGatewayImplAdapterTest` (+1):** guarda una cancelación negada y otra pendiente, y luego se aprueba.
 - **`FlujoAnteproyectoIntegracionTest` (+1):** por HTTP se verifica:
-  - Un estudiante recibe 406.
+  - Un estudiante recibe 403.
   - Sin formato responde 400.
   - No se permite una segunda solicitud pendiente.
   - El trabajo sigue mientras la solicitud está pendiente.

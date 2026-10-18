@@ -246,7 +246,7 @@ class FlujoPropuestaIntegracionTest {
         // Un usuario sin relación con el trabajo no tiene acceso
         crearUsuario("X", "DOCENTE");
         enviar(get(archivos).param("ruta", ruta), login(correo("X"), CLAVE), null)
-                .andExpect(status().isNotAcceptable())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", containsString("No tiene acceso a la información de este trabajo")));
         // Rutas de otro trabajo o inexistentes
         enviar(get(archivos).param("ruta", (trabajoId + 1) + "/TI-A/v1/propuesta.pdf"), estudiante, null)
@@ -371,7 +371,7 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$[0].titulo").value("Propuesta radicada"))
                 .andExpect(jsonPath("$[0].mensaje", containsString("\"Sistema de alertas\""))), "$[0].id");
         enviar(patch(API + "/notificaciones/" + notificacionId + "/leida"), estudiante, null)
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         enviar(patch(API + "/notificaciones/" + notificacionId + "/leida"), comite, null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.leida").value(true));
@@ -383,7 +383,7 @@ class FlujoPropuestaIntegracionTest {
 
         // Solo el director anula, con justificación: el trabajo queda cancelado y archivado
         enviar(post(API + "/trabajos-grado/" + trabajoId + "/anulacion"), estudiante,
-                Map.of("justificacion", "x")).andExpect(status().isNotAcceptable());
+                Map.of("justificacion", "x")).andExpect(status().isForbidden());
         enviar(post(API + "/trabajos-grado/" + trabajoId + "/anulacion"), docente, Map.of("justificacion", " "))
                 .andExpect(status().isBadRequest());
         enviar(post(API + "/trabajos-grado/" + trabajoId + "/anulacion"), docente,

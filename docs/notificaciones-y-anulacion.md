@@ -39,9 +39,9 @@ Cada aviso lleva la clave `<EVENTO>:<trabajoId>:<fecha límite>` y se envía una
 | Método | Ruta | Respuesta |
 |---|---|---|
 | `GET` | `/notificaciones` | Las del usuario, de la última creada a la primera |
-| `PATCH` | `/notificaciones/{id}/leida` | La notificación leída (406 si es de otro usuario, 404 si no existe) |
+| `PATCH` | `/notificaciones/{id}/leida` | La notificación leída (403 si es de otro usuario, 404 si no existe) |
 | `PATCH` | `/notificaciones/leidas` | 204: marca todas como leídas |
-| `DELETE` | `/notificaciones/{id}` | 204 (406 si es de otro usuario) |
+| `DELETE` | `/notificaciones/{id}` | 204 (403 si es de otro usuario) |
 | `DELETE` | `/notificaciones` | 204: vacía el buzón |
 
 Persistencia: tabla `notificaciones` con índices por usuario y por usuario y clave.
@@ -52,7 +52,7 @@ Persistencia: tabla `notificaciones` con índices por usuario y por usuario y cl
 queda `CANCELADO` con motivo `ANULACION_DIRECTOR` y la justificación como observación del cambio de etapa; el front lo
 muestra en el historial.
 
-- Solo el director (406 para los demás) y con justificación (400).
+- Solo el director (403 para los demás) y con justificación (400).
 - Solo en `PROPUESTA`, `ANTEPROYECTO`, `EVALUACION` o `APROBACION_CONSEJO`; después de la aprobación del Consejo se
   solicita la cancelación (fase 8 del dominio). Mensaje: `error.dominio.anulacion.etapa_invalida`.
 - Notifica a estudiantes, dirección y evaluadores (`TRABAJO_ANULADO`).

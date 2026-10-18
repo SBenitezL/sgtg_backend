@@ -129,7 +129,7 @@ Estando `SUSPENDIDO` no se permiten informes, prórroga ni otra suspensión.
 - **`ManageTrabajoGradoGatewayImplAdapterTest`:**
   - La práctica guarda una suspensión negada y otra aprobada y reanudada.
   - El fin del plazo incluye los 60 días suspendida.
-- **`FlujoAnteproyectoIntegracionTest`:** por HTTP, una suspensión durante la prórroga vuelve a `PRORROGA`. Un estudiante no reanuda (406) y no se suspende dos veces.
+- **`FlujoAnteproyectoIntegracionTest`:** por HTTP, una suspensión durante la prórroga vuelve a `PRORROGA`. Un estudiante no reanuda (403) y no se suspende dos veces.
 
 Total del proyecto: **274 pruebas** (antes eran 250).
 

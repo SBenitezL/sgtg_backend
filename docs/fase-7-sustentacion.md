@@ -108,7 +108,7 @@ Cada operación valida todo antes de modificar. El motivo del cierre queda en `m
 | `POST /sustentacion/ajustes/verificaciones` | Jurado de la sesión actual | `{ "cumple": true, "observaciones" }` |
 | `POST /sustentacion/version-definitiva` | Jurado de la sesión actual | `{ "rutaDocumento" }` |
 
-- **Permisos:** el caso de uso identifica al jurado con `Sustentacion.jurado(usuarioId)`. Si el usuario no es jurado de la sesión actual, responde `solo_jurado` (406). Los jurados se crean desde su `Usuario` (roles `DOCENTE`, `EVALUADOR` o `JURADO`).
+- **Permisos:** el caso de uso identifica al jurado con `Sustentacion.jurado(usuarioId)`. Si el usuario no es jurado de la sesión actual, responde `solo_jurado` (403). Los jurados se crean desde su `Usuario` (roles `DOCENTE`, `EVALUADOR` o `JURADO`).
 - **Fechas:** todas son las del día (`Clock`).
 - **Respuesta:** un bloque `sustentacion` con estado, documentos, sesiones (con jurados), calificaciones, inasistencias, verificaciones, ajustes, plazos, versión definitiva y motivo del cierre.
 - **Tarea diaria:** ahora también recorre los trabajos `SUSTENTACION` y `APLAZADO`.
@@ -156,7 +156,7 @@ Cada operación valida todo antes de modificar. El motivo del cierre queda en `m
   - Guarda y recupera dos sesiones con jurados distintos, calificaciones con acta, la inasistencia, los plazos y el motivo.
   - Los jurados ven el trabajo entre los suyos.
 - **`FlujoSustentacionIntegracionTest` (2, nueva):** por HTTP con un `Clock` ajustable (`@Primary`).
-  - Flujo completo: con observaciones, ajustes verificados, versión definitiva y `FINALIZADO`, con 406/403 por permisos.
+  - Flujo completo: con observaciones, ajustes verificados, versión definitiva y `FINALIZADO`, con 403 por permisos.
   - Inasistencia que aplaza, segunda sesión fuera de los 60 días rechazada y segunda inasistencia que deja `NO_APROBADO`.
 
 Total del proyecto: **300 pruebas** (antes eran 274).
@@ -190,7 +190,7 @@ Decisiones del usuario al integrar el front (fase 6 del plan de integración):
 
 1. **Solicitud:** el director adjunta la **monografía** (nueva, obligatoria) y el formato E como dos PDF, el paz y salvo, el concepto del asesor en práctica profesional y **anexos** opcionales. Decanatura no registra el paz y salvo.
 2. **Programación:** el Consejo indica el **jurado coordinador** y el otro jurado, la fecha, hora y salón, y adjunta el **formato E (obligatorio)**. Los **evaluadores del anteproyecto no pueden ser jurados del mismo trabajo** (sí de otros). Al programar, ambos reciben el rol `JURADO` y el coordinador además `JURADO_COORDINADOR` (rol nuevo).
-3. **Solo el coordinador** califica (con el **acta formato G obligatoria**), registra la inasistencia, verifica los ajustes y carga la versión definitiva; el otro jurado solo consulta (406 `solo_jurado_coordinador`). Ya no hay dos calificaciones ni regla de "la menos favorable": la del coordinador define el resultado, y una sola verificación aprueba o aplaza.
+3. **Solo el coordinador** califica (con el **acta formato G obligatoria**), registra la inasistencia, verifica los ajustes y carga la versión definitiva; el otro jurado solo consulta (403 `solo_jurado_coordinador`). Ya no hay dos calificaciones ni regla de "la menos favorable": la del coordinador define el resultado, y una sola verificación aprueba o aplaza.
 4. **Nueva fecha de sustentación:** antes de la fecha designada, el director la solicita con un PDF; el Consejo la decide con la resolución y, si la aprueba, indica la nueva fecha y hora (y opcionalmente otro salón): la sesión se reprograma con los mismos jurados. Mientras está pendiente no se registra la calificación ni la inasistencia.
 5. **Ajustes:** el director puede adjuntar **anexos** (PDF) con los ajustes; las reglas se mantienen.
 

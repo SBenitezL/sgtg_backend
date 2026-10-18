@@ -368,7 +368,7 @@ class FlujoAnteproyectoIntegracionTest {
         // Fase 4: el director solicita el cambio de título y el Consejo lo aprueba
         String cambio = TRABAJOS + trabajoId + "/cambio-objetivos";
         enviar(post(cambio), login("E"), Map.of("titulo", "T", "objetivos", List.of("O"), "justificacion", "J"))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         enviar(post(cambio), docente, Map.of("titulo", "Sistema de gestión y sustentaciones",
                 "objetivos", List.of("Objetivo general"), "justificacion", "Se amplía el alcance"))
                 .andExpect(status().isOk())
@@ -393,7 +393,7 @@ class FlujoAnteproyectoIntegracionTest {
 
         // En investigación los informes mensuales los radica el estudiante, no el director
         subir(TRABAJOS + trabajoId + "/informes-mensuales", docente, null, archivo("abril.pdf"))
-                .andExpect(status().isNotAcceptable())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(
                         "Los informes mensuales los radican los estudiantes del trabajo")));
 
@@ -431,7 +431,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.ejecucion.suspensiones[0].fechaMaximaReanudacion").isNotEmpty())
                 .andExpect(jsonPath("$.ejecucion.suspensiones[0].diasRestantes").isNumber());
         subir(suspension + "/reanudacion", login("E"), null, archivo("r.pdf"))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         subir(suspension + "/reanudacion", docente, null, archivo("reanudacion.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("PRORROGA"))
@@ -451,7 +451,7 @@ class FlujoAnteproyectoIntegracionTest {
         String cancelacion = TRABAJOS + trabajoId + "/cancelacion";
 
         subir(cancelacion, login("E"), null, archivo("c.pdf"))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         subir(cancelacion, docente, null)
                 .andExpect(status().isBadRequest());
         subir(cancelacion, docente, null, archivo("cancelacion-1.pdf"))
@@ -496,7 +496,7 @@ class FlujoAnteproyectoIntegracionTest {
 
         // Solo el director radica
         subir(TRABAJOS + trabajoId + "/anteproyecto", login("E"), null, archivo("anteproyecto.pdf"))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         subir(TRABAJOS + trabajoId + "/anteproyecto", login("D"), null, archivo("anteproyecto.pdf"))
                 .andExpect(status().isOk());
 
@@ -504,7 +504,7 @@ class FlujoAnteproyectoIntegracionTest {
         enviar(post(TRABAJOS + trabajoId + "/anteproyecto/evaluadores"), login("X"), evaluadores)
                 .andExpect(status().isForbidden());
         enviar(post(TRABAJOS + trabajoId + "/anteproyecto/evaluadores"), login("O"), evaluadores)
-                .andExpect(status().isNotAcceptable())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", containsString(
                         "Solo el jefe del departamento del director puede asignar los evaluadores.")));
 
@@ -521,7 +521,7 @@ class FlujoAnteproyectoIntegracionTest {
 
         // Solo los evaluadores asignados emiten concepto, y solo APROBADO o CON_CORRECCIONES
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("X"), Map.of("resultado", "APROBADO"))
-                .andExpect(status().isNotAcceptable());
+                .andExpect(status().isForbidden());
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("V"),
                 Map.of("resultado", "RECHAZADO", "observaciones", "No cumple"))
                 .andExpect(status().isBadRequest())

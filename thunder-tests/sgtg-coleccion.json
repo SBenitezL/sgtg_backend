@@ -1597,7 +1597,7 @@
       "_id": "fe279f59-956f-44c0-9d52-30073f2e94aa",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "12c3b61a-c0e2-45e8-a92c-4d0ac0be4fa3",
-      "name": "Docente sin relación no descarga (406)",
+      "name": "Docente sin relación no descarga (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/archivos?ruta={{rutaPropuesta}}",
       "method": "GET",
       "sortNum": 183000,
@@ -1609,7 +1609,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -4413,7 +4413,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -4531,7 +4531,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -4701,7 +4701,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -4799,7 +4799,7 @@
       "_id": "f4977368-ef5b-4771-bb6e-f3f9820e56ec",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
-      "name": "En investigación el director no radica informes (406)",
+      "name": "En investigación el director no radica informes (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales",
       "method": "POST",
       "sortNum": 810000,
@@ -4811,7 +4811,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -4904,7 +4904,7 @@
       "_id": "8989dab5-d508-4e49-b3f2-3b47cda83e56",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
-      "name": "El estudiante no revisa informes (406)",
+      "name": "El estudiante no revisa informes (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/informes-mensuales/1/revisiones",
       "method": "POST",
       "sortNum": 812000,
@@ -4931,7 +4931,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ]
     },
@@ -5132,7 +5132,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -5310,7 +5310,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -5859,7 +5859,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -5978,7 +5978,7 @@
       "_id": "e8722b3c-49f9-45a2-b798-31afe68ca3a8",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "Solo los jurados califican (406)",
+      "name": "Solo los jurados califican (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/sustentacion/calificaciones",
       "method": "POST",
       "sortNum": 1060000,
@@ -5990,7 +5990,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -7003,7 +7003,7 @@
       "_id": "b922273c-1f0f-4d52-86b5-97da1a2d44e6",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. El otro jurado no califica (406)",
+      "name": "A. El otro jurado no califica (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/calificaciones",
       "method": "POST",
       "sortNum": 1196000,
@@ -7035,7 +7035,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -7228,7 +7228,7 @@
       "_id": "761cdf8b-f45b-470f-a5c9-ef8355cdafd5",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. El otro jurado no verifica los ajustes (406)",
+      "name": "A. El otro jurado no verifica los ajustes (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/ajustes/verificaciones",
       "method": "POST",
       "sortNum": 1235000,
@@ -7240,7 +7240,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ],
       "body": {
@@ -7292,7 +7292,7 @@
       "_id": "03de9bd0-7db4-4e24-b329-463bbfc4cf09",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. El director no carga la versión definitiva (406)",
+      "name": "A. El director no carga la versión definitiva (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/version-definitiva",
       "method": "POST",
       "sortNum": 1260000,
@@ -7304,7 +7304,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -7333,7 +7333,7 @@
       "_id": "46c02d1d-42cb-4eaf-a3a9-afbaecf8f212",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "A. El otro jurado no carga la versión definitiva (406)",
+      "name": "A. El otro jurado no carga la versión definitiva (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo2Id}}/sustentacion/version-definitiva",
       "method": "POST",
       "sortNum": 1265000,
@@ -7360,7 +7360,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ]
     },
@@ -7669,7 +7669,7 @@
       "_id": "480cae22-53eb-48aa-ad02-21d37c6bc9ff",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "B. El otro jurado no califica (406)",
+      "name": "B. El otro jurado no califica (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/calificaciones",
       "method": "POST",
       "sortNum": 1325000,
@@ -7681,7 +7681,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ],
       "body": {
@@ -7814,7 +7814,7 @@
       "_id": "c66311b8-915c-464c-a880-e226e114bf34",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "f42c8d92-10aa-4f54-b834-0a49a536a42a",
-      "name": "B. El otro jurado no registra la inasistencia (406)",
+      "name": "B. El otro jurado no registra la inasistencia (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{practicaId}}/sustentacion/inasistencia",
       "method": "POST",
       "sortNum": 1355000,
@@ -7835,7 +7835,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ]
     },
@@ -8053,7 +8053,7 @@
       "_id": "498a00ed-59d1-4f14-9436-27eb2ac5a45a",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "92e802f0-221d-44ae-b707-44ebd7edb4b0",
-      "name": "Solo el director solicita la cancelación (406)",
+      "name": "Solo el director solicita la cancelación (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo3Id}}/cancelacion",
       "method": "POST",
       "sortNum": 1420000,
@@ -8065,7 +8065,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         },
         {
           "type": "json-query",
@@ -8543,7 +8543,7 @@
       "_id": "94a4b8e6-07ab-4798-b500-78ae7326ddd7",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
-      "name": "Solo el director anula (406)",
+      "name": "Solo el director anula (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajo4Id}}/anulacion",
       "method": "POST",
       "sortNum": 1530000,
@@ -8555,7 +8555,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ],
       "auth": {
@@ -8840,7 +8840,7 @@
       "_id": "d382da6a-7880-4b68-a5f9-fbedf2c3457c",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
-      "name": "Una notificación ajena no se marca (406)",
+      "name": "Una notificación ajena no se marca (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/{{notificacionId}}/leida",
       "method": "PATCH",
       "sortNum": 1610000,
@@ -8852,7 +8852,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ],
       "auth": {
@@ -8918,7 +8918,7 @@
       "_id": "26e6a82a-1f37-4292-a914-faaa92df08b0",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "ed7a0692-94c8-4708-98ef-f350292aad74",
-      "name": "Una notificación ajena no se elimina (406)",
+      "name": "Una notificación ajena no se elimina (403)",
       "url": "{{baseUrl}}/api/v1/sgtg/notificaciones/{{notificacionId}}",
       "method": "DELETE",
       "sortNum": 1640000,
@@ -8930,7 +8930,7 @@
           "type": "res-code",
           "custom": "",
           "action": "equal",
-          "value": "406"
+          "value": "403"
         }
       ],
       "auth": {

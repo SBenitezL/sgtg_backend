@@ -131,9 +131,9 @@ Las tres reciben `responsable` (o lo toman del emisor del concepto) y `ahora`, p
 ### Casos de uso (`ManageTrabajoGradoCUImplAdapter`)
 | Operación | Permiso que valida el caso de uso |
 |---|---|
-| `radicarAnteproyecto(trabajoId, usuarioId, url)` | Ser el director del trabajo (`solo_director`, 406) |
-| `asignarEvaluadores(trabajoId, usuarioId, evaluador1Id, evaluador2Id)` | El jefe necesita perfil docente (`jefe_sin_perfil`, 400) en el mismo departamento que el director (`otro_departamento`, 406). Cada evaluador se crea desde su `Usuario`, lo que valida su rol |
-| `registrarConceptoEvaluador(trabajoId, usuarioId, resultado, observaciones, urlFormato)` | Ser evaluador asignado (`solo_evaluador`, 406). La fecha del concepto es la del día (`Clock`) |
+| `radicarAnteproyecto(trabajoId, usuarioId, url)` | Ser el director del trabajo (`solo_director`, 403) |
+| `asignarEvaluadores(trabajoId, usuarioId, evaluador1Id, evaluador2Id)` | El jefe necesita perfil docente (`jefe_sin_perfil`, 400) en el mismo departamento que el director (`otro_departamento`, 403). Cada evaluador se crea desde su `Usuario`, lo que valida su rol |
+| `registrarConceptoEvaluador(trabajoId, usuarioId, resultado, observaciones, urlFormato)` | Ser evaluador asignado (`solo_evaluador`, 403). La fecha del concepto es la del día (`Clock`) |
 | `listarPorEtapa(etapa)` | La etapa es obligatoria; el controlador restringe por rol |
 
 ### Endpoints (`/api/v1/sgtg/trabajos-grado`)
@@ -199,7 +199,7 @@ Al leer, `MapperTrabajoGrado` resuelve el emisor de cada concepto contra los eva
 ### Caso de uso, persistencia y HTTP
 - **`ManageTrabajoGradoCUImplAdapterTest` (8 nuevas):**
   - Solo el director radica.
-  - El jefe del departamento del director asigna; uno de otro departamento recibe 406, y un jefe sin perfil recibe 400.
+  - El jefe del departamento del director asigna; uno de otro departamento recibe 403, y un jefe sin perfil recibe 400.
   - Un evaluador sin rol válido es rechazado.
   - Solo los evaluadores asignados emiten concepto.
   - `listarPorEtapa` exige la etapa.
