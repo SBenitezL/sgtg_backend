@@ -5,8 +5,9 @@ import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 /**
  * Puerto de salida para el almacenamiento de los archivos de los trabajos de
  * grado. Los archivos se organizan por trabajo, tipo de documento e iteración
- * ({@code <trabajoId>/<carpeta>/v<n>/<nombre>}); el dominio solo guarda la
- * ruta relativa que devuelve este puerto.
+ * ({@code <trabajoId>/<carpeta>/v<n>/<nombre> - v<n>.pdf}, ej.
+ * {@code 15/TI-A/v2/Formato A - v2.pdf}); el dominio solo guarda la ruta
+ * relativa que devuelve este puerto.
  */
 public interface ManageArchivoGatewayIntPort {
 
@@ -16,10 +17,11 @@ public interface ManageArchivoGatewayIntPort {
      *
      * @param trabajoId identificador del trabajo de grado
      * @param carpeta   carpeta del tipo de documento (ej. "PP-A", "ANTEPROYECTO")
+     * @param nombre    nombre del documento (ej. "Formato A"); se guarda con su versión
      * @param archivo   archivo a guardar
      * @return ruta relativa del archivo guardado
      */
-    public String guardar(Long trabajoId, String carpeta, ArchivoAdjunto archivo);
+    public String guardar(Long trabajoId, String carpeta, String nombre, ArchivoAdjunto archivo);
 
     /**
      * Guarda el archivo en una ubicación temporal, para los documentos que se
@@ -37,9 +39,10 @@ public interface ManageArchivoGatewayIntPort {
      * @param rutaTemporal ruta devuelta por {@link #guardarTemporal}
      * @param trabajoId    identificador del trabajo de grado
      * @param carpeta      carpeta del tipo de documento
+     * @param nombre       nombre del documento; se guarda con su versión
      * @return nueva ruta relativa del archivo
      */
-    public String reubicar(String rutaTemporal, Long trabajoId, String carpeta);
+    public String reubicar(String rutaTemporal, Long trabajoId, String carpeta, String nombre);
 
     /**
      * @param ruta ruta relativa del archivo

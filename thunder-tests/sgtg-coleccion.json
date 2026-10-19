@@ -1497,7 +1497,7 @@
           "type": "json-query",
           "custom": "json.propuesta.versiones[0].ruta",
           "action": "regex",
-          "value": "^{{trabajoId}}/TI-A/v\\d+/formato-a\\.pdf$"
+          "value": "^{{trabajoId}}/TI-A/v(\\d+)/Formato A - v\\d+\\.pdf$"
         },
         {
           "type": "set-env-var",
@@ -1585,7 +1585,7 @@
           "type": "res-header",
           "custom": "content-disposition",
           "action": "contains",
-          "value": "formato-a.pdf"
+          "value": "filename*=UTF-8''Formato%20A%20-%20v1.pdf"
         }
       ],
       "auth": {
@@ -1713,7 +1713,7 @@
           "type": "json-query",
           "custom": "json.propuesta.decisiones[0].rutaArchivo",
           "action": "regex",
-          "value": "^{{trabajoId}}/ACTA_COMITE/v\\d+/acta-comite\\.pdf$"
+          "value": "^{{trabajoId}}/ACTA_COMITE/v(\\d+)/Respuesta del Comite - v\\d+\\.pdf$"
         },
         {
           "type": "set-env-var",
@@ -2433,7 +2433,7 @@
           "type": "json-query",
           "custom": "json.anteproyecto.conceptos[1].anotaciones.ruta",
           "action": "regex",
-          "value": "^{{trabajoId}}/ANOTACIONES_EVALUACION/v\\d+/anotaciones\\.pdf$"
+          "value": "^{{trabajoId}}/ANOTACIONES_EVALUACION/v(\\d+)/Anotaciones del evaluador - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -2736,7 +2736,7 @@
           "type": "json-query",
           "custom": "json.anteproyecto.remisiones[0].ruta",
           "action": "regex",
-          "value": "^{{trabajoId}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+          "value": "^{{trabajoId}}/(TI|PP)-C/v(\\d+)/Formato C - v\\d+\\.pdf$"
         },
         {
           "type": "json-query",
@@ -2821,7 +2821,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
           }
         ],
         "files": []
@@ -2866,7 +2866,7 @@
           "type": "json-query",
           "custom": "json.anteproyecto.decisionesConsejo[0].rutaArchivo",
           "action": "regex",
-          "value": "^{{trabajoId}}/RESOLUCION/v\\d+/resolucion\\.pdf$"
+          "value": "^{{trabajoId}}/RESOLUCION/v(\\d+)/Resolucion - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -3086,9 +3086,56 @@
           "type": "json-query",
           "custom": "json.anteproyecto.remisiones[1].ruta",
           "action": "regex",
-          "value": "^{{trabajoId}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+          "value": "^{{trabajoId}}/(TI|PP)-C/v(\\d+)/Formato C - v\\d+\\.pdf$"
         }
       ]
+    },
+    {
+      "_id": "317ed2ea-d79d-4944-9679-aadf6f7c1ccb",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
+      "name": "El Consejo fija un plazo de la modalidad (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 415000,
+      "created": "2026-10-17T00:00:00.000Z",
+      "modified": "2026-10-17T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El Consejo debe fijar el plazo de ejecución: 6 o 9 meses en trabajo de investigación; 6, 9 o 12 meses en práctica profesional."
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 12\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "docs": "12 meses solo se admite en práctica profesional: un trabajo de investigación se aprueba a 6 o 9 meses."
     },
     {
       "_id": "5eb1a62e-c140-43d8-a899-c4881a78e825",
@@ -3131,6 +3178,18 @@
           "custom": "json.anteproyecto.versiones[2].estado",
           "action": "equal",
           "value": "APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.fechaFin",
+          "action": "regex",
+          "value": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.fechaMinimaSustentacion",
+          "action": "regex",
+          "value": "^\\d{4}-\\d{2}-\\d{2}$"
         }
       ],
       "body": {
@@ -3139,7 +3198,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\"\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\",\n  \"mesesEjecucion\": 9\n}"
           }
         ],
         "files": [
@@ -3724,7 +3783,7 @@
           "type": "json-query",
           "custom": "json.anteproyecto.remisiones[0].ruta",
           "action": "regex",
-          "value": "^{{practicaId}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+          "value": "^{{practicaId}}/(TI|PP)-C/v(\\d+)/Formato C - v\\d+\\.pdf$"
         },
         {
           "type": "json-query",
@@ -3765,7 +3824,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 12\n}"
           }
         ],
         "files": [
@@ -3809,7 +3868,7 @@
           "type": "json-query",
           "custom": "json.ejecucion.informesMensuales[0].rutaArchivo",
           "action": "regex",
-          "value": "^{{practicaId}}/PP-D/v\\d+/informe-mensual\\.pdf$"
+          "value": "^{{practicaId}}/PP-D/v(\\d+)/Formato D - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -3904,7 +3963,7 @@
           "type": "json-query",
           "custom": "json.ejecucion.prorroga.rutaSolicitud",
           "action": "regex",
-          "value": "^{{practicaId}}/SOLICITUD_PRORROGA/v\\d+/solicitud-prorroga\\.pdf$"
+          "value": "^{{practicaId}}/SOLICITUD_PRORROGA/v(\\d+)/Solicitud de prorroga - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -4057,7 +4116,7 @@
           "type": "json-query",
           "custom": "json.ejecucion.suspensiones[0].rutaSolicitud",
           "action": "regex",
-          "value": "^{{practicaId}}/SOLICITUD_SUSPENSION/v\\d+/solicitud-suspension\\.pdf$"
+          "value": "^{{practicaId}}/SOLICITUD_SUSPENSION/v(\\d+)/Solicitud de suspension - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -4152,7 +4211,7 @@
           "type": "json-query",
           "custom": "json.ejecucion.suspensiones[1].rutaSolicitud",
           "action": "regex",
-          "value": "^{{practicaId}}/SOLICITUD_SUSPENSION/v\\d+/solicitud-suspension\\.pdf$"
+          "value": "^{{practicaId}}/SOLICITUD_SUSPENSION/v(\\d+)/Solicitud de suspension - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -4293,7 +4352,7 @@
           "type": "json-query",
           "custom": "json.ejecucion.suspensiones[1].rutaReanudacion",
           "action": "regex",
-          "value": "^{{practicaId}}/REANUDACION/v\\d+/reanudacion\\.pdf$"
+          "value": "^{{practicaId}}/REANUDACION/v(\\d+)/Reanudacion - v\\d+\\.pdf$"
         },
         {
           "type": "json-query",
@@ -4623,7 +4682,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
           }
         ],
         "files": [
@@ -4669,7 +4728,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
           }
         ],
         "files": [
@@ -4896,7 +4955,7 @@
           "type": "json-query",
           "custom": "json.ejecucion.informesMensuales[0].rutaArchivo",
           "action": "regex",
-          "value": "^{{trabajoId}}/TI-D/v\\d+/informe-mensual\\.pdf$"
+          "value": "^{{trabajoId}}/TI-D/v(\\d+)/Formato D - v\\d+\\.pdf$"
         }
       ]
     },
@@ -4989,7 +5048,7 @@
           "type": "json-query",
           "custom": "json.ejecucion.informesMensuales[0].revisiones[0].rutaArchivo",
           "action": "regex",
-          "value": "^{{trabajoId}}/REVISION_INFORME/v\\d+/anotaciones\\.pdf$"
+          "value": "^{{trabajoId}}/REVISION_INFORME/v(\\d+)/Notas de revision - v\\d+\\.pdf$"
         }
       ]
     },
@@ -6472,7 +6531,7 @@
           "type": "json-query",
           "custom": "json.anteproyecto.remisiones[0].ruta",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/(TI|PP)-C/v\\d+/formato-c\\.pdf$"
+          "value": "^{{trabajo2Id}}/(TI|PP)-C/v(\\d+)/Formato C - v\\d+\\.pdf$"
         }
       ]
     },
@@ -6507,7 +6566,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
           }
         ],
         "files": [
@@ -6633,13 +6692,13 @@
           "type": "json-query",
           "custom": "json.sustentacion.rutaMonografia",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/MONOGRAFIA/v\\d+/monografia\\.pdf$"
+          "value": "^{{trabajo2Id}}/MONOGRAFIA/v(\\d+)/Monografia - v\\d+\\.pdf$"
         },
         {
           "type": "json-query",
           "custom": "json.sustentacion.rutaAnexos",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/ANEXOS/v\\d+/anexos\\.pdf$"
+          "value": "^{{trabajo2Id}}/ANEXOS/v(\\d+)/Anexos - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -6800,7 +6859,7 @@
           "type": "json-query",
           "custom": "json.sustentacion.sesiones[0].rutaFormatoE",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/TI-E/v\\d+/formato-e\\.pdf$"
+          "value": "^{{trabajo2Id}}/TI-E/v(\\d+)/Formato E - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -7114,7 +7173,7 @@
           "type": "json-query",
           "custom": "json.sustentacion.calificaciones[0].rutaActa",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/TI-G/v\\d+/acta-sustentacion\\.pdf$"
+          "value": "^{{trabajo2Id}}/TI-G/v(\\d+)/Formato G - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -7201,7 +7260,7 @@
           "type": "json-query",
           "custom": "json.sustentacion.rutaAnexosAjustes",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/ANEXOS/v\\d+/anexos\\.pdf$"
+          "value": "^{{trabajo2Id}}/ANEXOS/v(\\d+)/Anexos - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -7398,7 +7457,7 @@
           "type": "json-query",
           "custom": "json.sustentacion.rutaVersionDefinitiva",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/TI-H/v\\d+/version-definitiva\\.pdf$"
+          "value": "^{{trabajo2Id}}/TI-H/v(\\d+)/Formato H - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -7591,7 +7650,7 @@
           "type": "json-query",
           "custom": "json.sustentacion.rutaConceptoAsesor",
           "action": "regex",
-          "value": "^{{practicaId}}/CONCEPTO_ASESOR/v\\d+/concepto-asesor\\.pdf$"
+          "value": "^{{practicaId}}/CONCEPTO_ASESOR/v(\\d+)/Concepto del asesor - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -8160,7 +8219,7 @@
           "type": "json-query",
           "custom": "json.cancelaciones[0].rutaSolicitud",
           "action": "regex",
-          "value": "^{{trabajo3Id}}/SOLICITUD_CANCELACION/v\\d+/solicitud-cancelacion\\.pdf$"
+          "value": "^{{trabajo3Id}}/SOLICITUD_CANCELACION/v(\\d+)/Solicitud de cancelacion - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -8378,7 +8437,7 @@
           "type": "json-query",
           "custom": "json.cancelaciones[1].rutaSolicitud",
           "action": "regex",
-          "value": "^{{trabajo3Id}}/SOLICITUD_CANCELACION/v\\d+/solicitud-cancelacion\\.pdf$"
+          "value": "^{{trabajo3Id}}/SOLICITUD_CANCELACION/v(\\d+)/Solicitud de cancelacion - v\\d+\\.pdf$"
         }
       ],
       "body": {
@@ -9894,7 +9953,7 @@
           "type": "json-query",
           "custom": "json.sustentacion.rutaPazYSalvo",
           "action": "regex",
-          "value": "^{{trabajo2Id}}/TI-F/v\\d+/paz-y-salvo\\.pdf$"
+          "value": "^{{trabajo2Id}}/TI-F/v(\\d+)/Formato F - v\\d+\\.pdf$"
         }
       ],
       "body": {

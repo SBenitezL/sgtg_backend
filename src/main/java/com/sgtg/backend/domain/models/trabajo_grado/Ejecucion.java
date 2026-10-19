@@ -66,17 +66,28 @@ public class Ejecucion {
     }
 
     /**
-     * Inicia la ejecución con los plazos de la modalidad.
+     * Inicia la ejecución con el plazo que fijó el Consejo: la fecha máxima de
+     * entrega se cuenta desde la notificación de la aprobación (el día en que
+     * se registra la decisión) y la sustentación se puede solicitar desde los
+     * meses mínimos de la modalidad.
      *
      * @param fechaNotificacion fecha de notificación de la aprobación del Consejo
      * @param modalidad         modalidad del trabajo de grado
+     * @param meses             plazo de ejecución elegido (una de las opciones de la modalidad)
      */
-    static Ejecucion iniciar(LocalDate fechaNotificacion, Modalidad modalidad) {
+    static Ejecucion iniciar(LocalDate fechaNotificacion, Modalidad modalidad, Integer meses) {
         if (fechaNotificacion == null || modalidad == null)
             throw new ReglaNegocioException("error.dominio.ejecucion.datos_incompletos");
-        return new Ejecucion(Periodo.desde(fechaNotificacion, modalidad.getMesesMaximosEjecucion()),
+        if (!modalidad.admitePlazo(meses))
+            throw new ReglaNegocioException("error.dominio.ejecucion.plazo_invalido");
+        return new Ejecucion(Periodo.desde(fechaNotificacion, meses),
                 fechaNotificacion.plusMonths(modalidad.getMesesMinimosEjecucion()), List.of(), List.of(), null,
                 List.of());
+    }
+
+    /** Inicia la ejecución con el plazo más largo de la modalidad. */
+    static Ejecucion iniciar(LocalDate fechaNotificacion, Modalidad modalidad) {
+        return iniciar(fechaNotificacion, modalidad, modalidad == null ? null : modalidad.getMesesMaximosEjecucion());
     }
 
     // ----- Cambio de título u objetivos -----

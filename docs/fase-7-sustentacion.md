@@ -8,7 +8,7 @@ Artículos de la Resolución 231 de 2020 que cubre: **19 a 25 y 46 a 55**.
 
 1. **Solicitud (director).**
    - El director adjunta el documento final (formato E) y el paz y salvo (formato F). En práctica profesional también adjunta el concepto favorable del asesor.
-   - Se solicita desde `EN_CURSO` o `PRORROGA`, después de los meses mínimos (3 en investigación, 6 en práctica) y antes del fin del plazo.
+   - Se solicita desde `EN_CURSO` o `PRORROGA`, después de los meses mínimos (3 en ambas modalidades desde el 2026-10-17; antes 6 en práctica) y antes del fin del plazo.
    - El trabajo pasa a `SUSTENTACION`, lo que detiene el vencimiento del plazo de ejecución.
 2. **Programación (Consejo de Facultad):** dos jurados, fecha, hora y salón.
 3. **Calificación (cada jurado).** Con las dos calificaciones rige la **menos favorable**:

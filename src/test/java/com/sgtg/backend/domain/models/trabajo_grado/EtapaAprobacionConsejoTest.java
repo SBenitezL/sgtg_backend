@@ -93,7 +93,7 @@ class EtapaAprobacionConsejoTest {
     @Test
     void aprobadoPasaAEnCursoEIniciaLosNueveMesesDeInvestigacion() {
         trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
-                "CF01", dia(CONSEJO));
+                "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion());
 
         assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
         Ejecucion ejecucion = trabajo.getEjecucion();
@@ -111,21 +111,44 @@ class EtapaAprobacionConsejoTest {
     }
 
     @Test
-    void laPracticaProfesionalTieneDeSeisMesesAUnAnio() {
-        TrabajoGrado practica = enAprobacionConsejo(new PracticaProfesional(null, "Práctica", OBJETIVOS,
-                estudiante(10L), directorPlanta(1L), null, asesorOrganizacion(), cartaAceptacion()));
+    void laPracticaProfesionalAdmiteSeisNueveODoceMeses() {
+        for (int meses : new int[] { 6, 9, 12 }) {
+            TrabajoGrado practica = enAprobacionConsejo(new PracticaProfesional(null, "Práctica", OBJETIVOS,
+                    estudiante(10L), directorPlanta(1L), null, asesorOrganizacion(), cartaAceptacion()));
 
-        practica.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
-                "CF01", dia(CONSEJO));
+            practica.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
+                    "CF01", dia(CONSEJO), meses);
 
-        assertEquals(LocalDate.of(2027, 3, 20), practica.getEjecucion().getFechaFin());
-        assertEquals(LocalDate.of(2026, 9, 20), practica.getEjecucion().getFechaMinimaSustentacion());
+            // El plazo corre desde el día de la decisión; la sustentación se solicita desde el tercer mes
+            assertEquals(CONSEJO.plusMonths(meses), practica.getEjecucion().getFechaFin());
+            assertEquals(CONSEJO.plusMonths(3), practica.getEjecucion().getFechaMinimaSustentacion());
+        }
+    }
+
+    @Test
+    void elConsejoFijaSeisONueveMesesEnInvestigacion() {
+        trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
+                "CF01", dia(CONSEJO), 6);
+        assertEquals(CONSEJO.plusMonths(6), trabajo.getEjecucion().getFechaFin());
+        assertEquals(CONSEJO.plusMonths(3), trabajo.getEjecucion().getFechaMinimaSustentacion());
+    }
+
+    @Test
+    void alAprobarElPlazoDebeSerUnaOpcionDeLaModalidad() {
+        for (Integer meses : new Integer[] { null, 3, 12 })
+            assertRegla("error.dominio.ejecucion.plazo_invalido", () -> trabajo.registrarDecisionConsejo(
+                    decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO), meses));
+        assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
+        // Si no aprueba, el plazo no se pide
+        trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.NO_APROBADO, RUTA_RESOLUCION, CONSEJO),
+                "CF01", dia(CONSEJO), null);
+        assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
     }
 
     @Test
     void noAprobadoVuelveAAnteproyectoYLaNuevaVersionPasaPorLosEvaluadores() {
         trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.NO_APROBADO, RUTA_RESOLUCION, CONSEJO),
-                "CF01", dia(CONSEJO));
+                "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion());
 
         Anteproyecto anteproyecto = trabajo.getAnteproyecto();
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
@@ -143,7 +166,7 @@ class EtapaAprobacionConsejoTest {
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
         LocalDate segunda = LocalDate.of(2026, 4, 10);
         trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, segunda),
-                "CF01", dia(segunda));
+                "CF01", dia(segunda), trabajo.getModalidad().getMesesMaximosEjecucion());
 
         assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
         assertEquals(segunda, trabajo.getEjecucion().getFechaNotificacion());
@@ -158,16 +181,16 @@ class EtapaAprobacionConsejoTest {
         Decision sinComentario = decisionConsejo(ResultadoConcepto.NO_APROBADO, RUTA_RESOLUCION, CONSEJO);
         assertNull(sinComentario.observaciones());
 
-        trabajo.registrarDecisionConsejo(sinComentario, "CF01", dia(CONSEJO));
+        trabajo.registrarDecisionConsejo(sinComentario, "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion());
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
     }
 
     @Test
     void laRutaDeLaResolucionEsObligatoria() {
         assertRegla("error.dominio.anteproyecto.resolucion_obligatoria", () -> trabajo.registrarDecisionConsejo(
-                decisionConsejo(ResultadoConcepto.APROBADO, null, CONSEJO), "CF01", dia(CONSEJO)));
+                decisionConsejo(ResultadoConcepto.APROBADO, null, CONSEJO), "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion()));
         assertRegla("error.dominio.anteproyecto.resolucion_obligatoria", () -> trabajo.registrarDecisionConsejo(
-                decisionConsejo(ResultadoConcepto.NO_APROBADO, "  ", CONSEJO), "CF01", dia(CONSEJO)));
+                decisionConsejo(ResultadoConcepto.NO_APROBADO, "  ", CONSEJO), "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion()));
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
         assertTrue(trabajo.getAnteproyecto().getDecisionesConsejo().isEmpty());
     }
@@ -177,7 +200,7 @@ class EtapaAprobacionConsejoTest {
             mode = EnumSource.Mode.EXCLUDE)
     void elConsejoSoloApruebaONoAprueba(ResultadoConcepto resultado) {
         assertRegla("error.dominio.anteproyecto.resultado_consejo_invalido", () -> trabajo.registrarDecisionConsejo(
-                decisionConsejo(resultado, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO)));
+                decisionConsejo(resultado, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion()));
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
         assertTrue(trabajo.getAnteproyecto().getDecisionesConsejo().isEmpty());
     }
@@ -187,30 +210,30 @@ class EtapaAprobacionConsejoTest {
         Decision delComite = new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, null, RUTA_RESOLUCION,
                 null, CONSEJO);
         assertRegla("error.dominio.anteproyecto.organo_invalido",
-                () -> trabajo.registrarDecisionConsejo(delComite, "CF01", dia(CONSEJO)));
+                () -> trabajo.registrarDecisionConsejo(delComite, "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion()));
     }
 
     @Test
     void laDecisionNoPuedeSerAnteriorALosConceptosDeLosEvaluadores() {
         LocalDate antes = CONCEPTOS.minusDays(1);
         assertRegla("error.dominio.anteproyecto.fecha_invalida", () -> trabajo.registrarDecisionConsejo(
-                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, antes), "CF01", dia(antes)));
+                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, antes), "CF01", dia(antes), trabajo.getModalidad().getMesesMaximosEjecucion()));
     }
 
     @Test
     void soloSeDecideEnLaEtapaDeAprobacionDelConsejo() {
         trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
-                "CF01", dia(CONSEJO));
+                "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion());
 
         assertRegla("error.dominio.trabajo_grado.etapa_invalida", () -> trabajo.registrarDecisionConsejo(
-                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO)));
+                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion()));
         assertEquals(1, trabajo.getAnteproyecto().getDecisionesConsejo().size());
     }
 
     @Test
     void laEjecucionInformaSusPlazos() {
         trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
-                "CF01", dia(CONSEJO));
+                "CF01", dia(CONSEJO), trabajo.getModalidad().getMesesMaximosEjecucion());
         Ejecucion ejecucion = trabajo.getEjecucion();
 
         assertFalse(ejecucion.permiteSolicitarSustentacion(LocalDate.of(2026, 6, 19)));

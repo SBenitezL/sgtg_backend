@@ -128,7 +128,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         if (!(guardado instanceof PracticaProfesional practica))
             return registrado(asignarRolesDeDireccion(guardado), directorUsuarioId);
         String rutaDefinitiva = this.archivoGateway.reubicar(rutaTemporal, practica.getId(),
-                TipoDocumento.CARTA_ACEPTACION.carpeta(Modalidad.PRACTICA_PROFESIONAL));
+                TipoDocumento.CARTA_ACEPTACION.carpeta(Modalidad.PRACTICA_PROFESIONAL),
+                TipoDocumento.CARTA_ACEPTACION.nombreArchivo());
         practica.reubicarCartaAceptacion(rutaDefinitiva);
         return registrado(asignarRolesDeDireccion(this.trabajoGateway.guardar(practica)), directorUsuarioId);
     }
@@ -330,14 +331,14 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     @Override
     public TrabajoGrado registrarDecisionConsejo(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
-            ArchivoAdjunto resolucion, String observaciones) {
+            ArchivoAdjunto resolucion, String observaciones, Integer mesesEjecucion) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Usuario responsable = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
             trabajo.registrarDecisionConsejo(decisionConsejo(resultado, ruta, observaciones),
-                    responsable.getCodigo(), LocalDateTime.now(this.clock));
+                    responsable.getCodigo(), LocalDateTime.now(this.clock), mesesEjecucion);
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.DECISION_CONSEJO_ANTEPROYECTO, usuarioId, texto(resultado));
     }
@@ -674,7 +675,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         if (!hayArchivo(archivo))
             return null;
         validarPdf(archivo);
-        String ruta = this.archivoGateway.guardar(trabajoId, tipo.carpeta(trabajo.getModalidad()), archivo);
+        String ruta = this.archivoGateway.guardar(trabajoId, tipo.carpeta(trabajo.getModalidad()), tipo.nombreArchivo(),
+                archivo);
         rutas.add(ruta);
         return ruta;
     }

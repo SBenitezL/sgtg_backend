@@ -8,43 +8,54 @@ import java.util.Optional;
  * completo depende de la modalidad (ej. PROPUESTA → TI-A o PP-A).
  */
 public enum TipoDocumento {
-    PROPUESTA("A", false),
-    ANTEPROYECTO(null, false),
-    EVALUACION_ANTEPROYECTO("B", false),
-    REMISION_CONSEJO("C", false),
-    INFORME_MENSUAL("D", false),
-    DOCUMENTO_FINAL("E", false),
+    PROPUESTA("A", false, "Formato A"),
+    ANTEPROYECTO(null, false, "Anteproyecto"),
+    EVALUACION_ANTEPROYECTO("B", false, "Formato B"),
+    REMISION_CONSEJO("C", false, "Formato C"),
+    INFORME_MENSUAL("D", false, "Formato D"),
+    DOCUMENTO_FINAL("E", false, "Formato E"),
     /** Monografía del trabajo, que acompaña al formato E en la solicitud de sustentación */
-    MONOGRAFIA(null, false),
+    MONOGRAFIA(null, false, "Monografía"),
     /** Anexos opcionales (PDF) de la solicitud de sustentación o de los ajustes */
-    ANEXOS(null, false),
-    PAZ_Y_SALVO("F", false),
-    ACTA_SUSTENTACION("G", false),
-    VERSION_DEFINITIVA("H", false),
-    CARTA_ACEPTACION(null, true),
-    RESOLUCION(null, false),
-    ACTA_COMITE(null, false),
-    SOLICITUD_PRORROGA(null, false),
-    SOLICITUD_SUSPENSION(null, false),
-    REANUDACION(null, false),
-    CONCEPTO_ASESOR(null, true),
+    ANEXOS(null, false, "Anexos"),
+    PAZ_Y_SALVO("F", false, "Formato F"),
+    ACTA_SUSTENTACION("G", false, "Formato G"),
+    VERSION_DEFINITIVA("H", false, "Formato H"),
+    CARTA_ACEPTACION(null, true, "Carta de aceptación"),
+    RESOLUCION(null, false, "Resolución"),
+    ACTA_COMITE(null, false, "Respuesta del Comité"),
+    SOLICITUD_PRORROGA(null, false, "Solicitud de prórroga"),
+    SOLICITUD_SUSPENSION(null, false, "Solicitud de suspensión"),
+    REANUDACION(null, false, "Reanudación"),
+    CONCEPTO_ASESOR(null, true, "Concepto del asesor"),
     /** Documento con las anotaciones del evaluador sobre el anteproyecto (opcional, acompaña al formato B) */
-    ANOTACIONES_EVALUACION(null, false),
+    ANOTACIONES_EVALUACION(null, false, "Anotaciones del evaluador"),
     /** PDF con las notas del director, codirector o asesor al revisar un informe mensual */
-    REVISION_INFORME(null, false),
+    REVISION_INFORME(null, false, "Notas de revisión"),
     /** Solicitud del director de una nueva fecha para la sesión de sustentación programada */
-    SOLICITUD_NUEVA_FECHA(null, false),
-    AJUSTES_SUSTENTACION(null, false),
-    SOLICITUD_CANCELACION(null, false);
+    SOLICITUD_NUEVA_FECHA(null, false, "Solicitud de nueva fecha"),
+    AJUSTES_SUSTENTACION(null, false, "Ajustes de la sustentación"),
+    SOLICITUD_CANCELACION(null, false, "Solicitud de cancelación");
 
     /** Letra del formato en el reglamento, null si no corresponde a un formato */
     private final String letraFormato;
     /** Indica si el documento solo aplica a la modalidad de práctica profesional */
     private final boolean soloPracticaProfesional;
+    /** Nombre con el que se guarda el archivo (ej. "Formato A"), seguido de su versión */
+    private final String nombreArchivo;
 
-    TipoDocumento(String letraFormato, boolean soloPracticaProfesional) {
+    TipoDocumento(String letraFormato, boolean soloPracticaProfesional, String nombreArchivo) {
         this.letraFormato = letraFormato;
         this.soloPracticaProfesional = soloPracticaProfesional;
+        this.nombreArchivo = nombreArchivo;
+    }
+
+    /**
+     * @return nombre con el que se guardan los archivos de este tipo (ej.
+     *         "Formato A"); el almacenamiento le agrega la versión
+     */
+    public String nombreArchivo() {
+        return nombreArchivo;
     }
 
     /**

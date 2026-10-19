@@ -117,8 +117,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
         // El gateway devuelve el mismo trabajo que recibe
         when(trabajoGateway.guardar(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
         // El almacenamiento devuelve <trabajo>/<carpeta>/v1/<nombre>
-        when(archivoGateway.guardar(any(), any(), any())).thenAnswer(invocacion -> invocacion.getArgument(0) + "/"
-                + invocacion.getArgument(1) + "/v1/" + ((ArchivoAdjunto) invocacion.getArgument(2)).nombre());
+        when(archivoGateway.guardar(any(), any(), any(), any())).thenAnswer(invocacion -> invocacion.getArgument(0)
+                + "/" + invocacion.getArgument(1) + "/v1/" + ((ArchivoAdjunto) invocacion.getArgument(3)).nombre());
     }
 
     /** Archivo PDF de prueba con el nombre dado. */
@@ -177,7 +177,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 pdf("carta.pdf"));
         // La carta se guarda en una ubicación temporal y se mueve a la carpeta del trabajo ya guardado
         when(archivoGateway.guardarTemporal(any())).thenReturn("temporal/abc/carta.pdf");
-        when(archivoGateway.reubicar(eq("temporal/abc/carta.pdf"), any(), eq("CARTA_ACEPTACION")))
+        when(archivoGateway.reubicar(eq("temporal/abc/carta.pdf"), any(), eq("CARTA_ACEPTACION"),
+                eq("Carta de aceptación")))
                 .thenReturn("9/CARTA_ACEPTACION/v1/carta.pdf");
 
         PracticaProfesional practica = assertInstanceOf(PracticaProfesional.class, casoDeUso.crear(1L, datos));
@@ -371,7 +372,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         TrabajoGrado trabajo = casoDeUso.remitirAnteproyectoAlConsejo(7L, 60L, pdf("formato-c.pdf"));
 
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
-        verify(archivoGateway).guardar(eq(7L), eq("TI-C"), any());
+        verify(archivoGateway).guardar(eq(7L), eq("TI-C"), eq("Formato C"), any());
         assertEquals(1, trabajo.getAnteproyecto().getRemisiones().size());
         assertEquals("U60", trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).responsable());
     }
@@ -404,7 +405,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoEnAprobacionConsejo();
 
         TrabajoGrado trabajo = casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO,
-                pdf("res-100.pdf"), null);
+                pdf("res-100.pdf"), null, 9);
 
         assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
         // Reloj fijo: lunes 2-mar-2026; investigación dura 9 meses
@@ -420,7 +421,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoEnAprobacionConsejo();
 
         TrabajoGrado trabajo = casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.NO_APROBADO,
-                pdf("res-101.pdf"), null);
+                pdf("res-101.pdf"), null, 9);
 
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
         assertEquals(Estado.NO_APROBADO, trabajo.getAnteproyecto().getEstado());
@@ -431,7 +432,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     /** Trabajo aprobado por el Consejo (en curso desde el 2-mar-2026). */
     private void trabajoEnCurso() {
         trabajoEnAprobacionConsejo();
-        casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-100.pdf"), null);
+        casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-100.pdf"), null, 9);
     }
 
     @Test
@@ -464,7 +465,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals(1, informe.numero());
         assertEquals("U10", informe.radicadoPor());
         assertEquals("Avance de marzo", informe.observaciones());
-        verify(archivoGateway).guardar(eq(7L), eq("TI-D"), any());
+        verify(archivoGateway).guardar(eq(7L), eq("TI-D"), eq("Formato D"), any());
     }
 
     @Test
@@ -481,7 +482,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals(1L, revision.revisorUsuarioId());
         assertEquals("Ajustar el cronograma", revision.observaciones());
         assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
-        verify(archivoGateway).guardar(eq(7L), eq("REVISION_INFORME"), any());
+        verify(archivoGateway).guardar(eq(7L), eq("REVISION_INFORME"), eq("Notas de revisión"), any());
         // Una revisión por revisor
         ReglaNegocioException repetida = assertThrows(ReglaNegocioException.class,
                 () -> casoDeUso.revisarInformeMensual(7L, 1, 1L, "Otra", null));
@@ -750,7 +751,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoGuardado();
         TrabajoGrado trabajo = casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
 
-        verify(archivoGateway).guardar(eq(7L), eq("TI-A"), any());
+        verify(archivoGateway).guardar(eq(7L), eq("TI-A"), eq("Formato A"), any());
         assertEquals("7/TI-A/v1/p.pdf", trabajo.getPropuesta().getVersiones().get(0).documento().ruta());
     }
 
@@ -763,7 +764,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         BusinessRuleException porContenido = assertThrows(BusinessRuleException.class, () -> casoDeUso
                 .radicarPropuesta(7L, 1L, new ArchivoAdjunto("p.pdf", "application/pdf", new byte[] { 1, 2, 3 })));
         assertEquals("error.archivo.formato_invalido", porContenido.getBusinessRule());
-        verify(archivoGateway, never()).guardar(any(), any(), any());
+        verify(archivoGateway, never()).guardar(any(), any(), any(), any());
     }
 
     @Test
@@ -788,7 +789,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     void sinPermisoElDirectorNoAlmacenaArchivos() {
         trabajoGuardado();
         assertThrows(NoAccessException.class, () -> casoDeUso.radicarPropuesta(7L, 10L, pdf("p.pdf")));
-        verify(archivoGateway, never()).guardar(any(), any(), any());
+        verify(archivoGateway, never()).guardar(any(), any(), any(), any());
     }
 
     @Test

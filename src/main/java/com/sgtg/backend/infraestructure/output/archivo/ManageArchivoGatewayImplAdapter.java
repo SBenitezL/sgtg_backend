@@ -42,10 +42,10 @@ public class ManageArchivoGatewayImplAdapter implements ManageArchivoGatewayIntP
     }
 
     @Override
-    public String guardar(Long trabajoId, String carpeta, ArchivoAdjunto archivo) {
+    public String guardar(Long trabajoId, String carpeta, String nombre, ArchivoAdjunto archivo) {
         try {
             Path iteracion = crearSiguienteIteracion(carpetaDelTipo(trabajoId, carpeta));
-            Path destino = iteracion.resolve(nombreSeguro(archivo.nombre()));
+            Path destino = iteracion.resolve(nombreConVersion(nombre, iteracion));
             Files.write(destino, archivo.contenido(), StandardOpenOption.CREATE_NEW);
             return relativa(destino);
         } catch (IOException e) {
@@ -67,13 +67,13 @@ public class ManageArchivoGatewayImplAdapter implements ManageArchivoGatewayIntP
     }
 
     @Override
-    public String reubicar(String rutaTemporal, Long trabajoId, String carpeta) {
+    public String reubicar(String rutaTemporal, Long trabajoId, String carpeta, String nombre) {
         Path origen = resolver(rutaTemporal);
         if (origen == null || !Files.isRegularFile(origen))
             throw new IllegalArgumentException("El archivo temporal no existe: " + rutaTemporal);
         try {
             Path iteracion = crearSiguienteIteracion(carpetaDelTipo(trabajoId, carpeta));
-            Path destino = Files.move(origen, iteracion.resolve(origen.getFileName()));
+            Path destino = Files.move(origen, iteracion.resolve(nombreConVersion(nombre, iteracion)));
             eliminarSiVacia(origen.getParent());
             return relativa(destino);
         } catch (IOException e) {
@@ -163,6 +163,18 @@ public class ManageArchivoGatewayImplAdapter implements ManageArchivoGatewayIntP
                 return;
         }
         Files.deleteIfExists(carpeta);
+    }
+
+    /**
+     * Nombre descriptivo del archivo con su versión: "Formato A" en la carpeta
+     * {@code v2} → "Formato A - v2.pdf" (sin tildes; se conservan los espacios).
+     */
+    private static String nombreConVersion(String nombre, Path iteracion) {
+        String base = Normalizer.normalize(nombre == null || nombre.isBlank() ? "Documento" : nombre,
+                Normalizer.Form.NFD).replaceAll("\\p{M}", "").replaceAll("[^A-Za-z0-9 _-]", "").trim();
+        if (base.isEmpty())
+            base = "Documento";
+        return base + " - " + iteracion.getFileName() + ".pdf";
     }
 
     /** Nombre sin directorios, sin tildes y solo con letras, dígitos, punto, guion y guion bajo. */

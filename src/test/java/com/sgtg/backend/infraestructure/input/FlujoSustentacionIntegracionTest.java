@@ -222,7 +222,8 @@ class FlujoSustentacionIntegracionTest {
                     .andExpect(status().isOk());
         subir(TRABAJOS + trabajoId + "/anteproyecto/remision", login("J"), null, archivo("formato-c.pdf"))
                 .andExpect(status().isOk());
-        subir(TRABAJOS + trabajoId + "/anteproyecto/decisiones-consejo", login("F"), Map.of("resultado", "APROBADO"),
+        subir(TRABAJOS + trabajoId + "/anteproyecto/decisiones-consejo", login("F"), Map.of("resultado", "APROBADO",
+                "mesesEjecucion", 9),
                 archivo("res-aprobacion.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("EN_CURSO"))
@@ -282,10 +283,10 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("SUSTENTACION"))
                 .andExpect(jsonPath("$.sustentacion.estado").value("SOLICITADA"))
-                .andExpect(jsonPath("$.sustentacion.rutaMonografia").value(trabajoId + "/MONOGRAFIA/v1/monografia.pdf"))
-                .andExpect(jsonPath("$.sustentacion.rutaDocumentoFinal").value(trabajoId + "/TI-E/v1/tg.pdf"))
+                .andExpect(jsonPath("$.sustentacion.rutaMonografia").value(trabajoId + "/MONOGRAFIA/v1/Monografia - v1.pdf"))
+                .andExpect(jsonPath("$.sustentacion.rutaDocumentoFinal").value(trabajoId + "/TI-E/v1/Formato E - v1.pdf"))
                 .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").doesNotExist())
-                .andExpect(jsonPath("$.sustentacion.rutaAnexos").value(trabajoId + "/ANEXOS/v1/anexos.pdf"));
+                .andExpect(jsonPath("$.sustentacion.rutaAnexos").value(trabajoId + "/ANEXOS/v1/Anexos - v1.pdf"));
 
         // Decanatura revisa el paz y salvo: siempre con el formato F; si no lo aprueba, con observaciones
         String decanatura = login("K");
@@ -312,7 +313,7 @@ class FlujoSustentacionIntegracionTest {
         subir(pazYSalvo, decanatura, Map.of("aprobado", true), archivo("paz-y-salvo.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.revisionesPazYSalvo[1].aprobado").value(true))
-                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").value(trabajoId + "/TI-F/v2/paz-y-salvo.pdf"));
+                .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").value(trabajoId + "/TI-F/v2/Formato F - v2.pdf"));
         // Aprobado no se vuelve a revisar
         subir(pazYSalvo, decanatura, Map.of("aprobado", true), archivo("otro.pdf")).andExpect(status().isBadRequest());
 
@@ -331,7 +332,7 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(jsonPath("$.sustentacion.estado").value("PROGRAMADA"))
                 .andExpect(jsonPath("$.sustentacion.sesiones[0].salon").value("Salón 301"))
                 .andExpect(jsonPath("$.sustentacion.sesiones[0].juradoCoordinadorId").value(coordinadorId))
-                .andExpect(jsonPath("$.sustentacion.sesiones[0].rutaFormatoE").value(trabajoId + "/TI-E/v2/formato-e.pdf"));
+                .andExpect(jsonPath("$.sustentacion.sesiones[0].rutaFormatoE").value(trabajoId + "/TI-E/v2/Formato E - v2.pdf"));
         // Los jurados reciben sus roles
         enviar(get(API + "/usuarios/me"), login("X"), null)
                 .andExpect(jsonPath("$.roles").value(org.hamcrest.Matchers.hasItems("JURADO", "JURADO_COORDINADOR")));
@@ -366,7 +367,7 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.estado").value("EN_AJUSTES"))
                 .andExpect(jsonPath("$.sustentacion.calificaciones[0].rutaActa")
-                        .value(trabajoId + "/TI-G/v1/sesion-1.pdf"))
+                        .value(trabajoId + "/TI-G/v1/Formato G - v1.pdf"))
                 .andExpect(jsonPath("$.sustentacion.fechaLimiteAjustes").isNotEmpty());
 
         // El director radica los ajustes con anexos y el coordinador los verifica
@@ -374,9 +375,9 @@ class FlujoSustentacionIntegracionTest {
         subir(sustentacion + "/ajustes", docente, null, archivo("tg.pdf"), pdf("anexos", "anexos-ajustes.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.estado").value("AJUSTES_RADICADOS"))
-                .andExpect(jsonPath("$.sustentacion.rutaAjustes").value(trabajoId + "/AJUSTES_SUSTENTACION/v1/tg.pdf"))
+                .andExpect(jsonPath("$.sustentacion.rutaAjustes").value(trabajoId + "/AJUSTES_SUSTENTACION/v1/Ajustes de la sustentacion - v1.pdf"))
                 .andExpect(jsonPath("$.sustentacion.rutaAnexosAjustes")
-                        .value(trabajoId + "/ANEXOS/v2/anexos-ajustes.pdf"));
+                        .value(trabajoId + "/ANEXOS/v2/Anexos - v2.pdf"));
         enviar(post(sustentacion + "/ajustes/verificaciones"), jurado, Map.of("cumple", true))
                 .andExpect(status().isForbidden());
         enviar(post(sustentacion + "/ajustes/verificaciones"), coordinador, Map.of("cumple", true))
@@ -389,13 +390,13 @@ class FlujoSustentacionIntegracionTest {
         subir(sustentacion + "/version-definitiva", coordinador, null, archivo("tg.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("FINALIZADO"))
-                .andExpect(jsonPath("$.sustentacion.rutaVersionDefinitiva").value(trabajoId + "/TI-H/v1/tg.pdf"));
+                .andExpect(jsonPath("$.sustentacion.rutaVersionDefinitiva").value(trabajoId + "/TI-H/v1/Formato H - v1.pdf"));
 
         // El otro jurado ve el trabajo entre los suyos y descarga sus archivos
         enviar(get(API + "/trabajos-grado/mis-trabajos"), jurado, null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(trabajoId));
-        enviar(get(TRABAJOS + trabajoId + "/archivos").param("ruta", trabajoId + "/TI-E/v1/tg.pdf"), jurado, null)
+        enviar(get(TRABAJOS + trabajoId + "/archivos").param("ruta", trabajoId + "/TI-E/v1/Formato E - v1.pdf"), jurado, null)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF));
     }

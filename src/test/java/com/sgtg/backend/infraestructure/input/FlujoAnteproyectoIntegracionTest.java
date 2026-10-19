@@ -203,7 +203,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].tipo").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].ruta")
-                        .value(trabajoId + "/ANTEPROYECTO/v1/anteproyecto.pdf"));
+                        .value(trabajoId + "/ANTEPROYECTO/v1/Anteproyecto - v1.pdf"));
 
         // El jefe de departamento ve el trabajo pendiente y asigna los evaluadores
         enviar(get(API + "/trabajos-grado").param("etapa", "ANTEPROYECTO"), jefe, null)
@@ -236,7 +236,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("EVALUACION"))
                 .andExpect(jsonPath("$.anteproyecto.conceptos[0].formato.formato").value("TI-B"))
                 .andExpect(jsonPath("$.anteproyecto.conceptos[0].formato.ruta")
-                        .value(trabajoId + "/TI-B/v1/formato-b.pdf"));
+                        .value(trabajoId + "/TI-B/v1/Formato B - v1.pdf"));
         // El formato B es obligatorio
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador2,
                 Map.of("resultado", "CON_CORRECCIONES", "observaciones", "Ajustar el cronograma"))
@@ -248,7 +248,7 @@ class FlujoAnteproyectoIntegracionTest {
                 archivo("formato-b.pdf"), pdf("anotaciones", "notas.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.anteproyecto.conceptos[1].anotaciones.ruta")
-                        .value(trabajoId + "/ANOTACIONES_EVALUACION/v1/notas.pdf"))
+                        .value(trabajoId + "/ANOTACIONES_EVALUACION/v1/Anotaciones del evaluador - v1.pdf"))
                 .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("CON_CORRECCIONES"))
                 .andExpect(jsonPath("$.anteproyecto.fechaLimiteCorrecciones").isNotEmpty());
@@ -261,7 +261,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.anteproyecto.versiones[1].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.anteproyecto.versiones[1].version").value(2))
                 .andExpect(jsonPath("$.anteproyecto.versiones[1].ruta")
-                        .value(trabajoId + "/ANTEPROYECTO/v2/anteproyecto_v2.pdf"));
+                        .value(trabajoId + "/ANTEPROYECTO/v2/Anteproyecto - v2.pdf"));
 
         // Ambos aprueban la versión 2: queda en el Departamento hasta que el jefe la remita
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador1, Map.of("resultado", "APROBADO"),
@@ -285,7 +285,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("APROBACION_CONSEJO"))
                 .andExpect(jsonPath("$.anteproyecto.remisiones[0].formato").value("TI-C"))
                 .andExpect(jsonPath("$.anteproyecto.remisiones[0].version").value(2))
-                .andExpect(jsonPath("$.anteproyecto.remisiones[0].ruta").value(trabajoId + "/TI-C/v1/formato-c.pdf"));
+                .andExpect(jsonPath("$.anteproyecto.remisiones[0].ruta").value(trabajoId + "/TI-C/v1/Formato C - v1.pdf"));
 
         // El evaluador ve el trabajo entre los suyos
         enviar(get(API + "/trabajos-grado/mis-trabajos"), evaluador1, null)
@@ -337,7 +337,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("NO_APROBADO"))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo[0].organo").value("CONSEJO_FACULTAD"))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo[0].rutaArchivo")
-                        .value(trabajoId + "/RESOLUCION/v1/res-correcciones.pdf"))
+                        .value(trabajoId + "/RESOLUCION/v1/Resolucion - v1.pdf"))
                 .andExpect(jsonPath("$.ejecucion").isEmpty());
 
         // La nueva versión vuelve a los evaluadores
@@ -349,13 +349,18 @@ class FlujoAnteproyectoIntegracionTest {
         // El Consejo aprueba: pasa a en curso con el plazo de investigación
         subir(decisiones, consejo, Map.of("resultado", "APROBADO", "observaciones", "Aprobado en sesión ordinaria"),
                 archivo("res-aprobacion.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El Consejo debe fijar el plazo de ejecución: 6 o 9 meses en "
+                        + "trabajo de investigación; 6, 9 o 12 meses en práctica profesional."));
+        subir(decisiones, consejo, Map.of("resultado", "APROBADO", "observaciones", "Aprobado en sesión ordinaria",
+                "mesesEjecucion", 6), archivo("res-aprobacion.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("EN_CURSO"))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo.length()").value(2))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo[1].rutaArchivo")
-                        .value(trabajoId + "/RESOLUCION/v2/res-aprobacion.pdf"))
+                        .value(trabajoId + "/RESOLUCION/v2/Resolucion - v2.pdf"))
                 .andExpect(jsonPath("$.ejecucion.fechaNotificacion").isNotEmpty())
-                .andExpect(jsonPath("$.ejecucion.fechaFin").isNotEmpty())
+                .andExpect(jsonPath("$.ejecucion.fechaFin").value(java.time.LocalDate.now().plusMonths(6).toString()))
                 .andExpect(jsonPath("$.ejecucion.fechaMinimaSustentacion").isNotEmpty())
                 .andExpect(jsonPath("$.historial[-1:].destino", hasItem("EN_CURSO")));
 
@@ -384,7 +389,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.ejecucion.cambiosObjetivos[0].decision.resultado").value("APROBADO"))
                 // La iteración del archivo rechazado quedó libre
                 .andExpect(jsonPath("$.ejecucion.cambiosObjetivos[0].decision.rutaArchivo")
-                        .value(trabajoId + "/RESOLUCION/v3/res-cambio.pdf"));
+                        .value(trabajoId + "/RESOLUCION/v3/Resolucion - v3.pdf"));
         // Solo una vez
         enviar(post(cambio), docente, Map.of("titulo", "Otro", "objetivos", List.of("O"), "justificacion", "J"))
                 .andExpect(status().isBadRequest())

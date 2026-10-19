@@ -26,7 +26,7 @@ APROBACION_CONSEJO ────────────────────�
 | 1 | El Consejo solo emite `APROBADO` o `NO_APROBADO`. |
 | 2 | Si no aprueba, el trabajo vuelve a `ANTEPROYECTO` y la nueva versión pasa por los mismos evaluadores. |
 | 3 | La fecha de notificación es la fecha en que se registra la resolución aprobatoria (la del día). Más adelante habrá un sistema de notificaciones. |
-| 4 | Plazos de ejecución: investigación 9 meses; práctica profesional mínimo 6 meses y máximo 1 año. |
+| 4 | Plazos de ejecución: investigación 9 meses; práctica profesional mínimo 6 meses y máximo 1 año. **(2026-10-17)** El Consejo elige el plazo al aprobar: 6 o 9 meses en investigación, 6, 9 o 12 en práctica; la sustentación se solicita desde los 3 meses en ambas. Ver [ajustes-2026-10-17.md](ajustes-2026-10-17.md). |
 | 5 | La **ruta del documento de la resolución es obligatoria**: si no aprueba, el documento trae las correcciones; si aprueba, es el acta. Solo se guarda la ruta, como texto. |
 | 6 | No se guarda el número de la resolución (`acta` queda en `null`). |
 | 7 | El comentario es **opcional** incluso si no aprueba, porque la información puede venir en el documento. |
@@ -37,7 +37,7 @@ Hay una interpretación propia: en investigación, la fecha mínima para solicit
 ## Cambios en la base común
 
 - **`Organo`:** tiene `exigeObservacionesSiNoAprueba()`. Es `true` para el Comité de Programa y el Departamento, y `false` para el Consejo de Facultad, que soporta sus decisiones en la resolución adjunta. `Decision` aplica la regla de observaciones obligatorias solo si el órgano la exige.
-- **`Modalidad`:** tiene `getMesesMinimosEjecucion()` y `getMesesMaximosEjecucion()`. Los valores son TI = 3 y 9; PP = 6 y 12.
+- **`Modalidad`:** tiene `getMesesMinimosEjecucion()` y `getMesesMaximosEjecucion()`. Los valores son TI = 3 y 9; PP = 6 y 12. (2026-10-17: PP = 3 y 12, con las opciones de plazo de cada modalidad.)
 
 ## Clases del dominio
 

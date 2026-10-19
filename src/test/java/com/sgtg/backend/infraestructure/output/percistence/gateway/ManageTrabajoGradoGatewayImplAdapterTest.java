@@ -189,7 +189,7 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
                 "resoluciones/res-100.pdf", "Aprobado en sesión ordinaria", LUNES.plusDays(4)), "CF01",
-                LUNES.plusDays(4).atTime(9, 0));
+                LUNES.plusDays(4).atTime(9, 0), trabajo.getModalidad().getMesesMaximosEjecucion());
         gateway.guardar(trabajo);
 
         TrabajoGrado leido = gateway.buscarPorId(trabajo.getId());
@@ -228,7 +228,7 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
                 RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
         trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
-                "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0));
+                "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0), trabajo.getModalidad().getMesesMaximosEjecucion());
         // Un cambio no aprobado y otro pendiente; dos informes
         trabajo.solicitarCambioObjetivos("Práctica ampliada", List.of("Objetivo 1", "Objetivo 2"), "Ampliación",
                 LUNES.plusDays(10));
@@ -301,7 +301,7 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
                 RUTA_FORMATO_B, LUNES.atTime(12, 0), calendario);
         trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
-                "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0));
+                "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0), trabajo.getModalidad().getMesesMaximosEjecucion());
         // Sustentación: nueva fecha negada, primera sesión aplazada; en la segunda, inasistencia
         LocalDate julio = LocalDate.of(2026, 7, 1);
         trabajo.solicitarSustentacion("monografias/tg.pdf", "finales/tg.pdf", null,

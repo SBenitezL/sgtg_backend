@@ -358,15 +358,18 @@ public abstract class TrabajoGrado {
      * Registra el concepto del Consejo de Facultad sobre el anteproyecto
      * aprobado por los evaluadores (Art. 14). La decisión adjunta la ruta de
      * la resolución. Si lo aprueba, la fecha de la decisión es la de
-     * notificación: el trabajo pasa a en curso y empieza el plazo de la
-     * modalidad. Si no lo aprueba, vuelve a anteproyecto para radicar una
+     * notificación: el trabajo pasa a en curso y empieza el plazo que fija el
+     * Consejo. Si no lo aprueba, vuelve a anteproyecto para radicar una
      * nueva versión que revisan los evaluadores.
      *
      * @param decision    decisión del Consejo: APROBADO o NO_APROBADO
      * @param responsable código del usuario que registra la decisión
      * @param ahora       fecha y hora del registro
+     * @param mesesEjecucion plazo de ejecución que fija el Consejo al aprobar (6 o 9 meses en
+     *                       investigación; 6, 9 o 12 en práctica profesional); se ignora si no aprueba
      */
-    public void registrarDecisionConsejo(Decision decision, String responsable, LocalDateTime ahora) {
+    public void registrarDecisionConsejo(Decision decision, String responsable, LocalDateTime ahora,
+            Integer mesesEjecucion) {
         validarEtapa(Proceso.APROBACION_CONSEJO);
         if (ahora == null)
             throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
@@ -375,7 +378,7 @@ public abstract class TrabajoGrado {
         Ejecucion nueva = null;
         CambioEtapa cambio;
         if (resultado == Estado.APROBADO) {
-            nueva = Ejecucion.iniciar(decision.fecha(), getModalidad());
+            nueva = Ejecucion.iniciar(decision.fecha(), getModalidad(), mesesEjecucion);
             cambio = new CambioEtapa(this.etapa, Proceso.EN_CURSO, ahora, responsable,
                     "Anteproyecto aprobado por el Consejo de Facultad");
         } else {

@@ -29,6 +29,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ActualizarPropuestaDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AnulacionDTORequest;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionAnteproyectoDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.RevisionPazYSalvoDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AsignarEvaluadoresDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.CalificacionSustentacionDTORequest;
@@ -230,10 +231,11 @@ public class TrabajoGradoController {
     @PreAuthorize("hasAuthority('CONSEJO')")
     public ResponseEntity<TrabajoGradoDTOResponse> registrarDecisionConsejo(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
-            @Valid @RequestPart("datos") DecisionConsejoDTORequest request,
+            @Valid @RequestPart("datos") DecisionAnteproyectoDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
         return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.registrarDecisionConsejo(trabajoId,
-                usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones())));
+                usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones(),
+                request.mesesEjecucion())));
     }
 
     /** Solicita el cambio de título u objetivos del trabajo en curso. Solo el director. */

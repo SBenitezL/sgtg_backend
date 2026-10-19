@@ -185,7 +185,7 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.propuesta.estado").doesNotExist())
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].formato").value("TI-A"))
-                .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/propuesta.pdf"));
+                .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/Formato A - v1.pdf"));
 
         // El comité no la aprueba: sigue en propuesta y se radica una nueva versión. Sin el
         // documento de respuesta no se registra la decisión
@@ -202,13 +202,13 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("PROPUESTA"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
                 .andExpect(jsonPath("$.propuesta.decisiones[0].rutaArchivo")
-                        .value(trabajoId + "/ACTA_COMITE/v1/acta-01.pdf"));
+                        .value(trabajoId + "/ACTA_COMITE/v1/Respuesta del Comite - v1.pdf"));
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta_v2.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
                 .andExpect(jsonPath("$.propuesta.versiones[1].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.propuesta.versiones[1].version").value(2))
-                .andExpect(jsonPath("$.propuesta.versiones[1].ruta").value(trabajoId + "/TI-A/v2/propuesta_v2.pdf"));
+                .andExpect(jsonPath("$.propuesta.versiones[1].ruta").value(trabajoId + "/TI-A/v2/Formato A - v2.pdf"));
 
         // El comité aprueba: el trabajo pasa a anteproyecto
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", comite,
@@ -236,12 +236,12 @@ class FlujoPropuestaIntegracionTest {
 
         // Los archivos se descargan por su ruta: el estudiante y el comité sí pueden
         String archivos = API + "/trabajos-grado/" + trabajoId + "/archivos";
-        String ruta = trabajoId + "/TI-A/v1/propuesta.pdf";
+        String ruta = trabajoId + "/TI-A/v1/Formato A - v1.pdf";
         for (String usuario : List.of(estudiante, comite))
             enviar(get(archivos).param("ruta", ruta), usuario, null)
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("propuesta.pdf")))
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("Formato")))
                     .andExpect(content().bytes("%PDF-1.4 prueba".getBytes(StandardCharsets.US_ASCII)));
         // Un usuario sin relación con el trabajo no tiene acceso
         crearUsuario("X", "DOCENTE");
@@ -249,9 +249,9 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", containsString("No tiene acceso a la información de este trabajo")));
         // Rutas de otro trabajo o inexistentes
-        enviar(get(archivos).param("ruta", (trabajoId + 1) + "/TI-A/v1/propuesta.pdf"), estudiante, null)
+        enviar(get(archivos).param("ruta", (trabajoId + 1) + "/TI-A/v1/Formato A - v1.pdf"), estudiante, null)
                 .andExpect(status().isNotFound());
-        enviar(get(archivos).param("ruta", trabajoId + "/TI-A/v9/propuesta.pdf"), estudiante, null)
+        enviar(get(archivos).param("ruta", trabajoId + "/TI-A/v9/Formato A - v9.pdf"), estudiante, null)
                 .andExpect(status().isNotFound());
     }
 

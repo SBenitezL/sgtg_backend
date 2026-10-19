@@ -147,7 +147,7 @@ public interface ManageTrabajoGradoCUIntPort {
      * @param observaciones comentario opcional
      */
     public TrabajoGrado registrarDecisionConsejo(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
-            ArchivoAdjunto resolucion, String observaciones);
+            ArchivoAdjunto resolucion, String observaciones, Integer mesesEjecucion);
 
     /**
      * Solicita el cambio de título u objetivos del trabajo en curso. Solo el
