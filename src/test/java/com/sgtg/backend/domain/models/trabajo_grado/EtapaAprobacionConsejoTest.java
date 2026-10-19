@@ -253,4 +253,13 @@ class EtapaAprobacionConsejoTest {
         assertEquals(datos, reconstruido.getEjecucion().datos());
         assertThrows(ReglaNegocioException.class, () -> new DatosEjecucion(CONSEJO, null, CONSEJO));
     }
+
+    @Test
+    void lasOpcionesDePlazoMuestranLaFechaDeEntregaDeCadaUna() {
+        java.util.Map<Integer, LocalDate> practica = Ejecucion.opcionesDePlazo(Modalidad.PRACTICA_PROFESIONAL, LUNES);
+        assertEquals(List.of(6, 9, 12), List.copyOf(practica.keySet()));
+        assertEquals(LUNES.plusMonths(12), practica.get(12));
+        assertEquals(List.of(6, 9),
+                List.copyOf(Ejecucion.opcionesDePlazo(Modalidad.TRABAJO_DE_INVESTIGACION, LUNES).keySet()));
+    }
 }

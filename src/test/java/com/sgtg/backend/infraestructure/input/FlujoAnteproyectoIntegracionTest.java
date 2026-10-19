@@ -216,6 +216,8 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.anteproyecto.versiones[0].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.anteproyecto.evaluadores[1].usuarioId").value(evaluador2Id))
                 .andExpect(jsonPath("$.anteproyecto.fechaLimiteEvaluacion").isNotEmpty())
+                .andExpect(jsonPath("$.anteproyecto.diasHabilesRestantesEvaluacion").value(10))
+                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo.length()").value(0))
                 .andExpect(jsonPath("$.historial[1].responsable").value("J" + sufijo));
 
         // Pedir correcciones exige observaciones
@@ -236,7 +238,10 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("EVALUACION"))
                 .andExpect(jsonPath("$.anteproyecto.conceptos[0].formato.formato").value("TI-B"))
                 .andExpect(jsonPath("$.anteproyecto.conceptos[0].formato.ruta")
-                        .value(trabajoId + "/TI-B/v1/Formato B - v1.pdf"));
+                        .value(trabajoId + "/TI-B/v1/Formato B - v1.pdf"))
+                // El concepto se emitió dentro de los 10 días hábiles desde la asignación
+                .andExpect(jsonPath("$.anteproyecto.conceptos[0].aTiempo").value(true))
+                .andExpect(jsonPath("$.anteproyecto.conceptos[0].fechaLimite").isNotEmpty());
         // El formato B es obligatorio
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", evaluador2,
                 Map.of("resultado", "CON_CORRECCIONES", "observaciones", "Ajustar el cronograma"))
@@ -285,7 +290,14 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("APROBACION_CONSEJO"))
                 .andExpect(jsonPath("$.anteproyecto.remisiones[0].formato").value("TI-C"))
                 .andExpect(jsonPath("$.anteproyecto.remisiones[0].version").value(2))
-                .andExpect(jsonPath("$.anteproyecto.remisiones[0].ruta").value(trabajoId + "/TI-C/v1/Formato C - v1.pdf"));
+                .andExpect(jsonPath("$.anteproyecto.remisiones[0].ruta").value(trabajoId + "/TI-C/v1/Formato C - v1.pdf"))
+                // En la aprobación del Consejo, la respuesta trae los plazos que puede fijar y su fecha de fin
+                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo.length()").value(2))
+                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo[0].meses").value(6))
+                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo[1].meses").value(9))
+                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo[1].fechaFin")
+                        .value(java.time.LocalDate.now().plusMonths(9).toString()))
+                .andExpect(jsonPath("$.anteproyecto.diasHabilesRestantesEvaluacion").doesNotExist());
 
         // El evaluador ve el trabajo entre los suyos
         enviar(get(API + "/trabajos-grado/mis-trabajos"), evaluador1, null)
@@ -362,6 +374,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.ejecucion.fechaNotificacion").isNotEmpty())
                 .andExpect(jsonPath("$.ejecucion.fechaFin").value(java.time.LocalDate.now().plusMonths(6).toString()))
                 .andExpect(jsonPath("$.ejecucion.fechaMinimaSustentacion").isNotEmpty())
+                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo.length()").value(0))
                 .andExpect(jsonPath("$.historial[-1:].destino", hasItem("EN_CURSO")));
 
         // Ya no admite otra decisión (el archivo que se alcanzó a guardar se elimina)

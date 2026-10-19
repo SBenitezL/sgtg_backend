@@ -13,14 +13,7 @@ public class CalendarioHabilFalso implements CalendarioHabil {
     private static final Set<DayOfWeek> FIN_DE_SEMANA = Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
 
     @Override
-    public LocalDate sumarDiasHabiles(LocalDate desde, int dias) {
-        LocalDate fecha = desde;
-        int contados = 0;
-        while (contados < dias) {
-            fecha = fecha.plusDays(1);
-            if (!FIN_DE_SEMANA.contains(fecha.getDayOfWeek()))
-                contados++;
-        }
-        return fecha;
+    public boolean esHabil(LocalDate fecha) {
+        return !FIN_DE_SEMANA.contains(fecha.getDayOfWeek());
     }
 }

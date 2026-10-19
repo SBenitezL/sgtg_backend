@@ -235,4 +235,18 @@ class EtapaPropuestaTest {
                 ahora);
         assertFalse(propuesta.conceptoVencido(LocalDate.of(2026, 3, 20)));
     }
+
+    @Test
+    void laFechaLimiteDeCadaDecisionDelComiteSeCuentaDesdeLaRadicacionDeSuVersion() {
+        // Versión 1: lunes 2 de marzo → 10 días hábiles: lunes 16; versión 2: lunes 9 → lunes 23
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
+        trabajo.registrarDecisionComite(decisionComite(ResultadoConcepto.NO_APROBADO, LUNES.plusDays(3)), "C001",
+                LUNES.plusDays(3).atTime(9, 0));
+        trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES.plusDays(7), calendario);
+
+        Propuesta propuesta = trabajo.getPropuesta();
+        assertEquals(java.util.Optional.of(LocalDate.of(2026, 3, 16)), propuesta.fechaLimiteDecision(0, calendario));
+        assertEquals(java.util.Optional.of(LocalDate.of(2026, 3, 23)), propuesta.fechaLimiteDecision(1, calendario));
+        assertEquals(java.util.Optional.empty(), propuesta.fechaLimiteDecision(2, calendario));
+    }
 }

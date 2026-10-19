@@ -415,4 +415,25 @@ class EtapaAnteproyectoTest {
         assertEquals(Proceso.EVALUACION, reconstruido.getEtapa());
         assertEquals(Estado.APROBADO, reconstruido.getAnteproyecto().getVersiones().get(0).estado());
     }
+
+    @Test
+    void laFechaLimiteDeCadaConceptoSeCuentaDesdeLaAsignacionODesdeLaNuevaVersion() {
+        // Versión 1: radicada el lunes 9 y asignada el martes 10 → 10 días hábiles desde la asignación: martes 24
+        radicarYAsignar();
+        LocalDate dia24 = LocalDate.of(2026, 3, 24);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, dia24), RUTA_FORMATO_B,
+                dia(dia24), calendario);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.CON_CORRECCIONES, dia24),
+                RUTA_FORMATO_B, dia(dia24), calendario);
+        // Versión 2: radicada el miércoles 1 de abril, con los evaluadores ya asignados → miércoles 15
+        LocalDate dia1Abril = LocalDate.of(2026, 4, 1);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", dia(dia1Abril), calendario);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, dia1Abril.plusDays(1)),
+                RUTA_FORMATO_B, dia(dia1Abril.plusDays(1)), calendario);
+
+        List<ConceptoEvaluacion> conceptos = trabajo.getAnteproyecto().getConceptos();
+        assertEquals(java.util.Optional.of(dia24), trabajo.fechaLimiteConcepto(conceptos.get(0), calendario));
+        assertEquals(java.util.Optional.of(LocalDate.of(2026, 4, 15)),
+                trabajo.fechaLimiteConcepto(conceptos.get(2), calendario));
+    }
 }

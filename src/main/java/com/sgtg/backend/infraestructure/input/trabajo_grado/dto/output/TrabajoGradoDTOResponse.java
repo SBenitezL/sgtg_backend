@@ -3,6 +3,7 @@ package com.sgtg.backend.infraestructure.input.trabajo_grado.dto.output;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import com.sgtg.backend.domain.models.comun.Decision;
 import com.sgtg.backend.domain.models.comun.Organo;
@@ -35,15 +36,31 @@ import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.Propuesta;
 import com.sgtg.backend.domain.models.trabajo_grado.VersionDocumento;
+import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.input.catalogo.dto.output.CatalogoDTOResponse;
 
-/** Vista completa de un trabajo de grado. */
+/**
+ * Vista completa de un trabajo de grado. Además de los datos guardados, trae
+ * los cálculos de plazos que dependen del día de la consulta (días hábiles
+ * restantes, conceptos emitidos a tiempo, opciones de plazo del Consejo),
+ * hechos con el calendario y el reloj del servidor para que el front no los
+ * calcule por su cuenta.
+ */
 public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titulo, List<String> objetivos,
         String descripcion, String lineaInvestigacion, Proceso etapa, MotivoCierre motivoCierre, List<EstudianteDTO> estudiantes, DirectorDTO director,
         DirectorDTO codirector, AsesorDTO asesor, DocumentoDTO cartaAceptacion, PropuestaDTO propuesta,
         AnteproyectoDTO anteproyecto, EjecucionDTO ejecucion, SustentacionDTO sustentacion,
         List<CancelacionDTO> cancelaciones, List<CambioEtapaDTO> historial) {
+
+    /**
+     * Datos para calcular los plazos de la vista.
+     *
+     * @param hoy        fecha de la consulta (reloj del servidor)
+     * @param calendario calendario de días hábiles
+     */
+    public record Plazos(LocalDate hoy, CalendarioHabil calendario) {
+    }
 
     public record EstudianteDTO(Long usuarioId, String codigo, String nombreCompleto, String email,
             CatalogoDTOResponse programa) {
@@ -65,9 +82,13 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     public record DocumentoDTO(String tipo, String formato, String ruta, int version, LocalDate fechaCarga) {
     }
 
+    /**
+     * @param fechaLimite fecha límite que tenía el órgano para decidir; solo en las decisiones con plazo
+     *                    en días hábiles (concepto del Comité sobre la propuesta), null en las demás
+     * @param aTiempo     true si decidió a más tardar en la fecha límite; null si no hay fecha límite
+     */
     public record DecisionDTO(Organo organo, ResultadoConcepto resultado, String acta, String rutaArchivo,
-            String observaciones,
-            LocalDate fecha) {
+            String observaciones, LocalDate fecha, LocalDate fechaLimite, Boolean aTiempo) {
     }
 
     /**
@@ -80,10 +101,12 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     }
 
     /**
-     * @param versiones versiones radicadas; el estado de la propuesta es el de la última
+     * @param diasHabilesRestantesConcepto días hábiles que le quedan al Comité para decidir la versión en
+     *                                     revisión (negativo si venció); null si no hay versión en revisión
+     * @param versiones                    versiones radicadas; el estado de la propuesta es el de la última
      */
-    public record PropuestaDTO(LocalDate fechaLimiteConcepto, List<VersionDocumentoDTO> versiones,
-            List<DecisionDTO> decisiones) {
+    public record PropuestaDTO(LocalDate fechaLimiteConcepto, Integer diasHabilesRestantesConcepto,
+            List<VersionDocumentoDTO> versiones, List<DecisionDTO> decisiones) {
     }
 
     public record EvaluadorDTO(Long usuarioId, String codigo, String nombreCompleto, String email) {
@@ -92,19 +115,37 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     /**
      * @param formato     formato B adjunto
      * @param anotaciones documento con las anotaciones del evaluador, null si no lo adjuntó
+     * @param fechaLimite fecha límite que tenía el evaluador para esa versión, null si no se conoce
+     * @param aTiempo     true si emitió el concepto a más tardar en la fecha límite; null si no se conoce
      */
     public record ConceptoEvaluacionDTO(int version, Long evaluadorUsuarioId, String evaluador,
             ResultadoConcepto resultado, String observaciones, LocalDate fecha, DocumentoDTO formato,
-            DocumentoDTO anotaciones) {
+            DocumentoDTO anotaciones, LocalDate fechaLimite, Boolean aTiempo) {
     }
 
     /**
-     * @param versiones  versiones radicadas con el estado de su revisión; el estado del anteproyecto es el de la última
-     * @param remisiones formatos C con los que el Jefe de departamento remitió al Consejo cada versión aprobada
+     * @param diasHabilesRestantesEvaluacion   días hábiles que les quedan a los evaluadores (negativo si venció);
+     *                                         null fuera de la etapa de evaluación
+     * @param diasHabilesRestantesCorrecciones días hábiles que le quedan al director para radicar las
+     *                                         correcciones (negativo si venció); null si no hay correcciones pendientes
+     * @param versiones                        versiones radicadas con el estado de su revisión; el estado del
+     *                                         anteproyecto es el de la última
+     * @param remisiones                       formatos C con los que el Jefe de departamento remitió al Consejo
+     *                                         cada versión aprobada
+     * @param opcionesPlazo                    plazos que puede fijar el Consejo al aprobar, con la fecha máxima de
+     *                                         entrega que resultaría hoy; vacía fuera de la aprobación del Consejo
      */
-    public record AnteproyectoDTO(LocalDate fechaLimiteEvaluacion, LocalDate fechaLimiteCorrecciones,
+    public record AnteproyectoDTO(LocalDate fechaLimiteEvaluacion, Integer diasHabilesRestantesEvaluacion,
+            LocalDate fechaLimiteCorrecciones, Integer diasHabilesRestantesCorrecciones,
             List<VersionDocumentoDTO> versiones, List<EvaluadorDTO> evaluadores, List<ConceptoEvaluacionDTO> conceptos,
-            List<DecisionDTO> decisionesConsejo, List<DocumentoDTO> remisiones) {
+            List<DecisionDTO> decisionesConsejo, List<DocumentoDTO> remisiones, List<OpcionPlazoDTO> opcionesPlazo) {
+    }
+
+    /**
+     * @param meses    plazo de ejecución
+     * @param fechaFin fecha máxima de entrega si el Consejo aprueba hoy con ese plazo
+     */
+    public record OpcionPlazoDTO(int meses, LocalDate fechaFin) {
     }
 
     /** @param decision decisión del Consejo, null mientras esté pendiente */
@@ -193,13 +234,16 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
      * @param solicitudesNuevaFecha solicitudes de nueva fecha de la sesión, en orden
      * @param motivoNoAprobacion    motivo del cierre si no se aprobó
      * @param revisionesPazYSalvo   revisiones del paz y salvo de Decanatura; {@code rutaPazYSalvo} es el aprobado
+     * @param diasHabilesRestantesAjustes días hábiles que le quedan al director para radicar los ajustes
+     *                              (negativo si venció); null si no hay ajustes pendientes
      */
     public record SustentacionDTO(EstadoSustentacion estado, String rutaMonografia, String rutaDocumentoFinal,
             String rutaPazYSalvo, String rutaConceptoAsesor, String rutaAnexos, LocalDate fechaSolicitud,
             List<SesionSustentacionDTO> sesiones, List<SolicitudNuevaFechaDTO> solicitudesNuevaFecha,
             List<CalificacionJuradoDTO> calificaciones, List<RegistroJuradoDTO> inasistencias,
             List<RegistroJuradoDTO> verificaciones, String rutaAjustes, String rutaAnexosAjustes,
-            LocalDate fechaAjustes, LocalDate fechaLimiteAjustes, LocalDate fechaLimiteSegundaSesion,
+            LocalDate fechaAjustes, LocalDate fechaLimiteAjustes, Integer diasHabilesRestantesAjustes,
+            LocalDate fechaLimiteSegundaSesion,
             String rutaVersionDefinitiva, LocalDate fechaVersionDefinitiva, MotivoCierre motivoNoAprobacion,
             List<RevisionPazYSalvoDTO> revisionesPazYSalvo) {
     }
@@ -216,9 +260,16 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             String observacion) {
     }
 
-    public static TrabajoGradoDTOResponse desde(TrabajoGrado trabajo) {
+    /**
+     * @param trabajo trabajo de grado
+     * @param plazos  fecha de la consulta y calendario para los cálculos de plazos
+     */
+    public static TrabajoGradoDTOResponse desde(TrabajoGrado trabajo, Plazos plazos) {
         Modalidad modalidad = trabajo.getModalidad();
         Propuesta propuesta = trabajo.getPropuesta();
+        boolean conceptoPendiente = trabajo.getEtapa() == Proceso.PROPUESTA
+                && propuesta.getEstado() == Estado.EN_REVISION;
+        List<Decision> decisiones = propuesta.getDecisiones();
         DocumentoDTO carta = trabajo instanceof PracticaProfesional practica
                 ? documento(practica.getCartaAceptacion(), modalidad)
                 : null;
@@ -227,10 +278,14 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 trabajo.getEstudiantes().stream().map(TrabajoGradoDTOResponse::estudiante).toList(),
                 director(trabajo.getDirector()), director(trabajo.getCodirector()), asesor(trabajo.getAsesor()), carta,
                 new PropuestaDTO(propuesta.getFechaLimiteConcepto(),
+                        restantes(propuesta.getFechaLimiteConcepto(), conceptoPendiente, plazos),
                         propuesta.getVersiones().stream().map(v -> versionDocumento(v, modalidad)).toList(),
-                        propuesta.getDecisiones().stream().map(TrabajoGradoDTOResponse::decision).toList()),
-                anteproyecto(trabajo.getAnteproyecto(), modalidad), ejecucion(trabajo.getEjecucion()),
-                sustentacion(trabajo.getSustentacion()),
+                        IntStream.range(0, decisiones.size())
+                                .mapToObj(i -> decision(decisiones.get(i),
+                                        propuesta.fechaLimiteDecision(i, plazos.calendario()).orElse(null)))
+                                .toList()),
+                anteproyecto(trabajo, plazos), ejecucion(trabajo.getEjecucion()),
+                sustentacion(trabajo.getSustentacion(), plazos),
                 trabajo.getCancelaciones().stream().map(TrabajoGradoDTOResponse::cancelacion).toList(),
                 trabajo.getHistorial().stream().map(TrabajoGradoDTOResponse::cambio).toList());
     }
@@ -268,17 +323,47 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     }
 
     private static DecisionDTO decision(Decision d) {
-        return new DecisionDTO(d.organo(), d.resultado(), d.acta(), d.rutaArchivo(), d.observaciones(),
-                d.fecha());
+        return decision(d, null);
     }
 
-    private static AnteproyectoDTO anteproyecto(Anteproyecto a, Modalidad modalidad) {
-        return new AnteproyectoDTO(a.getFechaLimiteEvaluacion(), a.getFechaLimiteCorrecciones(),
+    private static DecisionDTO decision(Decision d, LocalDate fechaLimite) {
+        return new DecisionDTO(d.organo(), d.resultado(), d.acta(), d.rutaArchivo(), d.observaciones(),
+                d.fecha(), fechaLimite, aTiempo(d.fecha(), fechaLimite));
+    }
+
+    /** @return true si la fecha no supera la fecha límite; null si alguna no se conoce */
+    private static Boolean aTiempo(LocalDate fecha, LocalDate fechaLimite) {
+        return fecha == null || fechaLimite == null ? null : !fecha.isAfter(fechaLimite);
+    }
+
+    /** @return días hábiles desde hoy hasta la fecha límite si el plazo está vigente; null si no */
+    private static Integer restantes(LocalDate fechaLimite, boolean vigente, Plazos plazos) {
+        return vigente && fechaLimite != null ? plazos.calendario().contarDiasHabiles(plazos.hoy(), fechaLimite)
+                : null;
+    }
+
+    private static AnteproyectoDTO anteproyecto(TrabajoGrado trabajo, Plazos plazos) {
+        Anteproyecto a = trabajo.getAnteproyecto();
+        Modalidad modalidad = trabajo.getModalidad();
+        boolean evaluacionPendiente = trabajo.getEtapa() == Proceso.EVALUACION && a.getEstado() == Estado.EN_REVISION;
+        boolean correccionesPendientes = a.getEstado() == Estado.CON_CORRECCIONES;
+        List<OpcionPlazoDTO> opcionesPlazo = trabajo.getEtapa() == Proceso.APROBACION_CONSEJO
+                ? Ejecucion.opcionesDePlazo(modalidad, plazos.hoy()).entrySet().stream()
+                        .map(opcion -> new OpcionPlazoDTO(opcion.getKey(), opcion.getValue()))
+                        .toList()
+                : List.of();
+        return new AnteproyectoDTO(a.getFechaLimiteEvaluacion(),
+                restantes(a.getFechaLimiteEvaluacion(), evaluacionPendiente, plazos),
+                a.getFechaLimiteCorrecciones(),
+                restantes(a.getFechaLimiteCorrecciones(), correccionesPendientes, plazos),
                 a.getVersiones().stream().map(v -> versionDocumento(v, modalidad)).toList(),
                 a.getEvaluadores().stream().map(TrabajoGradoDTOResponse::evaluador).toList(),
-                a.getConceptos().stream().map(c -> concepto(c, modalidad)).toList(),
+                a.getConceptos().stream()
+                        .map(c -> concepto(c, modalidad, trabajo.fechaLimiteConcepto(c, plazos.calendario()).orElse(null)))
+                        .toList(),
                 a.getDecisionesConsejo().stream().map(TrabajoGradoDTOResponse::decision).toList(),
-                a.getRemisiones().stream().map(r -> documento(r, modalidad)).toList());
+                a.getRemisiones().stream().map(r -> documento(r, modalidad)).toList(),
+                opcionesPlazo);
     }
 
     private static EjecucionDTO ejecucion(Ejecucion e) {
@@ -303,7 +388,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 c.decision() == null ? null : decision(c.decision()));
     }
 
-    private static SustentacionDTO sustentacion(Sustentacion s) {
+    private static SustentacionDTO sustentacion(Sustentacion s, Plazos plazos) {
         if (s == null)
             return null;
         return new SustentacionDTO(s.getEstado(), s.getRutaMonografia(), s.getRutaDocumentoFinal(),
@@ -318,6 +403,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 s.getInasistencias().stream().map(TrabajoGradoDTOResponse::registro).toList(),
                 s.getVerificaciones().stream().map(TrabajoGradoDTOResponse::registro).toList(),
                 s.getRutaAjustes(), s.getRutaAnexosAjustes(), s.getFechaAjustes(), s.getFechaLimiteAjustes(),
+                restantes(s.getFechaLimiteAjustes(), s.getEstado() == EstadoSustentacion.EN_AJUSTES, plazos),
                 s.getFechaLimiteSegundaSesion(), s.getRutaVersionDefinitiva(), s.getFechaVersionDefinitiva(),
                 s.getMotivoNoAprobacion(), s.getRevisionesPazYSalvo().stream()
                         .map(r -> new RevisionPazYSalvoDTO(r.rutaDocumento(), r.aprobado(), r.observaciones(), r.fecha()))
@@ -364,10 +450,11 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
         return new EvaluadorDTO(e.getUsuarioId(), e.getCodigo(), e.getNombreCompleto(), e.getEmail());
     }
 
-    private static ConceptoEvaluacionDTO concepto(ConceptoEvaluacion c, Modalidad modalidad) {
+    private static ConceptoEvaluacionDTO concepto(ConceptoEvaluacion c, Modalidad modalidad, LocalDate fechaLimite) {
         return new ConceptoEvaluacionDTO(c.version(), c.concepto().emisor().getUsuarioId(),
                 c.concepto().emisor().getNombreCompleto(), c.concepto().resultado(), c.concepto().observaciones(),
-                c.concepto().fecha(), documento(c.formato(), modalidad), documento(c.anotaciones(), modalidad));
+                c.concepto().fecha(), documento(c.formato(), modalidad), documento(c.anotaciones(), modalidad),
+                fechaLimite, aTiempo(c.concepto().fecha(), fechaLimite));
     }
 
     private static CambioEtapaDTO cambio(CambioEtapa c) {

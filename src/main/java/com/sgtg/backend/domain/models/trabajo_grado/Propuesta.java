@@ -119,6 +119,23 @@ public class Propuesta {
     }
 
     /**
+     * Fecha límite que tuvo el Comité para decidir una versión: los días
+     * hábiles del plazo contados desde su radicación. La radicación y la
+     * decisión se alternan, así que la decisión {@code i} es la de la versión
+     * {@code i}.
+     *
+     * @param indice     posición de la decisión (y de su versión), desde 0
+     * @param calendario calendario para contar los días hábiles
+     * @return la fecha límite, vacía si no hay versión en esa posición
+     */
+    public Optional<LocalDate> fechaLimiteDecision(int indice, CalendarioHabil calendario) {
+        if (indice < 0 || indice >= this.versiones.size())
+            return Optional.empty();
+        return Optional.of(calendario.sumarDiasHabiles(this.versiones.get(indice).documento().fechaCarga(),
+                DIAS_HABILES_CONCEPTO_COMITE));
+    }
+
+    /**
      * @return la última versión radicada, vacía si no se ha radicado ninguna
      */
     public Optional<Documento> versionActual() {

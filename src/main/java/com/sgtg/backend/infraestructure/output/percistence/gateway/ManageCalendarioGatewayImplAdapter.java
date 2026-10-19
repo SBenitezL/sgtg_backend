@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.sgtg.backend.application.output.ManageCalendarioGatewayIntPort;
 import com.sgtg.backend.domain.models.comun.DiaNoHabil;
+import com.sgtg.backend.infraestructure.output.calendario.CalendarioHabilImplAdapter;
 import com.sgtg.backend.infraestructure.output.percistence.entities.DiaNoHabilEntity;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.DiaNoHabilRepository;
 
@@ -17,10 +18,13 @@ import lombok.RequiredArgsConstructor;
 public class ManageCalendarioGatewayImplAdapter implements ManageCalendarioGatewayIntPort {
 
     private final DiaNoHabilRepository diaNoHabilRepository;
+    /** Se le avisa cada cambio para que recargue los días no hábiles que tiene en memoria. */
+    private final CalendarioHabilImplAdapter calendarioHabil;
 
     @Override
     public DiaNoHabil guardar(DiaNoHabil dia) {
         DiaNoHabilEntity guardado = diaNoHabilRepository.save(new DiaNoHabilEntity(dia.fecha(), dia.descripcion()));
+        calendarioHabil.invalidar();
         return new DiaNoHabil(guardado.getFecha(), guardado.getDescripcion());
     }
 
@@ -32,6 +36,7 @@ public class ManageCalendarioGatewayImplAdapter implements ManageCalendarioGatew
     @Override
     public void eliminar(LocalDate fecha) {
         diaNoHabilRepository.deleteById(fecha);
+        calendarioHabil.invalidar();
     }
 
     @Override

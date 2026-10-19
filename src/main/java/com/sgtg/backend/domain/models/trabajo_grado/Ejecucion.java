@@ -3,7 +3,9 @@ package com.sgtg.backend.domain.models.trabajo_grado;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
@@ -83,6 +85,22 @@ public class Ejecucion {
         return new Ejecucion(Periodo.desde(fechaNotificacion, meses),
                 fechaNotificacion.plusMonths(modalidad.getMesesMinimosEjecucion()), List.of(), List.of(), null,
                 List.of());
+    }
+
+    /**
+     * Fecha máxima de entrega que tendría el trabajo con cada plazo que puede
+     * fijar el Consejo, si la ejecución iniciara en la fecha indicada (la
+     * misma regla de {@link #iniciar(LocalDate, Modalidad, Integer)}).
+     *
+     * @param modalidad         modalidad del trabajo
+     * @param fechaNotificacion fecha en que se registraría la decisión
+     * @return meses del plazo → fecha máxima de entrega, en el orden de las opciones
+     */
+    public static Map<Integer, LocalDate> opcionesDePlazo(Modalidad modalidad, LocalDate fechaNotificacion) {
+        Map<Integer, LocalDate> opciones = new LinkedHashMap<>();
+        modalidad.getOpcionesMesesEjecucion()
+                .forEach(meses -> opciones.put(meses, Periodo.desde(fechaNotificacion, meses).fin()));
+        return opciones;
     }
 
     /** Inicia la ejecución con el plazo más largo de la modalidad. */

@@ -272,6 +272,32 @@ public abstract class TrabajoGrado {
      * @param ahora       fecha y hora de la asignación
      * @param calendario  calendario para calcular el plazo de los evaluadores
      */
+    /**
+     * Fecha límite que tuvo el evaluador para emitir un concepto: los días
+     * hábiles del plazo contados desde que la versión evaluada quedó en manos
+     * de los evaluadores, es decir, desde su radicación o, si se radicó antes,
+     * desde la asignación de los evaluadores (primer paso a EVALUACION).
+     *
+     * @param concepto   concepto del evaluador
+     * @param calendario calendario para contar los días hábiles
+     * @return la fecha límite, vacía si no se conoce la versión o la asignación
+     */
+    public Optional<LocalDate> fechaLimiteConcepto(ConceptoEvaluacion concepto, CalendarioHabil calendario) {
+        Optional<LocalDate> asignacion = this.historial.stream()
+                .filter(cambio -> cambio.destino() == Proceso.EVALUACION)
+                .findFirst()
+                .map(cambio -> cambio.fecha().toLocalDate());
+        Optional<LocalDate> radicacion = this.anteproyecto.getVersiones().stream()
+                .map(VersionDocumento::documento)
+                .filter(documento -> documento.version() == concepto.version())
+                .findFirst()
+                .map(Documento::fechaCarga);
+        if (asignacion.isEmpty() || radicacion.isEmpty())
+            return Optional.empty();
+        LocalDate inicio = radicacion.get().isAfter(asignacion.get()) ? radicacion.get() : asignacion.get();
+        return Optional.of(calendario.sumarDiasHabiles(inicio, Anteproyecto.DIAS_HABILES_EVALUACION));
+    }
+
     public void asignarEvaluadores(Evaluador evaluador1, Evaluador evaluador2, String responsable,
             LocalDateTime ahora, CalendarioHabil calendario) {
         validarEtapa(Proceso.ANTEPROYECTO);

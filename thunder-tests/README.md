@@ -14,6 +14,8 @@ Las operaciones que llevan un documento son `multipart/form-data`, igual que en 
 
 El backend guarda cada archivo en `<trabajoId>/<tipo>/v<n>/<nombre del tipo> - v<n>.pdf` (por ejemplo `15/TI-A/v2/Formato A - v2.pdf`), sin importar el nombre del archivo subido, y la respuesta solo trae esa ruta. Las pruebas la validan con una expresión regular (`v\d+`) porque la carpeta de archivos sobrevive a los reinicios de la base de datos de desarrollo y la iteración puede no ser la 1. Los archivos se descargan con `GET /trabajos-grado/{id}/archivos?ruta=...`.
 
+Las carpetas 2 a 4 también verifican los plazos que calcula el backend: días hábiles restantes (10 justo después de radicar o asignar evaluadores), `aTiempo` y `fechaLimite` de la decisión del Comité y de los conceptos, y las opciones de plazo del Consejo (`opcionesPlazo`, 2 en investigación y 3 en práctica, vacía al aprobar).
+
 Los archivos adjuntos y el *Content-Type* de los campos requieren una licencia de Thunder Client (la misma que exigen las colecciones).
 
 ### Rutas de los archivos

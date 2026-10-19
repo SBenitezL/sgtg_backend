@@ -1504,6 +1504,12 @@
           "custom": "json.propuesta.versiones[0].ruta",
           "action": "setto",
           "value": "{{rutaPropuesta}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.diasHabilesRestantesConcepto",
+          "action": "equal",
+          "value": "10"
         }
       ],
       "body": {
@@ -1720,6 +1726,24 @@
           "custom": "json.propuesta.decisiones[0].rutaArchivo",
           "action": "setto",
           "value": "{{rutaActaComite}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.decisiones[0].aTiempo",
+          "action": "equal",
+          "value": "true"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.decisiones[0].fechaLimite",
+          "action": "regex",
+          "value": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.propuesta.diasHabilesRestantesConcepto",
+          "action": "equal",
+          "value": "null"
         }
       ],
       "body": {
@@ -2240,6 +2264,12 @@
           "custom": "json.historial[1].responsable",
           "action": "equal",
           "value": "{{jefeCodigo}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.diasHabilesRestantesEvaluacion",
+          "action": "equal",
+          "value": "10"
         }
       ],
       "body": {
@@ -2375,6 +2405,18 @@
           "custom": "json.anteproyecto.conceptos[0].formato.formato",
           "action": "equal",
           "value": "TI-B"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.conceptos[0].aTiempo",
+          "action": "equal",
+          "value": "true"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.conceptos[0].fechaLimite",
+          "action": "regex",
+          "value": "^\\d{4}-\\d{2}-\\d{2}$"
         }
       ],
       "body": {
@@ -2755,6 +2797,24 @@
           "custom": "json.historial[4].responsable",
           "action": "equal",
           "value": "{{jefeCodigo}}"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.opcionesPlazo",
+          "action": "count",
+          "value": "2"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.opcionesPlazo[1].meses",
+          "action": "equal",
+          "value": "9"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.opcionesPlazo[1].fechaFin",
+          "action": "regex",
+          "value": "^\\d{4}-\\d{2}-\\d{2}$"
         }
       ],
       "docs": "Aprobado por ambos evaluadores, el Jefe de departamento lo remite al Consejo (paso obligatorio)."
@@ -3190,6 +3250,12 @@
           "custom": "json.ejecucion.fechaMinimaSustentacion",
           "action": "regex",
           "value": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.opcionesPlazo",
+          "action": "count",
+          "value": "0"
         }
       ],
       "body": {
@@ -3790,6 +3856,18 @@
           "custom": "json.anteproyecto.remisiones[0].formato",
           "action": "equal",
           "value": "PP-C"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.opcionesPlazo",
+          "action": "count",
+          "value": "3"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.anteproyecto.opcionesPlazo[2].meses",
+          "action": "equal",
+          "value": "12"
         }
       ]
     },

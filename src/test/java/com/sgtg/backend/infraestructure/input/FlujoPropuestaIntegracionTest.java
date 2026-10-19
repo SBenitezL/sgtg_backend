@@ -185,7 +185,9 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.propuesta.estado").doesNotExist())
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("EN_REVISION"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].formato").value("TI-A"))
-                .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/Formato A - v1.pdf"));
+                .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/Formato A - v1.pdf"))
+                // Los días hábiles que le quedan al Comité los calcula el backend con su calendario
+                .andExpect(jsonPath("$.propuesta.diasHabilesRestantesConcepto").value(10));
 
         // El comité no la aprueba: sigue en propuesta y se radica una nueva versión. Sin el
         // documento de respuesta no se registra la decisión
@@ -202,7 +204,11 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("PROPUESTA"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
                 .andExpect(jsonPath("$.propuesta.decisiones[0].rutaArchivo")
-                        .value(trabajoId + "/ACTA_COMITE/v1/Respuesta del Comite - v1.pdf"));
+                        .value(trabajoId + "/ACTA_COMITE/v1/Respuesta del Comite - v1.pdf"))
+                // Decidió dentro del plazo; sin versión en revisión no hay días restantes
+                .andExpect(jsonPath("$.propuesta.decisiones[0].aTiempo").value(true))
+                .andExpect(jsonPath("$.propuesta.decisiones[0].fechaLimite").isNotEmpty())
+                .andExpect(jsonPath("$.propuesta.diasHabilesRestantesConcepto").doesNotExist());
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta_v2.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))

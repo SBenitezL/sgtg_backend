@@ -3,6 +3,8 @@ package com.sgtg.backend.infraestructure.input.trabajo_grado.controller;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.ContentDisposition;
@@ -27,6 +29,7 @@ import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntPort;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
+import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ActualizarPropuestaDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AnulacionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionAnteproyectoDTORequest;
@@ -70,14 +73,25 @@ import lombok.RequiredArgsConstructor;
 public class TrabajoGradoController {
 
     private final ManageTrabajoGradoCUIntPort manageTrabajoGrado;
+    private final CalendarioHabil calendario;
+    private final Clock clock;
+
+    /**
+     * Vista del trabajo con los plazos calculados a la fecha de hoy según el
+     * reloj del servidor (días hábiles restantes, conceptos a tiempo, opciones
+     * de plazo del Consejo).
+     */
+    private TrabajoGradoDTOResponse vista(TrabajoGrado trabajo) {
+        return TrabajoGradoDTOResponse.desde(trabajo,
+                new TrabajoGradoDTOResponse.Plazos(LocalDate.now(clock), calendario));
+    }
 
     /** Crea un trabajo de investigación; el docente autenticado queda como director. */
     @PostMapping("/investigacion")
     @PreAuthorize("hasAnyAuthority('DOCENTE', 'DIRECTOR')")
     public ResponseEntity<TrabajoGradoDTOResponse> crearInvestigacion(@AuthenticationPrincipal UserEntity usuario,
             @Valid @RequestBody CrearTrabajoInvestigacionDTORequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(TrabajoGradoDTOResponse
-                .desde(manageTrabajoGrado.crear(usuario.getCusuari(), request.toNuevoTrabajo())));
+        return ResponseEntity.status(HttpStatus.CREATED).body(vista(manageTrabajoGrado.crear(usuario.getCusuari(), request.toNuevoTrabajo())));
     }
 
     /** Crea una práctica profesional con la carta de aceptación; el docente autenticado queda como director. */
@@ -87,7 +101,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario,
             @Valid @RequestPart("datos") CrearPracticaProfesionalDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile cartaAceptacion) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(TrabajoGradoDTOResponse.desde(
+        return ResponseEntity.status(HttpStatus.CREATED).body(vista(
                 manageTrabajoGrado.crear(usuario.getCusuari(), request.toNuevoTrabajo(adjunto(cartaAceptacion)))));
     }
 
@@ -96,7 +110,7 @@ public class TrabajoGradoController {
     public ResponseEntity<List<TrabajoGradoDTOResponse>> listarMisTrabajos(
             @AuthenticationPrincipal UserEntity usuario) {
         return ResponseEntity.ok(manageTrabajoGrado.listarMisTrabajos(usuario.getCusuari()).stream()
-                .map(TrabajoGradoDTOResponse::desde).toList());
+                .map(this::vista).toList());
     }
 
     /**
@@ -108,7 +122,7 @@ public class TrabajoGradoController {
     public ResponseEntity<List<TrabajoGradoDTOResponse>> listar(@RequestParam(required = false) Proceso etapa) {
         List<TrabajoGrado> trabajos = etapa == null ? manageTrabajoGrado.listarTodos()
                 : manageTrabajoGrado.listarPorEtapa(etapa);
-        return ResponseEntity.ok(trabajos.stream().map(TrabajoGradoDTOResponse::desde).toList());
+        return ResponseEntity.ok(trabajos.stream().map(this::vista).toList());
     }
 
     /**
@@ -125,7 +139,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> consultar(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId) {
         return ResponseEntity
-                .ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.consultar(trabajoId, usuario.getCusuari())));
+                .ok(vista(manageTrabajoGrado.consultar(trabajoId, usuario.getCusuari())));
     }
 
     /**
@@ -150,8 +164,7 @@ public class TrabajoGradoController {
     @PostMapping(value = "/{trabajoId}/propuesta", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> radicarPropuesta(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse
-                .desde(manageTrabajoGrado.radicarPropuesta(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+        return ResponseEntity.ok(vista(manageTrabajoGrado.radicarPropuesta(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
     /**
@@ -161,7 +174,7 @@ public class TrabajoGradoController {
     @PutMapping("/{trabajoId}/propuesta")
     public ResponseEntity<TrabajoGradoDTOResponse> actualizarPropuesta(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestBody ActualizarPropuestaDTORequest request) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.actualizarPropuesta(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.actualizarPropuesta(trabajoId,
                 usuario.getCusuari(), request.titulo(), request.objetivos(), request.descripcion(),
                 request.lineaInvestigacion())));
     }
@@ -173,7 +186,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestPart("datos") DecisionComiteDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.registrarDecisionComite(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.registrarDecisionComite(trabajoId,
                 usuario.getCusuari(), request.resultado(), request.acta(), adjunto(archivo),
                 request.observaciones(), request.fecha())));
     }
@@ -182,8 +195,7 @@ public class TrabajoGradoController {
     @PostMapping(value = "/{trabajoId}/anteproyecto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> radicarAnteproyecto(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse
-                .desde(manageTrabajoGrado.radicarAnteproyecto(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+        return ResponseEntity.ok(vista(manageTrabajoGrado.radicarAnteproyecto(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
     /** Asigna los dos evaluadores. Solo el jefe del departamento del director. */
@@ -191,7 +203,7 @@ public class TrabajoGradoController {
     @PreAuthorize("hasAuthority('JEFE_DEP')")
     public ResponseEntity<TrabajoGradoDTOResponse> asignarEvaluadores(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestBody AsignarEvaluadoresDTORequest request) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.asignarEvaluadores(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.asignarEvaluadores(trabajoId,
                 usuario.getCusuari(), request.evaluador1Id(), request.evaluador2Id())));
     }
 
@@ -206,7 +218,7 @@ public class TrabajoGradoController {
             @Valid @RequestPart("datos") ConceptoEvaluadorDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo,
             @RequestPart(value = "anotaciones", required = false) MultipartFile anotaciones) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.registrarConceptoEvaluador(
+        return ResponseEntity.ok(vista(manageTrabajoGrado.registrarConceptoEvaluador(
                 trabajoId, usuario.getCusuari(), request.resultado(), request.observaciones(), adjunto(archivo),
                 adjunto(anotaciones))));
     }
@@ -221,7 +233,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> remitirAnteproyectoAlConsejo(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
+        return ResponseEntity.ok(vista(
                 manageTrabajoGrado.remitirAnteproyectoAlConsejo(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
@@ -233,7 +245,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestPart("datos") DecisionAnteproyectoDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.registrarDecisionConsejo(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.registrarDecisionConsejo(trabajoId,
                 usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones(),
                 request.mesesEjecucion())));
     }
@@ -243,7 +255,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarCambioObjetivos(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestBody SolicitudCambioObjetivosDTORequest request) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.solicitarCambioObjetivos(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.solicitarCambioObjetivos(trabajoId,
                 usuario.getCusuari(), request.titulo(), request.objetivos(), request.justificacion())));
     }
 
@@ -255,7 +267,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestPart("datos") DecisionConsejoDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.resolverCambioObjetivos(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.resolverCambioObjetivos(trabajoId,
                 usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones())));
     }
 
@@ -269,7 +281,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @RequestPart(value = "datos", required = false) ObservacionesOpcionalesDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.registrarInformeMensual(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.registrarInformeMensual(trabajoId,
                 usuario.getCusuari(), request == null ? null : request.observaciones(), adjunto(archivo))));
     }
 
@@ -284,7 +296,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId, @PathVariable int numero,
             @RequestPart(value = "datos", required = false) ObservacionesOpcionalesDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.revisarInformeMensual(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.revisarInformeMensual(trabajoId,
                 numero, usuario.getCusuari(), request == null ? null : request.observaciones(), adjunto(archivo))));
     }
 
@@ -293,7 +305,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarProrroga(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestPart("datos") SolicitudProrrogaDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.solicitarProrroga(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.solicitarProrroga(trabajoId,
                 usuario.getCusuari(), request.meses(), adjunto(archivo))));
     }
 
@@ -303,7 +315,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> resolverProrroga(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestPart("datos") DecisionConsejoDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.resolverProrroga(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.resolverProrroga(trabajoId,
                 usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones())));
     }
 
@@ -311,7 +323,7 @@ public class TrabajoGradoController {
     @PostMapping(value = "/{trabajoId}/suspension", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarSuspension(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
+        return ResponseEntity.ok(vista(
                 manageTrabajoGrado.solicitarSuspension(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
@@ -322,7 +334,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> resolverSuspension(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestPart("datos") DecisionConsejoDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.resolverSuspension(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.resolverSuspension(trabajoId,
                 usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones())));
     }
 
@@ -330,8 +342,7 @@ public class TrabajoGradoController {
     @PostMapping(value = "/{trabajoId}/suspension/reanudacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> reanudar(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse
-                .desde(manageTrabajoGrado.reanudar(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+        return ResponseEntity.ok(vista(manageTrabajoGrado.reanudar(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
     /**
@@ -346,7 +357,7 @@ public class TrabajoGradoController {
             @RequestPart(value = "documentoFinal", required = false) MultipartFile documentoFinal,
             @RequestPart(value = "conceptoAsesor", required = false) MultipartFile conceptoAsesor,
             @RequestPart(value = "anexos", required = false) MultipartFile anexos) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.solicitarSustentacion(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.solicitarSustentacion(trabajoId,
                 usuario.getCusuari(), adjunto(monografia), adjunto(documentoFinal), adjunto(conceptoAsesor),
                 adjunto(anexos))));
     }
@@ -361,7 +372,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> revisarPazYSalvo(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestPart("datos") RevisionPazYSalvoDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.revisarPazYSalvo(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.revisarPazYSalvo(trabajoId,
                 usuario.getCusuari(), request.aprobado(), request.observaciones(), adjunto(archivo))));
     }
 
@@ -376,7 +387,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestPart("datos") ProgramacionSustentacionDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.programarSustentacion(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.programarSustentacion(trabajoId,
                 usuario.getCusuari(), request.juradoCoordinadorId(), request.juradoId(), request.fechaHora(),
                 request.salon(), adjunto(archivo))));
     }
@@ -389,7 +400,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarNuevaFechaSustentacion(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado
+        return ResponseEntity.ok(vista(manageTrabajoGrado
                 .solicitarNuevaFechaSustentacion(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
@@ -404,7 +415,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestPart("datos") DecisionNuevaFechaDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.resolverNuevaFechaSustentacion(
+        return ResponseEntity.ok(vista(manageTrabajoGrado.resolverNuevaFechaSustentacion(
                 trabajoId, usuario.getCusuari(), request.resultado(), request.fechaHora(), request.salon(),
                 adjunto(archivo), request.observaciones())));
     }
@@ -415,7 +426,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestPart("datos") CalificacionSustentacionDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.calificarSustentacion(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.calificarSustentacion(trabajoId,
                 usuario.getCusuari(), request.calificacion(), request.observaciones(), adjunto(archivo))));
     }
 
@@ -424,7 +435,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> registrarInasistencia(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestBody ObservacionesDTORequest request) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
+        return ResponseEntity.ok(vista(
                 manageTrabajoGrado.registrarInasistencia(trabajoId, usuario.getCusuari(), request.observaciones())));
     }
 
@@ -437,7 +448,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo,
             @RequestPart(value = "anexos", required = false) MultipartFile anexos) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado
+        return ResponseEntity.ok(vista(manageTrabajoGrado
                 .radicarAjustesSustentacion(trabajoId, usuario.getCusuari(), adjunto(archivo), adjunto(anexos))));
     }
 
@@ -446,7 +457,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> verificarAjustesSustentacion(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @Valid @RequestBody VerificacionAjustesDTORequest request) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.verificarAjustesSustentacion(
+        return ResponseEntity.ok(vista(manageTrabajoGrado.verificarAjustesSustentacion(
                 trabajoId, usuario.getCusuari(), request.cumple(), request.observaciones())));
     }
 
@@ -456,7 +467,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> cargarVersionDefinitiva(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado
+        return ResponseEntity.ok(vista(manageTrabajoGrado
                 .cargarVersionDefinitiva(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
@@ -467,7 +478,7 @@ public class TrabajoGradoController {
     @PostMapping("/{trabajoId}/anulacion")
     public ResponseEntity<TrabajoGradoDTOResponse> anular(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestBody AnulacionDTORequest request) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
+        return ResponseEntity.ok(vista(
                 manageTrabajoGrado.anular(trabajoId, usuario.getCusuari(), request.justificacion())));
     }
 
@@ -475,7 +486,7 @@ public class TrabajoGradoController {
     @PostMapping(value = "/{trabajoId}/cancelacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarCancelacion(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(
+        return ResponseEntity.ok(vista(
                 manageTrabajoGrado.solicitarCancelacion(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
@@ -486,7 +497,7 @@ public class TrabajoGradoController {
     public ResponseEntity<TrabajoGradoDTOResponse> resolverCancelacion(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long trabajoId, @Valid @RequestPart("datos") DecisionConsejoDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(TrabajoGradoDTOResponse.desde(manageTrabajoGrado.resolverCancelacion(trabajoId,
+        return ResponseEntity.ok(vista(manageTrabajoGrado.resolverCancelacion(trabajoId,
                 usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones())));
     }
 
