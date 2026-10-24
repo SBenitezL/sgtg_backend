@@ -28,8 +28,10 @@ public interface ManageTrabajoGradoCUIntPort {
     public TrabajoGrado crear(Long directorUsuarioId, NuevoTrabajoGrado datos);
 
     /**
-     * Consulta un trabajo. Pueden hacerlo sus participantes y los usuarios con rol
-     * COMITE, JEFE_DEP, CONSEJO o ADMINISTRADOR.
+     * Consulta un trabajo. Pueden hacerlo sus participantes; los usuarios con rol
+     * CONSEJO, DECANATURA o ADMINISTRADOR; el Comité del programa de sus
+     * estudiantes (docentes con rol COMITE del departamento al que está adscrito
+     * el programa) y el jefe del departamento de su director (JEFE_DEP).
      */
     public TrabajoGrado consultar(Long trabajoId, Long usuarioId);
 
@@ -47,22 +49,25 @@ public interface ManageTrabajoGradoCUIntPort {
 
     /**
      * Lista los trabajos que se encuentran en una etapa (ej. los anteproyectos
-     * pendientes de evaluadores). Para los roles de consulta general; el
-     * controlador restringe el acceso.
+     * pendientes de evaluadores) y que el usuario puede consultar (ver
+     * {@link #consultar}): el Comité solo ve los de su programa y el jefe los de
+     * su departamento. El controlador restringe el acceso por rol.
      *
-     * @param etapa etapa del proceso
+     * @param etapa     etapa del proceso
+     * @param usuarioId usuario que consulta
      * @return los trabajos en esa etapa, del más reciente al más antiguo
      */
-    public List<TrabajoGrado> listarPorEtapa(Proceso etapa);
+    public List<TrabajoGrado> listarPorEtapa(Proceso etapa, Long usuarioId);
 
     /**
-     * Lista todos los trabajos de grado, en cualquier etapa. Para los roles de
-     * consulta general (el controlador restringe el acceso): pantallas de
-     * seguimiento, historial y estadísticas.
+     * Lista los trabajos de grado, en cualquier etapa, que el usuario puede
+     * consultar (ver {@link #consultar}): pantallas de seguimiento, historial y
+     * estadísticas. El controlador restringe el acceso por rol.
      *
-     * @return todos los trabajos, del más reciente al más antiguo
+     * @param usuarioId usuario que consulta
+     * @return los trabajos, del más reciente al más antiguo
      */
-    public List<TrabajoGrado> listarTodos();
+    public List<TrabajoGrado> listarTodos(Long usuarioId);
 
     /**
      * @return los usuarios estudiantes (activos) que pueden participar en un trabajo
@@ -85,7 +90,8 @@ public interface ManageTrabajoGradoCUIntPort {
             String descripcion, String lineaInvestigacion);
 
     /**
-     * Registra el concepto del Comité de Programa sobre la propuesta.
+     * Registra el concepto del Comité de Programa sobre la propuesta. Solo un
+     * miembro del Comité del programa de los estudiantes del trabajo.
      *
      * @param usuarioId usuario del comité que registra la decisión
      * @param resultado APROBADO o NO_APROBADO

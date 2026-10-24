@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import com.sgtg.backend.application.output.ManageCatalogoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageNotificacionGatewayIntPort;
 import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
@@ -20,6 +21,7 @@ import com.sgtg.backend.domain.models.notificacion.Notificacion;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.Participante;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
+import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioEtapa;
 import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
@@ -43,13 +45,16 @@ public class NotificadorTrabajoGrado {
     private final ManageNotificacionGatewayIntPort notificacionGateway;
     private final ManageUserGatewayIntPort userGateway;
     private final ManagePerfilGatewayIntPort perfilGateway;
+    private final ManageCatalogoGatewayIntPort catalogoGateway;
     private final Clock clock;
 
     public NotificadorTrabajoGrado(ManageNotificacionGatewayIntPort notificacionGateway,
-            ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway, Clock clock) {
+            ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
+            ManageCatalogoGatewayIntPort catalogoGateway, Clock clock) {
         this.notificacionGateway = notificacionGateway;
         this.userGateway = userGateway;
         this.perfilGateway = perfilGateway;
+        this.catalogoGateway = catalogoGateway;
         this.clock = clock;
     }
 
@@ -164,6 +169,8 @@ public class NotificadorTrabajoGrado {
                             .filter(usuario -> tieneRol(usuario, destinatario.name()))
                             .filter(usuario -> destinatario != Destinatario.JEFE_DEP
                                     || esDelDepartamentoDelDirector(usuario, trabajo))
+                            .filter(usuario -> destinatario != Destinatario.COMITE
+                                    || esDelComiteDelPrograma(usuario, trabajo))
                             .forEach(usuario -> usuarios.add(usuario.getCusuari()));
                 }
             }
@@ -192,6 +199,15 @@ public class NotificadorTrabajoGrado {
         PerfilDocente perfil = this.perfilGateway.buscarPerfilDocente(usuario.getCusuari());
         return perfil != null && perfil.getDepartamento() != null
                 && perfil.getDepartamento().esMismo(trabajo.getDirector().getDepartamento());
+    }
+
+    /** El Comité del programa de los estudiantes: docentes del departamento al que está adscrito. */
+    private boolean esDelComiteDelPrograma(Usuario usuario, TrabajoGrado trabajo) {
+        PerfilDocente perfil = this.perfilGateway.buscarPerfilDocente(usuario.getCusuari());
+        if (perfil == null || perfil.getDepartamento() == null)
+            return false;
+        Programa programa = this.catalogoGateway.buscarPrograma(trabajo.getPrograma().id());
+        return programa != null && programa.esDelDepartamento(perfil.getDepartamento());
     }
 
     /** Nombre de la etapa para el texto de las notificaciones. */

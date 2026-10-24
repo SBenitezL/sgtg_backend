@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgtg.backend.application.input.catalogo.ManageCatalogoCUIntPort;
 import com.sgtg.backend.infraestructure.input.catalogo.dto.input.NombreDTORequest;
+import com.sgtg.backend.infraestructure.input.catalogo.dto.input.ProgramaDTORequest;
 import com.sgtg.backend.infraestructure.input.catalogo.dto.output.CatalogoDTOResponse;
+import com.sgtg.backend.infraestructure.input.catalogo.dto.output.ProgramaDTOResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,14 +42,15 @@ public class CatalogoController {
     }
 
     @GetMapping("/programas")
-    public ResponseEntity<List<CatalogoDTOResponse>> listarProgramas() {
-        return ResponseEntity.ok(manageCatalogo.listarProgramas().stream().map(CatalogoDTOResponse::desde).toList());
+    public ResponseEntity<List<ProgramaDTOResponse>> listarProgramas() {
+        return ResponseEntity.ok(manageCatalogo.listarProgramas().stream().map(ProgramaDTOResponse::desde).toList());
     }
 
+    /** Registra un programa adscrito a un departamento. */
     @PostMapping("/programas")
     @PreAuthorize("hasAuthority('ADMINISTRADOR')")
-    public ResponseEntity<CatalogoDTOResponse> crearPrograma(@Valid @RequestBody NombreDTORequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(CatalogoDTOResponse.desde(manageCatalogo.crearPrograma(request.nombre())));
+    public ResponseEntity<ProgramaDTOResponse> crearPrograma(@Valid @RequestBody ProgramaDTORequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ProgramaDTOResponse
+                .desde(manageCatalogo.crearPrograma(request.nombre(), request.departamentoId())));
     }
 }

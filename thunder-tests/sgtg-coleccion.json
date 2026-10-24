@@ -180,6 +180,12 @@
           "value": "201"
         },
         {
+          "type": "json-query",
+          "custom": "json.departamento.id",
+          "action": "equal",
+          "value": "{{departamentoId}}"
+        },
+        {
           "type": "set-env-var",
           "custom": "json.id",
           "action": "setto",
@@ -188,13 +194,14 @@
       ],
       "body": {
         "type": "json",
-        "raw": "{\n  \"nombre\": \"Ingeniería de Sistemas {{#guid}}\"\n}",
+        "raw": "{\n  \"nombre\": \"Ingeniería de Sistemas {{#guid}}\",\n  \"departamentoId\": \"{{departamentoId}}\"\n}",
         "form": []
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{adminToken}}"
-      }
+      },
+      "docs": "Cada programa está adscrito a un departamento: su Comité de Programa lo forman docentes de ese departamento."
     },
     {
       "_id": "2d78840c-8a4e-4c3b-8399-564051f2dd6f",
@@ -375,6 +382,12 @@
           "value": "Usuario"
         },
         {
+          "type": "json-query",
+          "custom": "json.departamento.id",
+          "action": "equal",
+          "value": "{{departamentoId}}"
+        },
+        {
           "type": "set-env-var",
           "custom": "json.id",
           "action": "setto",
@@ -401,13 +414,14 @@
       ],
       "body": {
         "type": "json",
-        "raw": "{\n  \"codigo\": \"C-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"c.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Comite\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"COMITE\"\n  ]\n}",
+        "raw": "{\n  \"codigo\": \"C-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"c.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Comite\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"COMITE\"\n  ],\n  \"tipoVinculacion\": \"PLANTA\",\n  \"departamentoId\": \"{{departamentoId}}\"\n}",
         "form": []
       },
       "auth": {
         "type": "bearer",
         "bearer": "{{adminToken}}"
-      }
+      },
+      "docs": "El Comité solo ve y decide las propuestas de los programas adscritos a su departamento: se crea con su perfil docente."
     },
     {
       "_id": "9753dd56-3172-4e07-be50-94a064f0a226",
@@ -10102,6 +10116,430 @@
         "bearer": "{{decanaturaToken}}"
       },
       "docs": "Dos jurados (uno de ellos fue evaluador del anteproyecto), fecha, hora y salón."
+    },
+    {
+      "_id": "4fa5c2c4-46d9-5b0d-958c-5c527c44ffe7",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Crear departamento de otro programa",
+      "url": "{{baseUrl}}/api/v1/sgtg/catalogos/departamentos",
+      "method": "POST",
+      "sortNum": 1000100,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.id",
+          "action": "setto",
+          "value": "{{otroDepartamentoId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nombre\": \"Telemática {{#guid}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "6d63feb5-0f66-53bd-9fc8-48c99f194a16",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Crear otro programa",
+      "url": "{{baseUrl}}/api/v1/sgtg/catalogos/programas",
+      "method": "POST",
+      "sortNum": 1000200,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.departamento.id",
+          "action": "equal",
+          "value": "{{otroDepartamentoId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nombre\": \"Tecnología en Telemática {{#guid}}\",\n  \"departamentoId\": \"{{otroDepartamentoId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "96d25586-00d9-5fa8-b40e-f8e099b9abe5",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Programa sin departamento (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/catalogos/programas",
+      "method": "POST",
+      "sortNum": 1000300,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nombre\": \"Programa {{#guid}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "95102f13-8116-54b7-b55c-c88d22539f8b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Crear miembro del comité de otro programa",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 1000400,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.departamento.id",
+          "action": "equal",
+          "value": "{{otroDepartamentoId}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{otroComiteEmail}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"CO-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"co.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Comite\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"DOCENTE\",\n    \"COMITE\"\n  ],\n  \"tipoVinculacion\": \"PLANTA\",\n  \"departamentoId\": \"{{otroDepartamentoId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "3ae50875-59b8-55f9-98c1-44d9218712c4",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Crear jefe de otro departamento",
+      "url": "{{baseUrl}}/api/v1/sgtg/usuarios",
+      "method": "POST",
+      "sortNum": 1000500,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.email",
+          "action": "setto",
+          "value": "{{otroJefeEmail}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"codigo\": \"JO-{{#guid}}\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{#number}}{{#number}}\",\n  \"email\": \"jo.{{#guid}}@unicauca.edu.co\",\n  \"password\": \"Clave123*\",\n  \"primerNombre\": \"Usuario\",\n  \"segundoNombre\": \"Jefe\",\n  \"primerApellido\": \"Prueba\",\n  \"segundoApellido\": \"\",\n  \"roles\": [\n    \"DOCENTE\",\n    \"JEFE_DEP\"\n  ],\n  \"tipoVinculacion\": \"PLANTA\",\n  \"departamentoId\": \"{{otroDepartamentoId}}\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{adminToken}}"
+      }
+    },
+    {
+      "_id": "3e33d29e-7d40-5e32-81e5-b6d05804d7ee",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Login comité de otro programa",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 1000600,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{otroComiteToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{otroComiteEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "2df9ca12-6276-59e1-b5ab-cfd14601968c",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "Login jefe de otro departamento",
+      "url": "{{baseUrl}}/api/v1/sgtg/auth/login",
+      "method": "POST",
+      "sortNum": 1000700,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{otroJefeToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{otroJefeEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "32fab1b0-37e2-5966-aaca-c61ea07f4839",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El Comité de otro programa no ve el trabajo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado",
+      "method": "GET",
+      "sortNum": 1000800,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-body",
+          "custom": "",
+          "action": "notcontains",
+          "value": "{\"id\":{{trabajoId}},\"modalidad\""
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroComiteToken}}"
+      },
+      "docs": "El Comité solo ve los trabajos de los programas adscritos a su departamento."
+    },
+    {
+      "_id": "7ccc8b81-677b-5a21-8520-ca26d9ea6364",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El Comité de otro programa no consulta el trabajo (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}",
+      "method": "GET",
+      "sortNum": 1000900,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroComiteToken}}"
+      }
+    },
+    {
+      "_id": "0b2e29cd-fe78-547e-9a92-5f0fba8e758e",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El Comité de otro programa no emite el concepto (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/propuesta/decisiones",
+      "method": "POST",
+      "sortNum": 1001000,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "contains",
+          "value": "Solo el Comité del programa de los estudiantes puede emitir el concepto sobre la propuesta."
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"acta\": \"Acta 99\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-comite.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroComiteToken}}"
+      },
+      "docs": "Se valida antes que la etapa: un Comité de otro programa recibe 403 aunque el trabajo ya no esté en propuesta."
+    },
+    {
+      "_id": "d6c3effa-b72f-5ffd-9aed-22830a14ef67",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El Comité del programa sí ve el trabajo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado",
+      "method": "GET",
+      "sortNum": 1001100,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-body",
+          "custom": "",
+          "action": "contains",
+          "value": "{\"id\":{{trabajoId}},\"modalidad\""
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      }
+    },
+    {
+      "_id": "5b1c3232-4872-52b5-9389-50056876721b",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El jefe de otro departamento no ve el trabajo",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado",
+      "method": "GET",
+      "sortNum": 1001200,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "res-body",
+          "custom": "",
+          "action": "notcontains",
+          "value": "{\"id\":{{trabajoId}},\"modalidad\""
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroJefeToken}}"
+      },
+      "docs": "El jefe solo ve los trabajos cuyo director es de su departamento."
+    },
+    {
+      "_id": "df979818-4c67-5e6d-a0d6-4282aa80dca8",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5b432194-ee63-45b7-bc82-615f72fb4d40",
+      "name": "El jefe de otro departamento no consulta el trabajo (403)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}",
+      "method": "GET",
+      "sortNum": 1001300,
+      "created": "2026-10-23T00:00:00.000Z",
+      "modified": "2026-10-23T00:00:00.000Z",
+      "headers": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{otroJefeToken}}"
+      }
     }
   ],
   "ref": "SGTG"

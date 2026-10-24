@@ -17,7 +17,8 @@ public interface ManageCatalogoGatewayIntPort {
 
     public List<Departamento> listarDepartamentos();
 
-    public Programa crearPrograma(String nombre);
+    /** Registra el programa adscrito al departamento indicado. */
+    public Programa crearPrograma(String nombre, Departamento departamento);
 
     public boolean existePrograma(String nombre);
 

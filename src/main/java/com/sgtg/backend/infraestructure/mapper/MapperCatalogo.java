@@ -23,12 +23,12 @@ public abstract class MapperCatalogo {
     public static Programa toDomain(ProgramaEntity entity) {
         if (entity == null)
             return null;
-        return new Programa(entity.getId(), entity.getNombre());
+        return new Programa(entity.getId(), entity.getNombre(), toDomain(entity.getDepartamento()));
     }
 
     public static ProgramaEntity toEntity(Programa programa) {
         if (programa == null)
             return null;
-        return new ProgramaEntity(programa.id(), programa.nombre());
+        return new ProgramaEntity(programa.id(), programa.nombre(), toEntity(programa.departamento()));
     }
 }

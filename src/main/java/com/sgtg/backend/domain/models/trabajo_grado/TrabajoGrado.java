@@ -17,6 +17,7 @@ import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.Participante;
+import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.utils.CheckString;
 import com.sgtg.backend.domain.utils.CheckString;
@@ -148,6 +149,10 @@ public abstract class TrabajoGrado {
             for (int j = i + 1; j < estudiantes.size(); j++)
                 if (estudiantes.get(i).esMismaPersona(estudiantes.get(j)))
                     throw new ReglaNegocioException("error.dominio.trabajo_grado.estudiante_repetido");
+        // Un solo Comité de Programa emite el concepto: todos los estudiantes son del mismo programa
+        Programa programa = estudiantes.get(0).getPrograma();
+        if (estudiantes.stream().anyMatch(estudiante -> !estudiante.getPrograma().esMismo(programa)))
+            throw new ReglaNegocioException("error.dominio.trabajo_grado.estudiantes_de_otro_programa");
     }
 
     private static void validarDireccion(Director director, Director codirector, List<Estudiante> estudiantes) {
@@ -1085,6 +1090,15 @@ public abstract class TrabajoGrado {
 
     public List<Estudiante> getEstudiantes() {
         return Collections.unmodifiableList(estudiantes);
+    }
+
+    /**
+     * @return programa académico del trabajo: el de sus estudiantes, que son
+     *         todos del mismo programa; su Comité de Programa emite el concepto
+     *         sobre la propuesta
+     */
+    public Programa getPrograma() {
+        return estudiantes.get(0).getPrograma();
     }
 
     public Director getDirector() {

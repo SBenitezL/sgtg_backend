@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 import com.sgtg.backend.application.input.trabajo_grado.DatosAsesor;
@@ -19,9 +21,11 @@ import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntP
 import com.sgtg.backend.application.input.trabajo_grado.NuevoTrabajoGrado;
 import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
 import com.sgtg.backend.application.output.ManageArchivoGatewayIntPort;
+import com.sgtg.backend.application.output.ManageCatalogoGatewayIntPort;
 import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
 import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
+import com.sgtg.backend.domain.models.Role;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
 import com.sgtg.backend.domain.models.comun.Concepto;
@@ -31,11 +35,13 @@ import com.sgtg.backend.domain.models.comun.Organo;
 import com.sgtg.backend.domain.models.comun.ResultadoConcepto;
 import com.sgtg.backend.domain.models.notificacion.EventoTrabajoGrado;
 import com.sgtg.backend.domain.models.participantes.Asesor;
+import com.sgtg.backend.domain.models.participantes.Departamento;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
+import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.trabajo_grado.Calificacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
@@ -56,10 +62,13 @@ import com.sgtg.backend.domain.utils.CheckString;
  */
 public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntPort {
 
-    /** Roles que pueden consultar cualquier trabajo de grado sin participar en él */
-    private static final Set<String> ROLES_CONSULTA_GENERAL = Set.of(RoleAdmited.COMITE.name(),
-            RoleAdmited.JEFE_DEP.name(), RoleAdmited.CONSEJO.name(), RoleAdmited.ADMINISTRADOR.name(),
-            RoleAdmited.DECANATURA.name());
+    /**
+     * Roles que pueden consultar cualquier trabajo de grado sin participar en él.
+     * COMITE y JEFE_DEP solo consultan los de su programa o departamento (ver
+     * {@link #alcanceDeConsulta}).
+     */
+    private static final Set<String> ROLES_CONSULTA_GENERAL = Set.of(RoleAdmited.CONSEJO.name(),
+            RoleAdmited.ADMINISTRADOR.name(), RoleAdmited.DECANATURA.name());
 
     /** Firma con la que inicia todo archivo PDF */
     private static final byte[] FIRMA_PDF = "%PDF-".getBytes(StandardCharsets.US_ASCII);
@@ -67,6 +76,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     private final ManageTrabajoGradoGatewayIntPort trabajoGateway;
     private final ManageUserGatewayIntPort userGateway;
     private final ManagePerfilGatewayIntPort perfilGateway;
+    private final ManageCatalogoGatewayIntPort catalogoGateway;
     private final ManageArchivoGatewayIntPort archivoGateway;
     private final CalendarioHabil calendario;
     private final Clock clock;
@@ -75,11 +85,13 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     public ManageTrabajoGradoCUImplAdapter(ManageTrabajoGradoGatewayIntPort trabajoGateway,
             ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
-            ManageArchivoGatewayIntPort archivoGateway, CalendarioHabil calendario, Clock clock,
-            ExceptionFormatterIntPort exceptionFormatter, NotificadorTrabajoGrado notificador) {
+            ManageCatalogoGatewayIntPort catalogoGateway, ManageArchivoGatewayIntPort archivoGateway,
+            CalendarioHabil calendario, Clock clock, ExceptionFormatterIntPort exceptionFormatter,
+            NotificadorTrabajoGrado notificador) {
         this.trabajoGateway = trabajoGateway;
         this.userGateway = userGateway;
         this.perfilGateway = perfilGateway;
+        this.catalogoGateway = catalogoGateway;
         this.archivoGateway = archivoGateway;
         this.calendario = calendario;
         this.clock = clock;
@@ -184,15 +196,15 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
-    public List<TrabajoGrado> listarPorEtapa(Proceso etapa) {
+    public List<TrabajoGrado> listarPorEtapa(Proceso etapa, Long usuarioId) {
         if (etapa == null)
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.etapa_obligatoria");
-        return this.trabajoGateway.listarPorEtapa(etapa);
+        return this.trabajoGateway.listarPorEtapa(etapa).stream().filter(alcanceDeConsulta(usuarioId)).toList();
     }
 
     @Override
-    public List<TrabajoGrado> listarTodos() {
-        return this.trabajoGateway.listarTodos();
+    public List<TrabajoGrado> listarTodos(Long usuarioId) {
+        return this.trabajoGateway.listarTodos().stream().filter(alcanceDeConsulta(usuarioId)).toList();
     }
 
     @Override
@@ -247,6 +259,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
             String acta, ArchivoAdjunto soporte, String observaciones, LocalDate fecha) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Usuario responsable = cargarUsuario(usuarioId);
+        validarComiteDelPrograma(trabajo, usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.ACTA_COMITE, soporte, rutas);
         return notificar(conArchivos(rutas, () -> {
@@ -255,6 +268,20 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
             trabajo.registrarDecisionComite(decision, responsable.getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.DECISION_COMITE, usuarioId, texto(resultado));
+    }
+
+    /**
+     * El Comité del programa de los estudiantes emite el concepto sobre la
+     * propuesta (Art. 11): sus miembros son docentes del departamento al que
+     * está adscrito el programa.
+     */
+    private void validarComiteDelPrograma(TrabajoGrado trabajo, Long usuarioId) {
+        PerfilDocente perfil = this.perfilGateway.buscarPerfilDocente(usuarioId);
+        if (perfil == null)
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.comite_sin_perfil");
+        Programa programa = this.catalogoGateway.buscarPrograma(trabajo.getPrograma().id());
+        if (programa == null || !programa.esDelDepartamento(perfil.getDepartamento()))
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.otro_programa");
     }
 
     @Override
@@ -725,7 +752,39 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     private boolean puedeConsultar(TrabajoGrado trabajo, Long usuarioId) {
-        return trabajo.participa(usuarioId) || tieneRolDeConsultaGeneral(usuarioId);
+        return alcanceDeConsulta(usuarioId).test(trabajo);
+    }
+
+    /**
+     * Trabajos que el usuario puede consultar: aquellos en los que participa;
+     * todos, si tiene un rol de consulta general; los del programa adscrito a su
+     * departamento, si es del Comité (Art. 11), y los de su departamento (el del
+     * director), si es jefe (Art. 13). Sin perfil docente, el Comité y el jefe
+     * solo consultan aquellos en los que participan.
+     */
+    private Predicate<TrabajoGrado> alcanceDeConsulta(Long usuarioId) {
+        Usuario usuario = this.userGateway.findById(usuarioId);
+        Set<String> roles = usuario == null || usuario.getRole() == null ? Set.of()
+                : usuario.getRole().stream().map(Role::getTrole).collect(Collectors.toSet());
+        if (roles.stream().anyMatch(ROLES_CONSULTA_GENERAL::contains))
+            return trabajo -> true;
+        Predicate<TrabajoGrado> alcance = trabajo -> trabajo.participa(usuarioId);
+        boolean comite = roles.contains(RoleAdmited.COMITE.name());
+        boolean jefe = roles.contains(RoleAdmited.JEFE_DEP.name());
+        PerfilDocente perfil = comite || jefe ? this.perfilGateway.buscarPerfilDocente(usuarioId) : null;
+        if (perfil == null)
+            return alcance;
+        Departamento departamento = perfil.getDepartamento();
+        if (jefe)
+            alcance = alcance.or(trabajo -> departamento.esMismo(trabajo.getDirector().getDepartamento()));
+        if (comite) {
+            Set<Long> programas = this.catalogoGateway.listarProgramas().stream()
+                    .filter(programa -> programa.esDelDepartamento(departamento))
+                    .map(Programa::id)
+                    .collect(Collectors.toSet());
+            alcance = alcance.or(trabajo -> programas.contains(trabajo.getPrograma().id()));
+        }
+        return alcance;
     }
 
     /**
@@ -797,11 +856,5 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         return new Asesor(null, datos.codigo(), new NombrePersona(datos.primerNombre(), datos.segundoNombre(),
                 datos.primerApellido(), datos.segundoApellido()), datos.email(), datos.organizacion(),
                 datos.externo());
-    }
-
-    private boolean tieneRolDeConsultaGeneral(Long usuarioId) {
-        Usuario usuario = this.userGateway.findById(usuarioId);
-        return usuario != null
-                && usuario.getRole().stream().anyMatch(role -> ROLES_CONSULTA_GENERAL.contains(role.getTrole()));
     }
 }

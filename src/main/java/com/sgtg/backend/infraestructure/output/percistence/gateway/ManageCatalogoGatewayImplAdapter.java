@@ -46,8 +46,9 @@ public class ManageCatalogoGatewayImplAdapter implements ManageCatalogoGatewayIn
     }
 
     @Override
-    public Programa crearPrograma(String nombre) {
-        ProgramaEntity entity = ProgramaEntity.builder().nombre(nombre).build();
+    public Programa crearPrograma(String nombre, Departamento departamento) {
+        ProgramaEntity entity = ProgramaEntity.builder().nombre(nombre)
+                .departamento(MapperCatalogo.toEntity(departamento)).build();
         return MapperCatalogo.toDomain(programaRepository.save(entity));
     }
 

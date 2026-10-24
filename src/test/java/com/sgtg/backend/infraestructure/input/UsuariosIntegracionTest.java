@@ -1,5 +1,6 @@
 package com.sgtg.backend.infraestructure.input;
 
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -105,10 +106,24 @@ class UsuariosIntegracionTest {
                 Map.of("email", "admin@sgtg.test", "password", "Admin123*")).andReturn().getResponse()
                 .getContentAsString(), "$.token");
         departamentoId = id(enviar(post(API + "/catalogos/departamentos"), admin, Map.of("nombre", "Depto " + sufijo)));
-        programaId = id(enviar(post(API + "/catalogos/programas"), admin, Map.of("nombre", "Programa " + sufijo)));
+        programaId = id(enviar(post(API + "/catalogos/programas"), admin,
+                Map.of("nombre", "Programa " + sufijo, "departamentoId", departamentoId)));
     }
 
     // ----- Pruebas -----
+
+    @Test
+    void cadaProgramaQuedaAdscritoAUnDepartamento() throws Exception {
+        enviar(post(API + "/catalogos/programas"), admin, Map.of("nombre", "Sin depto " + sufijo))
+                .andExpect(status().isBadRequest());
+        enviar(post(API + "/catalogos/programas"), admin,
+                Map.of("nombre", "Depto inexistente " + sufijo, "departamentoId", 999999))
+                .andExpect(status().isNotFound());
+        enviar(get(API + "/catalogos/programas"), admin, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + programaId + ")].departamento.id")
+                        .value(contains((int) departamentoId)));
+    }
 
     @Test
     void creaUsuariosConSuPerfilEnUnaSolaPeticion() throws Exception {

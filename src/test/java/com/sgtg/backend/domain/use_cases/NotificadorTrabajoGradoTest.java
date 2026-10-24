@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.sgtg.backend.application.output.ManageCatalogoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageNotificacionGatewayIntPort;
 import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
@@ -66,6 +67,7 @@ class NotificadorTrabajoGradoTest {
     private final CalendarioHabil calendario = new CalendarioHabilFalso();
     private ManageNotificacionGatewayIntPort notificacionGateway;
     private ManagePerfilGatewayIntPort perfilGateway;
+    private ManageCatalogoGatewayIntPort catalogoGateway;
     private ManageUserGatewayIntPort userGateway;
     private NotificadorTrabajoGrado notificador;
 
@@ -108,15 +110,25 @@ class NotificadorTrabajoGradoTest {
         notificacionGateway = mock(ManageNotificacionGatewayIntPort.class);
         userGateway = mock(ManageUserGatewayIntPort.class);
         perfilGateway = mock(ManagePerfilGatewayIntPort.class);
-        // Comité (50, y 51 inactivo), Consejo (70), jefes de Sistemas (60) y de Telemática (61)
+        catalogoGateway = mock(ManageCatalogoGatewayIntPort.class);
+        // Comité de Sistemas (50, y 51 inactivo), comité de Telemática (52), Consejo (70),
+        // jefes de Sistemas (60) y de Telemática (61)
         when(userGateway.listar()).thenReturn(List.of(usuario(50L, true, RoleAdmited.COMITE),
-                usuario(51L, false, RoleAdmited.COMITE), usuario(70L, true, RoleAdmited.CONSEJO),
+                usuario(51L, false, RoleAdmited.COMITE), usuario(52L, true, RoleAdmited.COMITE),
+                usuario(70L, true, RoleAdmited.CONSEJO),
                 usuario(60L, true, RoleAdmited.JEFE_DEP, RoleAdmited.DOCENTE),
                 usuario(61L, true, RoleAdmited.JEFE_DEP, RoleAdmited.DOCENTE)));
+        when(perfilGateway.buscarPerfilDocente(50L)).thenReturn(new PerfilDocente(50L, TipoVinculacion.PLANTA, SISTEMAS));
+        when(perfilGateway.buscarPerfilDocente(51L)).thenReturn(new PerfilDocente(51L, TipoVinculacion.PLANTA, SISTEMAS));
+        when(perfilGateway.buscarPerfilDocente(52L))
+                .thenReturn(new PerfilDocente(52L, TipoVinculacion.PLANTA, TELEMATICA));
         when(perfilGateway.buscarPerfilDocente(60L)).thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, SISTEMAS));
         when(perfilGateway.buscarPerfilDocente(61L))
                 .thenReturn(new PerfilDocente(61L, TipoVinculacion.PLANTA, TELEMATICA));
-        notificador = new NotificadorTrabajoGrado(notificacionGateway, userGateway, perfilGateway, RELOJ);
+        // Ingeniería de Sistemas está adscrito al departamento de Sistemas
+        when(catalogoGateway.buscarPrograma(1L)).thenReturn(new Programa(1L, "Ingeniería de Sistemas", SISTEMAS));
+        notificador = new NotificadorTrabajoGrado(notificacionGateway, userGateway, perfilGateway, catalogoGateway,
+                RELOJ);
     }
 
     @Test
@@ -127,7 +139,8 @@ class NotificadorTrabajoGradoTest {
         notificador.notificar(trabajo, EventoTrabajoGrado.PROPUESTA_RADICADA, 1L, null);
 
         List<Notificacion> notificaciones = guardadas();
-        // Comité activo, estudiante y codirector; no el director que radicó ni el comité inactivo
+        // Comité activo del programa, estudiante y codirector; no el director que radicó, el comité inactivo
+        // ni el Comité de otro programa
         assertEquals(Set.of(50L, 10L, 2L), usuarios(notificaciones));
         Notificacion una = notificaciones.get(0);
         assertEquals(TipoNotificacion.INFO, una.tipo());
@@ -137,6 +150,18 @@ class NotificadorTrabajoGradoTest {
         assertEquals(Proceso.PROPUESTA, una.etapa());
         assertEquals(LocalDateTime.of(2026, 3, 2, 10, 0), una.fecha());
         assertEquals(false, una.leida());
+    }
+
+    @Test
+    void elComiteQueSeNotificaEsElDelProgramaDeLosEstudiantes() {
+        TrabajoInvestigacion trabajo = trabajo();
+        trabajo.radicarPropuesta("1/PROPUESTA/v1/p.pdf", LUNES, calendario);
+        // Si el programa pasa al departamento de Telemática, se notifica a su Comité
+        when(catalogoGateway.buscarPrograma(1L)).thenReturn(new Programa(1L, "Ingeniería de Sistemas", TELEMATICA));
+
+        notificador.notificar(trabajo, EventoTrabajoGrado.PROPUESTA_RADICADA, 1L, null);
+
+        assertEquals(Set.of(52L, 10L, 2L), usuarios(guardadas()));
     }
 
     @Test

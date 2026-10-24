@@ -146,17 +146,86 @@ class FlujoPropuestaIntegracionTest {
         admin = login("admin@sgtg.test", "Admin123*");
         departamentoId = id(enviar(post(API + "/catalogos/departamentos"), admin, Map.of("nombre", "Depto " + sufijo))
                 .andExpect(status().isCreated()), "$.id");
-        programaId = id(enviar(post(API + "/catalogos/programas"), admin, Map.of("nombre", "Programa " + sufijo))
+        programaId = id(enviar(post(API + "/catalogos/programas"), admin,
+                Map.of("nombre", "Programa " + sufijo, "departamentoId", departamentoId))
                 .andExpect(status().isCreated()), "$.id");
+    }
+
+    /** Crea un miembro del Comité del programa: docente del departamento al que está adscrito. */
+    private long crearComite(String codigo, long departamento) throws Exception {
+        long comiteId = crearUsuario(codigo, "COMITE");
+        enviar(put(API + "/perfiles/docentes/" + comiteId), admin,
+                Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamento)).andExpect(status().isOk());
+        return comiteId;
     }
 
     // ----- Pruebas -----
 
     @Test
+    void elComiteSoloAtiendeLasPropuestasDelProgramaDeSuDepartamento() throws Exception {
+        long docenteId = crearUsuario("D", "DOCENTE");
+        long estudianteId = crearUsuario("E", "ESTUDIANTE");
+        long otroEstudianteId = crearUsuario("F", "ESTUDIANTE");
+        crearComite("C", departamentoId);
+        // Otro programa, adscrito a otro departamento, con su propio Comité
+        long otroDepartamentoId = id(enviar(post(API + "/catalogos/departamentos"), admin,
+                Map.of("nombre", "Otro depto " + sufijo)).andExpect(status().isCreated()), "$.id");
+        long otroProgramaId = id(enviar(post(API + "/catalogos/programas"), admin,
+                Map.of("nombre", "Otro programa " + sufijo, "departamentoId", otroDepartamentoId))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.departamento.id").value(otroDepartamentoId)), "$.id");
+        crearComite("O", otroDepartamentoId);
+        enviar(put(API + "/perfiles/docentes/" + docenteId), admin,
+                Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamentoId)).andExpect(status().isOk());
+        enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
+                .andExpect(status().isOk());
+        enviar(put(API + "/perfiles/estudiantes/" + otroEstudianteId), admin, Map.of("programaId", otroProgramaId))
+                .andExpect(status().isOk());
+        String docente = login(correo("D"), CLAVE);
+
+        // Los estudiantes de un trabajo son del mismo programa
+        enviar(post(API + "/trabajos-grado/investigacion"), docente, Map.of("titulo", "T", "objetivos", List.of("O"),
+                "estudiantesIds", List.of(estudianteId, otroEstudianteId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Todos los estudiantes del trabajo de grado deben ser del mismo programa."));
+
+        long trabajoId = id(enviar(post(API + "/trabajos-grado/investigacion"), docente,
+                Map.of("titulo", "Sistema de gestión", "objetivos", List.of("Objetivo general"),
+                        "estudiantesIds", List.of(estudianteId)))
+                .andExpect(status().isCreated()), "$.id");
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
+                .andExpect(status().isOk());
+
+        // El Comité del otro programa no ve el trabajo, no lo consulta y no emite el concepto
+        String trabajoEnLista = "$[?(@.id == " + trabajoId + ")]";
+        String otroComite = login(correo("O"), CLAVE);
+        enviar(get(API + "/trabajos-grado"), otroComite, null)
+                .andExpect(status().isOk()).andExpect(jsonPath(trabajoEnLista).isEmpty());
+        enviar(get(API + "/trabajos-grado?etapa=PROPUESTA"), otroComite, null)
+                .andExpect(status().isOk()).andExpect(jsonPath(trabajoEnLista).isEmpty());
+        enviar(get(API + "/trabajos-grado/" + trabajoId), otroComite, null).andExpect(status().isForbidden());
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", otroComite,
+                Map.of("resultado", "APROBADO", "acta", "Acta 01"), archivo("acta-01.pdf"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", containsString(
+                        "Solo el Comité del programa de los estudiantes puede emitir el concepto sobre la propuesta.")));
+
+        // El Comité del programa sí lo ve y emite el concepto
+        String comite = login(correo("C"), CLAVE);
+        enviar(get(API + "/trabajos-grado?etapa=PROPUESTA"), comite, null)
+                .andExpect(status().isOk()).andExpect(jsonPath(trabajoEnLista).isNotEmpty());
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta/decisiones", comite,
+                Map.of("resultado", "APROBADO", "acta", "Acta 01"), archivo("acta-01.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.etapa").value("ANTEPROYECTO"));
+    }
+
+    @Test
     void flujoCompletoDeLaPropuesta() throws Exception {
         long docenteId = crearUsuario("D", "DOCENTE");
         long estudianteId = crearUsuario("E", "ESTUDIANTE");
-        crearUsuario("C", "COMITE");
+        crearComite("C", departamentoId);
         enviar(put(API + "/perfiles/docentes/" + docenteId), admin,
                 Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamentoId)).andExpect(status().isOk());
         enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
@@ -296,7 +365,7 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(status().isForbidden());
         enviar(post(API + "/usuarios"), estudiante, datosUsuario("X", documento(9), "ADMINISTRADOR"))
                 .andExpect(status().isForbidden());
-        enviar(post(API + "/catalogos/programas"), estudiante, Map.of("nombre", "P"))
+        enviar(post(API + "/catalogos/programas"), estudiante, Map.of("nombre", "P", "departamentoId", departamentoId))
                 .andExpect(status().isForbidden());
         // Pero sí consulta sus propios datos
         enviar(get(API + "/usuarios/me"), estudiante, null)
@@ -347,7 +416,7 @@ class FlujoPropuestaIntegracionTest {
     void notificacionesDelBuzonYAnulacionDelDirector() throws Exception {
         long docenteId = crearUsuario("D", "DOCENTE");
         long estudianteId = crearUsuario("E", "ESTUDIANTE");
-        crearUsuario("C", "COMITE");
+        crearComite("C", departamentoId);
         crearUsuario("K", "DECANATURA");
         enviar(put(API + "/perfiles/docentes/" + docenteId), admin,
                 Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamentoId)).andExpect(status().isOk());

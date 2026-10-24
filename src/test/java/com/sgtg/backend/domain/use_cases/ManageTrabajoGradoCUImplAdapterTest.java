@@ -26,6 +26,7 @@ import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 import com.sgtg.backend.application.input.trabajo_grado.DatosAsesor;
 import com.sgtg.backend.application.input.trabajo_grado.NuevoTrabajoGrado;
 import com.sgtg.backend.application.output.ManageArchivoGatewayIntPort;
+import com.sgtg.backend.application.output.ManageCatalogoGatewayIntPort;
 import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
 import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
@@ -68,7 +69,9 @@ import com.sgtg.backend.infraestructure.output.formatter.ExceptionFormatterImplA
 class ManageTrabajoGradoCUImplAdapterTest {
 
     private static final Departamento SISTEMAS = new Departamento(1L, "Sistemas");
+    private static final Departamento TELEMATICA = new Departamento(2L, "Telemática");
     private static final Programa ING_SISTEMAS = new Programa(1L, "Ingeniería de Sistemas");
+    private static final Programa TEC_TELEMATICA = new Programa(2L, "Tecnología en Telemática");
     /** Lunes 2 de marzo de 2026 a las 10:00 en Bogotá */
     private static final Clock RELOJ = Clock.fixed(
             LocalDate.of(2026, 3, 2).atTime(10, 0).atZone(ZoneId.of("America/Bogota")).toInstant(),
@@ -77,6 +80,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     private ManageTrabajoGradoGatewayIntPort trabajoGateway;
     private ManageUserGatewayIntPort userGateway;
     private ManagePerfilGatewayIntPort perfilGateway;
+    private ManageCatalogoGatewayIntPort catalogoGateway;
     private ManageArchivoGatewayIntPort archivoGateway;
     private NotificadorTrabajoGrado notificador;
     private ManageTrabajoGradoCUImplAdapter casoDeUso;
@@ -92,23 +96,43 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoGateway = mock(ManageTrabajoGradoGatewayIntPort.class);
         userGateway = mock(ManageUserGatewayIntPort.class);
         perfilGateway = mock(ManagePerfilGatewayIntPort.class);
+        catalogoGateway = mock(ManageCatalogoGatewayIntPort.class);
         archivoGateway = mock(ManageArchivoGatewayIntPort.class);
         notificador = mock(NotificadorTrabajoGrado.class);
-        casoDeUso = new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
-                new CalendarioHabilFalso(), RELOJ, new ExceptionFormatterImplAdapter(), notificador);
+        casoDeUso = casoDeUsoCon(RELOJ);
 
-        // Director (1), estudiante (10), miembro del comité (50) y usuario sin relación (99)
+        // Catálogo: Ingeniería de Sistemas está adscrito a Sistemas y Tecnología en Telemática a Telemática
+        Programa sistemasEnCatalogo = new Programa(1L, "Ingeniería de Sistemas", SISTEMAS);
+        Programa telematicaEnCatalogo = new Programa(2L, "Tecnología en Telemática", TELEMATICA);
+        when(catalogoGateway.buscarPrograma(1L)).thenReturn(sistemasEnCatalogo);
+        when(catalogoGateway.buscarPrograma(2L)).thenReturn(telematicaEnCatalogo);
+        when(catalogoGateway.listarProgramas()).thenReturn(List.of(sistemasEnCatalogo, telematicaEnCatalogo));
+
+        // Director (1), estudiantes de Sistemas (10) y de Telemática (11), miembro del comité de Sistemas (50)
+        // y usuario sin relación (99)
         when(userGateway.findById(1L)).thenReturn(usuario(1L, RoleAdmited.DOCENTE));
         when(perfilGateway.buscarPerfilDocente(1L))
                 .thenReturn(new PerfilDocente(1L, TipoVinculacion.PLANTA, SISTEMAS));
         when(userGateway.findById(10L)).thenReturn(usuario(10L, RoleAdmited.ESTUDIANTE));
         when(perfilGateway.buscarPerfilEstudiante(10L)).thenReturn(new PerfilEstudiante(10L, ING_SISTEMAS));
+        when(userGateway.findById(11L)).thenReturn(usuario(11L, RoleAdmited.ESTUDIANTE));
+        when(perfilGateway.buscarPerfilEstudiante(11L)).thenReturn(new PerfilEstudiante(11L, TEC_TELEMATICA));
         when(userGateway.findById(50L)).thenReturn(usuario(50L, RoleAdmited.COMITE));
+        when(perfilGateway.buscarPerfilDocente(50L))
+                .thenReturn(new PerfilDocente(50L, TipoVinculacion.PLANTA, SISTEMAS));
         when(userGateway.findById(99L)).thenReturn(usuario(99L, RoleAdmited.DOCENTE));
-        // Jefe del departamento de Sistemas (60) y evaluadores (20, 21)
+        // Miembro del comité de Telemática (51) y del comité sin perfil docente (52)
+        when(userGateway.findById(51L)).thenReturn(usuario(51L, RoleAdmited.COMITE, RoleAdmited.DOCENTE));
+        when(perfilGateway.buscarPerfilDocente(51L))
+                .thenReturn(new PerfilDocente(51L, TipoVinculacion.PLANTA, TELEMATICA));
+        when(userGateway.findById(52L)).thenReturn(usuario(52L, RoleAdmited.COMITE));
+        // Jefes de los departamentos de Sistemas (60) y Telemática (61), y evaluadores (20, 21)
         when(userGateway.findById(60L)).thenReturn(usuario(60L, RoleAdmited.JEFE_DEP, RoleAdmited.DOCENTE));
         when(perfilGateway.buscarPerfilDocente(60L))
                 .thenReturn(new PerfilDocente(60L, TipoVinculacion.PLANTA, SISTEMAS));
+        when(userGateway.findById(61L)).thenReturn(usuario(61L, RoleAdmited.JEFE_DEP, RoleAdmited.DOCENTE));
+        when(perfilGateway.buscarPerfilDocente(61L))
+                .thenReturn(new PerfilDocente(61L, TipoVinculacion.PLANTA, TELEMATICA));
         when(userGateway.findById(20L)).thenReturn(usuario(20L, RoleAdmited.DOCENTE));
         when(userGateway.findById(21L)).thenReturn(usuario(21L, RoleAdmited.EVALUADOR));
         // Miembro del Consejo de Facultad (70) y jurado de otros trabajos (30)
@@ -119,6 +143,12 @@ class ManageTrabajoGradoCUImplAdapterTest {
         // El almacenamiento devuelve <trabajo>/<carpeta>/v1/<nombre>
         when(archivoGateway.guardar(any(), any(), any(), any())).thenAnswer(invocacion -> invocacion.getArgument(0)
                 + "/" + invocacion.getArgument(1) + "/v1/" + ((ArchivoAdjunto) invocacion.getArgument(3)).nombre());
+    }
+
+    /** Caso de uso con el reloj dado. */
+    private ManageTrabajoGradoCUImplAdapter casoDeUsoCon(Clock reloj) {
+        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, catalogoGateway,
+                archivoGateway, new CalendarioHabilFalso(), reloj, new ExceptionFormatterImplAdapter(), notificador);
     }
 
     /** Archivo PDF de prueba con el nombre dado. */
@@ -535,11 +565,9 @@ class ManageTrabajoGradoCUImplAdapterTest {
         TrabajoGrado suspendido = casoDeUso.resolverSuspension(7L, 70L, ResultadoConcepto.APROBADO,
                 pdf("res-400.pdf"), null);
         when(trabajoGateway.listarPorEtapa(Proceso.SUSPENDIDO)).thenReturn(List.of(suspendido));
-        ManageTrabajoGradoCUImplAdapter enEnero = new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway,
-                perfilGateway, archivoGateway, new CalendarioHabilFalso(),
+        ManageTrabajoGradoCUImplAdapter enEnero = casoDeUsoCon(
                 Clock.fixed(LocalDate.of(2027, 1, 1).atTime(0, 5).atZone(ZoneId.of("America/Bogota")).toInstant(),
-                        ZoneId.of("America/Bogota")),
-                new ExceptionFormatterImplAdapter(), notificador);
+                        ZoneId.of("America/Bogota")));
 
         assertEquals(1, enEnero.verificarVencimientos());
         assertEquals(Proceso.EN_CURSO, suspendido.getEtapa());
@@ -547,10 +575,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
 
     /** Caso de uso con el reloj en la fecha dada (10:00, hora de Bogotá). */
     private ManageTrabajoGradoCUImplAdapter casoDeUsoEn(LocalDate fecha) {
-        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
-                new CalendarioHabilFalso(), Clock.fixed(fecha.atTime(10, 0).atZone(ZoneId.of("America/Bogota"))
-                        .toInstant(), ZoneId.of("America/Bogota")),
-                new ExceptionFormatterImplAdapter(), notificador);
+        return casoDeUsoCon(Clock.fixed(fecha.atTime(10, 0).atZone(ZoneId.of("America/Bogota")).toInstant(),
+                ZoneId.of("America/Bogota")));
     }
 
     /** Solicita la sustentación con monografía y formato E (sin anexos). */
@@ -725,14 +751,14 @@ class ManageTrabajoGradoCUImplAdapterTest {
 
     @Test
     void listarTodosDelegaAlGateway() {
-        casoDeUso.listarTodos();
+        casoDeUso.listarTodos(70L);
         verify(trabajoGateway).listarTodos();
     }
 
     @Test
     void listarPorEtapaExigeLaEtapa() {
-        assertThrows(BusinessRuleException.class, () -> casoDeUso.listarPorEtapa(null));
-        casoDeUso.listarPorEtapa(Proceso.ANTEPROYECTO);
+        assertThrows(BusinessRuleException.class, () -> casoDeUso.listarPorEtapa(null, 70L));
+        casoDeUso.listarPorEtapa(Proceso.ANTEPROYECTO, 70L);
         verify(trabajoGateway).listarPorEtapa(Proceso.ANTEPROYECTO);
     }
 
@@ -741,7 +767,53 @@ class ManageTrabajoGradoCUImplAdapterTest {
         TrabajoGrado trabajo = trabajoGuardado();
         assertSame(trabajo, casoDeUso.consultar(7L, 10L));
         assertSame(trabajo, casoDeUso.consultar(7L, 50L));
+        assertSame(trabajo, casoDeUso.consultar(7L, 70L));
         assertThrows(NoAccessException.class, () -> casoDeUso.consultar(7L, 99L));
+    }
+
+    @Test
+    void elComiteYElJefeSoloConsultanLosTrabajosDeSuProgramaYDepartamento() {
+        // Trabajo de un estudiante de Ingeniería de Sistemas con director del departamento de Sistemas
+        TrabajoGrado trabajo = trabajoGuardado();
+        when(trabajoGateway.listarTodos()).thenReturn(List.of(trabajo));
+        when(trabajoGateway.listarPorEtapa(Proceso.PROPUESTA)).thenReturn(List.of(trabajo));
+
+        // Comité de Sistemas, jefe de Sistemas y Consejo lo ven
+        assertEquals(List.of(trabajo), casoDeUso.listarTodos(50L));
+        assertEquals(List.of(trabajo), casoDeUso.listarPorEtapa(Proceso.PROPUESTA, 60L));
+        assertEquals(List.of(trabajo), casoDeUso.listarTodos(70L));
+        assertSame(trabajo, casoDeUso.consultar(7L, 60L));
+        // Comité y jefe de Telemática no lo ven ni lo consultan
+        assertTrue(casoDeUso.listarTodos(51L).isEmpty());
+        assertTrue(casoDeUso.listarPorEtapa(Proceso.PROPUESTA, 61L).isEmpty());
+        assertThrows(NoAccessException.class, () -> casoDeUso.consultar(7L, 51L));
+        assertThrows(NoAccessException.class, () -> casoDeUso.consultar(7L, 61L));
+        assertThrows(NoAccessException.class, () -> casoDeUso.obtenerArchivo(7L, 51L, "7/TI-A/v1/a.pdf"));
+        // Sin perfil docente, el Comité no ve trabajos en los que no participa
+        assertTrue(casoDeUso.listarTodos(52L).isEmpty());
+    }
+
+    @Test
+    void soloElComiteDelProgramaEmiteElConcepto() {
+        trabajoGuardado();
+        casoDeUso.radicarPropuesta(7L, 1L, pdf("p.pdf"));
+
+        NoAccessException otroPrograma = assertThrows(NoAccessException.class, () -> casoDeUso
+                .registrarDecisionComite(7L, 51L, ResultadoConcepto.APROBADO, "Acta 1", pdf("acta.pdf"), null, null));
+        assertEquals("error.trabajo_grado.otro_programa", otroPrograma.getMessage());
+        BusinessRuleException sinPerfil = assertThrows(BusinessRuleException.class, () -> casoDeUso
+                .registrarDecisionComite(7L, 52L, ResultadoConcepto.APROBADO, "Acta 1", pdf("acta.pdf"), null, null));
+        assertEquals("error.trabajo_grado.comite_sin_perfil", sinPerfil.getBusinessRule());
+        verify(archivoGateway, never()).guardar(any(), eq("ACTA_COMITE"), any(), any());
+    }
+
+    @Test
+    void losEstudiantesDelTrabajoSonDelMismoPrograma() {
+        NuevoTrabajoGrado mezclado = new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título",
+                List.of("Objetivo"), List.of(10L, 11L), null, null, null);
+
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> casoDeUso.crear(1L, mezclado));
+        assertEquals("error.dominio.trabajo_grado.estudiantes_de_otro_programa", error.getMessage());
     }
 
     // ----- Archivos -----

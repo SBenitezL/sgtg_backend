@@ -153,9 +153,10 @@ class FlujoAnteproyectoIntegracionTest {
     private long trabajoEnAnteproyecto() throws Exception {
         long docenteId = crearUsuario("D", "DOCENTE");
         long estudianteId = crearUsuario("E", "ESTUDIANTE");
-        crearUsuario("C", "COMITE");
+        long comiteId = crearUsuario("C", "COMITE");
         long jefeId = crearUsuario("J", "JEFE_DEP", "DOCENTE");
         perfilDocente(docenteId, departamentoId);
+        perfilDocente(comiteId, departamentoId);
         perfilDocente(jefeId, departamentoId);
         enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
                 .andExpect(status().isOk());
@@ -180,7 +181,8 @@ class FlujoAnteproyectoIntegracionTest {
         documentos = 0;
         admin = login("admin@sgtg.test", "Admin123*");
         departamentoId = crearDepartamento("Depto");
-        programaId = id(enviar(post(API + "/catalogos/programas"), admin, Map.of("nombre", "Programa " + sufijo))
+        programaId = id(enviar(post(API + "/catalogos/programas"), admin,
+                Map.of("nombre", "Programa " + sufijo, "departamentoId", departamentoId))
                 .andExpect(status().isCreated()), "$.id");
     }
 
@@ -526,8 +528,16 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.message", containsString(
                         "Solo el jefe del departamento del director puede asignar los evaluadores.")));
 
-        // El director no puede ser evaluador de su propio trabajo
+        // El jefe solo ve y consulta los trabajos de su departamento
         String jefe = login("J");
+        String trabajoEnLista = "$[?(@.id == " + trabajoId + ")]";
+        enviar(get(API + "/trabajos-grado?etapa=ANTEPROYECTO"), jefe, null)
+                .andExpect(status().isOk()).andExpect(jsonPath(trabajoEnLista).isNotEmpty());
+        enviar(get(API + "/trabajos-grado?etapa=ANTEPROYECTO"), login("O"), null)
+                .andExpect(status().isOk()).andExpect(jsonPath(trabajoEnLista).isEmpty());
+        enviar(get(TRABAJOS + trabajoId), login("O"), null).andExpect(status().isForbidden());
+
+        // El director no puede ser evaluador de su propio trabajo
         long directorId = id(enviar(get(TRABAJOS + trabajoId), jefe, null), "$.director.usuarioId");
         enviar(post(TRABAJOS + trabajoId + "/anteproyecto/evaluadores"), jefe,
                 Map.of("evaluador1Id", evaluador1Id, "evaluador2Id", directorId))

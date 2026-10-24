@@ -115,13 +115,15 @@ public class TrabajoGradoController {
 
     /**
      * Trabajos en una etapa (ej. ANTEPROYECTO para asignar evaluadores) o, sin
-     * etapa, todos los trabajos. Solo para los roles de consulta general.
+     * etapa, todos los trabajos que el usuario puede consultar: el Comité solo ve
+     * los de su programa y el jefe los de su departamento.
      */
     @GetMapping
     @PreAuthorize("hasAnyAuthority('COMITE', 'JEFE_DEP', 'CONSEJO', 'ADMINISTRADOR', 'DECANATURA')")
-    public ResponseEntity<List<TrabajoGradoDTOResponse>> listar(@RequestParam(required = false) Proceso etapa) {
-        List<TrabajoGrado> trabajos = etapa == null ? manageTrabajoGrado.listarTodos()
-                : manageTrabajoGrado.listarPorEtapa(etapa);
+    public ResponseEntity<List<TrabajoGradoDTOResponse>> listar(@AuthenticationPrincipal UserEntity usuario,
+            @RequestParam(required = false) Proceso etapa) {
+        List<TrabajoGrado> trabajos = etapa == null ? manageTrabajoGrado.listarTodos(usuario.getCusuari())
+                : manageTrabajoGrado.listarPorEtapa(etapa, usuario.getCusuari());
         return ResponseEntity.ok(trabajos.stream().map(this::vista).toList());
     }
 

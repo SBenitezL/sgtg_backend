@@ -23,11 +23,13 @@ public class ManagePerfilCUImplAdapter implements ManagePerfilCUIntPort {
 
     /**
      * Roles que pueden tener perfil docente (dirigir, codirigir o evaluar). El
-     * jefe de departamento lo necesita para indicar a qué departamento pertenece.
+     * jefe de departamento y el Comité de Programa lo necesitan para indicar a
+     * qué departamento pertenecen: el jefe actúa sobre los trabajos de su
+     * departamento y el Comité sobre los del programa adscrito a él.
      */
     static final Set<String> ROLES_DOCENTE = Set.of(RoleAdmited.DOCENTE.name(), RoleAdmited.DIRECTOR.name(),
             RoleAdmited.CODIRECTOR.name(), RoleAdmited.EVALUADOR.name(), RoleAdmited.JURADO.name(),
-            RoleAdmited.JURADO_COORDINADOR.name(), RoleAdmited.JEFE_DEP.name());
+            RoleAdmited.JURADO_COORDINADOR.name(), RoleAdmited.JEFE_DEP.name(), RoleAdmited.COMITE.name());
     /** Roles que pueden tener perfil de estudiante */
     static final Set<String> ROLES_ESTUDIANTE = Set.of(RoleAdmited.ESTUDIANTE.name());
 

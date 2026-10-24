@@ -20,12 +20,14 @@ public interface ManageCatalogoCUIntPort {
     public List<Departamento> listarDepartamentos();
 
     /**
-     * Registra un programa académico de pregrado.
+     * Registra un programa académico de pregrado, adscrito a un departamento:
+     * su Comité de Programa lo forman docentes de ese departamento.
      *
-     * @param nombre nombre del programa, único
-     * @return el programa creado con su identificador
+     * @param nombre         nombre del programa, único
+     * @param departamentoId departamento al que está adscrito
+     * @return el programa creado con su identificador y su departamento
      */
-    public Programa crearPrograma(String nombre);
+    public Programa crearPrograma(String nombre, Long departamentoId);
 
     /** @return los programas registrados, ordenados por nombre */
     public List<Programa> listarProgramas();

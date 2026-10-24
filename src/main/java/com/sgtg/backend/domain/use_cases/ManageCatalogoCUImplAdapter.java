@@ -35,11 +35,16 @@ public class ManageCatalogoCUImplAdapter implements ManageCatalogoCUIntPort {
     }
 
     @Override
-    public Programa crearPrograma(String nombre) {
+    public Programa crearPrograma(String nombre, Long departamentoId) {
         String limpio = validarNombre(nombre);
+        if (departamentoId == null)
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.catalogo.programa_sin_departamento");
+        Departamento departamento = this.catalogoGateway.buscarDepartamento(departamentoId);
+        if (departamento == null)
+            this.exceptionFormatter.returnResponseErrorEntityNotFound("error.catalogo.departamento_no_encontrado");
         if (this.catalogoGateway.existePrograma(limpio))
             this.exceptionFormatter.returnResponseErrorEntityExists("error.catalogo.programa_existente");
-        return this.catalogoGateway.crearPrograma(limpio);
+        return this.catalogoGateway.crearPrograma(limpio, departamento);
     }
 
     @Override

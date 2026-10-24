@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Reloj de desarrollo: permite adelantar la fecha de la aplicación y ejecutar
- * la verificación diaria de vencimientos para probar (ej. con Thunder Client)
+ * la verificación diaria de vencimientos para probar (ej. con Postman)
  * flujos que dependen del paso del tiempo. Solo existe con
  * {@code sgtg.reloj.ajustable=true}; nunca debe activarse en producción. Solo
  * el ADMINISTRADOR lo usa.

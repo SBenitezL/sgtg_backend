@@ -191,13 +191,14 @@ class FlujoSustentacionIntegracionTest {
     private long trabajoEnCurso() throws Exception {
         long docenteId = crearUsuario("D", "DOCENTE");
         long estudianteId = crearUsuario("E", "ESTUDIANTE");
-        crearUsuario("C", "COMITE");
+        long comiteId = crearUsuario("C", "COMITE");
         long jefeId = crearUsuario("J", "JEFE_DEP");
         long evaluador1Id = crearUsuario("V", "EVALUADOR");
         long evaluador2Id = crearUsuario("W", "DOCENTE");
         crearUsuario("F", "CONSEJO");
         crearUsuario("K", "DECANATURA");
         perfilDocente(docenteId);
+        perfilDocente(comiteId);
         perfilDocente(jefeId);
         enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
                 .andExpect(status().isOk());
@@ -239,7 +240,8 @@ class FlujoSustentacionIntegracionTest {
         admin = login("admin@sgtg.test", "Admin123*");
         departamentoId = id(enviar(post(API + "/catalogos/departamentos"), admin, Map.of("nombre", "Depto " + sufijo))
                 .andExpect(status().isCreated()), "$.id");
-        programaId = id(enviar(post(API + "/catalogos/programas"), admin, Map.of("nombre", "Programa " + sufijo))
+        programaId = id(enviar(post(API + "/catalogos/programas"), admin,
+                Map.of("nombre", "Programa " + sufijo, "departamentoId", departamentoId))
                 .andExpect(status().isCreated()), "$.id");
     }
 

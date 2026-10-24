@@ -120,17 +120,19 @@ public class ApplicationConfig {
 
     @Bean
     public NotificadorTrabajoGrado notificadorTrabajoGrado(ManageNotificacionGatewayIntPort notificacionGateway,
-            ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway, Clock clock) {
-        return new NotificadorTrabajoGrado(notificacionGateway, userGateway, perfilGateway, clock);
+            ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
+            ManageCatalogoGatewayIntPort catalogoGateway, Clock clock) {
+        return new NotificadorTrabajoGrado(notificacionGateway, userGateway, perfilGateway, catalogoGateway, clock);
     }
 
     @Bean
     public ManageTrabajoGradoCUIntPort manageTrabajoGradoCUIntPort(ManageTrabajoGradoGatewayIntPort trabajoGateway,
             ManageUserGatewayIntPort userGateway, ManagePerfilGatewayIntPort perfilGateway,
-            ManageArchivoGatewayIntPort archivoGateway, CalendarioHabil calendario, Clock clock,
-            ExceptionFormatterIntPort exceptionFormatter, NotificadorTrabajoGrado notificador) {
-        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, archivoGateway,
-                calendario, clock, exceptionFormatter, notificador);
+            ManageCatalogoGatewayIntPort catalogoGateway, ManageArchivoGatewayIntPort archivoGateway,
+            CalendarioHabil calendario, Clock clock, ExceptionFormatterIntPort exceptionFormatter,
+            NotificadorTrabajoGrado notificador) {
+        return new ManageTrabajoGradoCUImplAdapter(trabajoGateway, userGateway, perfilGateway, catalogoGateway,
+                archivoGateway, calendario, clock, exceptionFormatter, notificador);
     }
 
     @Bean

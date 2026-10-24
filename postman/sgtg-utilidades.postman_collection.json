@@ -1,0 +1,2340 @@
+{
+  "info": {
+    "_postman_id": "0b8f6a2e-9d3c-4e57-8a61-2c4f7e9b1d05",
+    "name": "SGTG - Utilidades de desarrollo",
+    "description": "Reloj de desarrollo (adelantar la fecha del backend y ejecutar los vencimientos) y carga masiva de usuarios con datos creíbles. Las peticiones inician sesión como administrador por su cuenta. Ver postman/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login administrador",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('adminToken', pm.response.json().token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/sgtg/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "sgtg",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Opcional: las demás peticiones inician sesión solas si no hay token o está vencido."
+      }
+    },
+    {
+      "name": "Reloj de desarrollo",
+      "item": [
+        {
+          "name": "Consultar la fecha del backend",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj"
+              ]
+            },
+            "description": "Fecha actual de la aplicación y días que está adelantada. Requiere SGTG_RELOJ_AJUSTABLE=true (activo por defecto en docker-compose y en el .env de ejemplo). El reloj vive en memoria: al reiniciar el backend vuelve a la fecha real."
+          }
+        },
+        {
+          "name": "Adelantar 1 día",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta el reloj un día.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adelantar 1 semana",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta el reloj 7 días.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adelantar 15 días",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta el reloj 15 días (unos 10 días hábiles: el plazo del Comité y de los evaluadores).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adelantar 1 mes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta el reloj 30 días.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adelantar 3 meses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta el reloj 90 días (prórroga máxima).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": 90\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adelantar 6 meses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta el reloj 180 días (meses mínimos de ejecución de la práctica profesional).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": 180\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adelantar N días",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta el reloj los días de la variable de colección diasAdelantar (1 a 3650).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": {{diasAdelantar}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adelantar N días y ejecutar vencimientos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);",
+                  "",
+                  "// La tarea diaria corre a la hora real configurada (sgtg.vencimientos.cron), no al adelantar el reloj:",
+                  "// se ejecuta ahora para aplicar los vencimientos de la nueva fecha.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn('{{baseUrl}}/api/v1/sgtg/reloj/tareas/vencimientos'),",
+                  "    method: 'POST',",
+                  "    header: [{ key: 'Authorization', value: 'Bearer ' + pm.collectionVariables.get('adminToken') }]",
+                  "}, (err, res) => {",
+                  "    pm.test('Verificación de vencimientos ejecutada', () => {",
+                  "        pm.expect(err).to.be.null;",
+                  "        pm.expect(res.code).to.eql(200);",
+                  "    });",
+                  "    if (!err && res.code === 200) {",
+                  "        console.log('Trabajos que cambiaron de etapa por vencimiento:', res.json().actualizados);",
+                  "        pm.test(`Trabajos actualizados por vencimiento: ${res.json().actualizados}`, () => true);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Adelanta diasAdelantar días y ejecuta enseguida la verificación diaria de vencimientos (reanuda suspensiones cumplidas, aplica los plazos de la sustentación y cierra los trabajos con el plazo vencido).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": {{diasAdelantar}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ir a una fecha",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Vuelve a la fecha real y calcula cuántos días faltan para la fecha objetivo (formato AAAA-MM-DD).",
+                  "const objetivo = pm.variables.replaceIn('{{fechaObjetivo}}');",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn('{{baseUrl}}/api/v1/sgtg/reloj'),",
+                  "    method: 'DELETE',",
+                  "    header: [{ key: 'Authorization', value: 'Bearer ' + pm.collectionVariables.get('adminToken') }]",
+                  "}, (err, res) => {",
+                  "    if (err || res.code !== 200) {",
+                  "        console.error('No se pudo restablecer el reloj', err || res.text());",
+                  "        return;",
+                  "    }",
+                  "    const dias = Math.round((Date.parse(objetivo) - Date.parse(res.json().fecha)) / 86400000);",
+                  "    pm.variables.set('diasHastaFecha', String(dias));",
+                  "    console.log(`Fecha real ${res.json().fecha}; se adelanta ${dias} días hasta ${objetivo}`);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 (la fecha objetivo debe ser posterior a la fecha real)', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`El backend quedó en ${pm.variables.replaceIn('{{fechaObjetivo}}')}`, () => pm.expect(reloj.fecha).to.eql(pm.variables.replaceIn('{{fechaObjetivo}}')));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/avanzar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "avanzar"
+              ]
+            },
+            "description": "Deja el backend en la fecha de la variable fechaObjetivo (AAAA-MM-DD, posterior a la fecha real): restablece el reloj y lo adelanta los días que faltan.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dias\": {{diasHastaFecha}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ejecutar la verificación de vencimientos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(`Trabajos actualizados por vencimiento: ${pm.response.json().actualizados}`, () => pm.expect(pm.response.json().actualizados).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj/tareas/vencimientos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj",
+                "tareas",
+                "vencimientos"
+              ]
+            },
+            "description": "Ejecuta ahora la tarea diaria de vencimientos (VencimientosScheduler) con la fecha del reloj. Responde cuántos trabajos cambiaron de etapa."
+          }
+        },
+        {
+          "name": "Restablecer a la fecha real",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const reloj = pm.response.json();",
+                  "pm.test(`Fecha del backend: ${reloj.fecha} (${reloj.desplazamientoDias} días adelantado)`, () => pm.expect(reloj.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));",
+                  "console.log('Fecha del backend:', reloj.fecha, '| días adelantado:', reloj.desplazamientoDias);",
+                  "",
+                  "pm.test('El reloj quedó en la fecha real', () => pm.expect(pm.response.json().desplazamientoDias).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/reloj",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "reloj"
+              ]
+            },
+            "description": "Vuelve el reloj a la fecha real."
+          }
+        }
+      ],
+      "description": "Requiere SGTG_RELOJ_AJUSTABLE=true (activo por defecto en docker-compose y en el .env de ejemplo). El reloj vive en memoria: al reiniciar el backend vuelve a la fecha real."
+    },
+    {
+      "name": "Carga masiva de usuarios",
+      "item": [
+        {
+          "name": "Cargar docentes, Consejo y Decanatura",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Crea los usuarios de la lista uno por uno (con sus departamentos y programas, si faltan).",
+                  "// Es idempotente: los usuarios que ya existen (mismo correo, código o documento) se cuentan y se omiten.",
+                  "const usuarios = [",
+                  "    {",
+                  "        \"codigo\": \"107063\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"10315623\",",
+                  "        \"email\": \"jramirez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Javier\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Ramírez\",",
+                  "        \"segundoApellido\": \"Patiño\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"JEFE_DEP\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107086\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76885672\",",
+                  "        \"email\": \"drojas@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Diego\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Rojas\",",
+                  "        \"segundoApellido\": \"Morales\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"COMITE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107117\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76142259\",",
+                  "        \"email\": \"jlbravo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"José\",",
+                  "        \"segundoNombre\": \"Luis\",",
+                  "        \"primerApellido\": \"Bravo\",",
+                  "        \"segundoApellido\": \"Torres\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"JEFE_DEP\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107131\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76953165\",",
+                  "        \"email\": \"jlquintero@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"José\",",
+                  "        \"segundoNombre\": \"Luis\",",
+                  "        \"primerApellido\": \"Quintero\",",
+                  "        \"segundoApellido\": \"Castillo\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"COMITE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107170\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76606864\",",
+                  "        \"email\": \"caagredo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Carlos\",",
+                  "        \"segundoNombre\": \"Andrés\",",
+                  "        \"primerApellido\": \"Agredo\",",
+                  "        \"segundoApellido\": \"Hurtado\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"JEFE_DEP\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107190\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"10455731\",",
+                  "        \"email\": \"lsalazar@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Luis\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Salazar\",",
+                  "        \"segundoApellido\": \"Rodríguez\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"COMITE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107225\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"34857825\",",
+                  "        \"email\": \"mfcaicedo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"María\",",
+                  "        \"segundoNombre\": \"Fernanda\",",
+                  "        \"primerApellido\": \"Caicedo\",",
+                  "        \"segundoApellido\": \"Morales\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"JEFE_DEP\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Electrónica, Instrumentación y Control\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107240\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76151898\",",
+                  "        \"email\": \"jdiaz@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Julián\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Díaz\",",
+                  "        \"segundoApellido\": \"Rodríguez\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\",",
+                  "            \"COMITE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Electrónica, Instrumentación y Control\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107299\",",
+                  "        \"tipoDocumento\": \"CE\",",
+                  "        \"numeroDocumento\": \"181951\",",
+                  "        \"email\": \"mfsarria@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"María\",",
+                  "        \"segundoNombre\": \"Fernanda\",",
+                  "        \"primerApellido\": \"Sarria\",",
+                  "        \"segundoApellido\": \"Quintero\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"CATEDRA\",",
+                  "        \"departamento\": \"Departamento de Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107321\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76130364\",",
+                  "        \"email\": \"crodriguez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Cristian\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Rodríguez\",",
+                  "        \"segundoApellido\": \"Ramírez\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"OCASIONAL\",",
+                  "        \"departamento\": \"Departamento de Electrónica, Instrumentación y Control\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107333\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76327195\",",
+                  "        \"email\": \"amosquera@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Andrés\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Mosquera\",",
+                  "        \"segundoApellido\": \"Valencia\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"OCASIONAL\",",
+                  "        \"departamento\": \"Departamento de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107372\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"34716039\",",
+                  "        \"email\": \"pabolanos@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Paula\",",
+                  "        \"segundoNombre\": \"Andrea\",",
+                  "        \"primerApellido\": \"Bolaños\",",
+                  "        \"segundoApellido\": \"Fernández\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107393\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"25539856\",",
+                  "        \"email\": \"lvceron@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Laura\",",
+                  "        \"segundoNombre\": \"Valentina\",",
+                  "        \"primerApellido\": \"Cerón\",",
+                  "        \"segundoApellido\": \"Chicangana\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"CATEDRA\",",
+                  "        \"departamento\": \"Departamento de Electrónica, Instrumentación y Control\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107400\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"25702963\",",
+                  "        \"email\": \"dburbano@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Diana\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Burbano\",",
+                  "        \"segundoApellido\": \"Erazo\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"CATEDRA\",",
+                  "        \"departamento\": \"Departamento de Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107414\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"34971150\",",
+                  "        \"email\": \"lvortiz@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Laura\",",
+                  "        \"segundoNombre\": \"Valentina\",",
+                  "        \"primerApellido\": \"Ortiz\",",
+                  "        \"segundoApellido\": \"Delgado\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"OCASIONAL\",",
+                  "        \"departamento\": \"Departamento de Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107437\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76978865\",",
+                  "        \"email\": \"arengifo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Andrés\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Rengifo\",",
+                  "        \"segundoApellido\": \"Patiño\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"OCASIONAL\",",
+                  "        \"departamento\": \"Departamento de Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107472\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"25690925\",",
+                  "        \"email\": \"acampo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Alejandra\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Campo\",",
+                  "        \"segundoApellido\": \"Paz\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107506\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"10748057\",",
+                  "        \"email\": \"jburbano@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Javier\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Burbano\",",
+                  "        \"segundoApellido\": \"Morales\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Electrónica, Instrumentación y Control\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107542\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"10172481\",",
+                  "        \"email\": \"jgarcia@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Javier\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"García\",",
+                  "        \"segundoApellido\": \"Erazo\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"PLANTA\",",
+                  "        \"departamento\": \"Departamento de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107564\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"10935802\",",
+                  "        \"email\": \"jcchicangana@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"Camilo\",",
+                  "        \"primerApellido\": \"Chicangana\",",
+                  "        \"segundoApellido\": \"García\",",
+                  "        \"roles\": [",
+                  "            \"DOCENTE\"",
+                  "        ],",
+                  "        \"tipoVinculacion\": \"CATEDRA\",",
+                  "        \"departamento\": \"Departamento de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107111\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"76388053\",",
+                  "        \"email\": \"jdordonez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"David\",",
+                  "        \"primerApellido\": \"Ordóñez\",",
+                  "        \"segundoApellido\": \"Burbano\",",
+                  "        \"roles\": [",
+                  "            \"CONSEJO\"",
+                  "        ]",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"107665\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"25434355\",",
+                  "        \"email\": \"ccampo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Catalina\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Campo\",",
+                  "        \"segundoApellido\": \"Morales\",",
+                  "        \"roles\": [",
+                  "            \"DECANATURA\"",
+                  "        ]",
+                  "    }",
+                  "];",
+                  "// Departamento al que está adscrito cada programa (su Comité de Programa es de ese departamento)",
+                  "const adscripcion = {",
+                  "    \"Ingeniería de Sistemas\": \"Departamento de Sistemas\",",
+                  "    \"Tecnología en Telemática\": \"Departamento de Telemática\",",
+                  "    \"Ingeniería Electrónica y Telecomunicaciones\": \"Departamento de Telecomunicaciones\",",
+                  "    \"Ingeniería en Automática Industrial\": \"Departamento de Electrónica, Instrumentación y Control\"",
+                  "};",
+                  "const clave = pm.variables.replaceIn('{{claveCargaMasiva}}');",
+                  "const api = pm.variables.replaceIn('{{baseUrl}}') + '/api/v1/sgtg';",
+                  "const resumen = { creados: [], existentes: [], errores: [] };",
+                  "",
+                  "const enviar = (metodo, ruta, cuerpo, cb) => pm.sendRequest({",
+                  "    url: api + ruta,",
+                  "    method: metodo,",
+                  "    header: [",
+                  "        { key: 'Authorization', value: 'Bearer ' + pm.collectionVariables.get('adminToken') },",
+                  "        { key: 'Content-Type', value: 'application/json' }",
+                  "    ],",
+                  "    body: cuerpo ? { mode: 'raw', raw: JSON.stringify(cuerpo) } : undefined",
+                  "}, cb);",
+                  "",
+                  "const mensaje = (err, res) => err ? String(err) : `${res.code} ${res.text()}`;",
+                  "",
+                  "// MySQL compara los nombres sin distinguir mayúsculas ni tildes (\"Departamento de sistemas\" ya es",
+                  "// \"Departamento de Sistemas\"): los catálogos se buscan igual para reutilizar los que ya existen.",
+                  "const normalizar = n => n.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();",
+                  "",
+                  "// Consulta un catálogo y crea los nombres que falten con el cuerpo que arma cuerpoDe(nombre);",
+                  "// devuelve los registros existentes y { nombre normalizado: id }",
+                  "const asegurarCatalogo = (tipo, nombres, cuerpoDe, cb) => enviar('GET', '/catalogos/' + tipo, null, (err, res) => {",
+                  "    if (err || res.code !== 200) {",
+                  "        resumen.errores.push(`Consultar ${tipo}: ${mensaje(err, res)}`);",
+                  "        return cb({}, []);",
+                  "    }",
+                  "    const ids = {};",
+                  "    const existentes = res.json();",
+                  "    existentes.forEach(c => { ids[normalizar(c.nombre)] = c.id; });",
+                  "    existentes.filter(c => nombres.some(n => n && normalizar(n) === normalizar(c.nombre) && n !== c.nombre))",
+                  "        .forEach(c => console.log(`Se usa el registro existente en ${tipo}: ${c.nombre}`));",
+                  "    const faltan = [...new Set(nombres)].filter(n => n && !(normalizar(n) in ids));",
+                  "    const siguiente = i => {",
+                  "        if (i >= faltan.length) return cb(ids, existentes);",
+                  "        enviar('POST', '/catalogos/' + tipo, cuerpoDe(faltan[i]), (e, r) => {",
+                  "            if (!e && r.code === 201) {",
+                  "                ids[normalizar(faltan[i])] = r.json().id;",
+                  "                console.log(`Creado en ${tipo}: ${faltan[i]}`);",
+                  "            } else {",
+                  "                resumen.errores.push(`Crear ${faltan[i]}: ${mensaje(e, r)}`);",
+                  "            }",
+                  "            siguiente(i + 1);",
+                  "        });",
+                  "    };",
+                  "    siguiente(0);",
+                  "});",
+                  "",
+                  "const crearUsuarios = (departamentos, programas) => {",
+                  "    const siguiente = i => {",
+                  "        if (i >= usuarios.length) {",
+                  "            pm.variables.set('resumenCarga', JSON.stringify(resumen));",
+                  "            console.log(`Carga terminada: ${resumen.creados.length} creados, ${resumen.existentes.length} ya existían, ${resumen.errores.length} errores`);",
+                  "            return;",
+                  "        }",
+                  "        const { departamento, programa, ...datos } = usuarios[i];",
+                  "        const nombre = `${datos.primerNombre} ${datos.primerApellido} <${datos.email}>`;",
+                  "        const cuerpo = { ...datos, password: clave };",
+                  "        if (departamento) cuerpo.departamentoId = departamentos[normalizar(departamento)];",
+                  "        if (programa) cuerpo.programaId = programas[normalizar(programa)];",
+                  "        // Sin su departamento o programa no se crea: quedaría sin perfil",
+                  "        if ((departamento && !cuerpo.departamentoId) || (programa && !cuerpo.programaId)) {",
+                  "            resumen.errores.push(`${nombre}: no se encontró ni se pudo crear ${departamento || programa}`);",
+                  "            return siguiente(i + 1);",
+                  "        }",
+                  "        enviar('POST', '/usuarios', cuerpo, (err, res) => {",
+                  "            if (!err && res.code === 201) resumen.creados.push(nombre);",
+                  "            else if (!err && res.code === 406) resumen.existentes.push(nombre);",
+                  "            else resumen.errores.push(`${nombre}: ${mensaje(err, res)}`);",
+                  "            siguiente(i + 1);",
+                  "        });",
+                  "    };",
+                  "    siguiente(0);",
+                  "};",
+                  "",
+                  "pm.variables.set('correosCarga', JSON.stringify(usuarios.map(u => u.email)));",
+                  "const nombresProgramas = usuarios.map(u => u.programa).filter(Boolean);",
+                  "const nombresDepartamentos = usuarios.map(u => u.departamento).concat(nombresProgramas.map(p => adscripcion[p]));",
+                  "asegurarCatalogo('departamentos', nombresDepartamentos, nombre => ({ nombre }), departamentos =>",
+                  "    asegurarCatalogo('programas', nombresProgramas,",
+                  "        nombre => ({ nombre, departamentoId: departamentos[normalizar(adscripcion[nombre])] }),",
+                  "        (programas, existentes) => {",
+                  "            // Un programa ya registrado sin su departamento deja a su Comité sin ver los trabajos",
+                  "            existentes.filter(c => nombresProgramas.some(n => normalizar(n) === normalizar(c.nombre)))",
+                  "                .forEach(c => {",
+                  "                    const esperado = nombresProgramas.find(n => normalizar(n) === normalizar(c.nombre));",
+                  "                    const departamentoId = departamentos[normalizar(adscripcion[esperado])];",
+                  "                    if (!c.departamento || c.departamento.id !== departamentoId)",
+                  "                        resumen.errores.push(`El programa ${c.nombre} ya existe pero no está adscrito a ` +",
+                  "                            `${adscripcion[esperado]}: su Comité no verá sus trabajos`);",
+                  "                });",
+                  "            crearUsuarios(departamentos, programas);",
+                  "        }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const resumen = JSON.parse(pm.variables.get('resumenCarga') || '{\"creados\":[],\"existentes\":[],\"errores\":[\"La carga no terminó\"]}');",
+                  "pm.test(`${resumen.creados.length} usuarios creados, ${resumen.existentes.length} ya existían`, () =>",
+                  "    pm.expect(resumen.errores, 'Errores:\\n' + resumen.errores.join('\\n')).to.be.empty);",
+                  "",
+                  "const registrados = pm.response.json().map(u => u.email);",
+                  "const faltantes = JSON.parse(pm.variables.get('correosCarga')).filter(c => !registrados.includes(c));",
+                  "pm.test('Todos los usuarios de la carga están registrados', () => pm.expect(faltantes, faltantes.join(', ')).to.be.empty);",
+                  "resumen.errores.forEach(e => console.error(e));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "usuarios"
+              ]
+            },
+            "description": "Crea los 4 departamentos de la FIET (si faltan) y 22 usuarios: en cada departamento, un docente de planta jefe (JEFE_DEP), uno del Comité de Programa (COMITE) y 3 docentes sin cargo (planta, ocasional y cátedra), todos con su perfil docente; un miembro del Consejo de Facultad (CONSEJO, uno para toda la facultad) y una persona de Decanatura, sin perfil docente. Contraseña: variable claveCargaMasiva. Ver postman/usuarios-carga-masiva.csv."
+          }
+        },
+        {
+          "name": "Cargar estudiantes",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Crea los usuarios de la lista uno por uno (con sus departamentos y programas, si faltan).",
+                  "// Es idempotente: los usuarios que ya existen (mismo correo, código o documento) se cuentan y se omiten.",
+                  "const usuarios = [",
+                  "    {",
+                  "        \"codigo\": \"101201920018\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058861102\",",
+                  "        \"email\": \"jsmorales@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"Sebastián\",",
+                  "        \"primerApellido\": \"Morales\",",
+                  "        \"segundoApellido\": \"García\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202010013\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1059600102\",",
+                  "        \"email\": \"hsalazar@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Hernán\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Salazar\",",
+                  "        \"segundoApellido\": \"López\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202120013\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061776751\",",
+                  "        \"email\": \"azuniga@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Andrea\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Zúñiga\",",
+                  "        \"segundoApellido\": \"Torres\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202120010\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002981115\",",
+                  "        \"email\": \"ahurtado@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Angélica\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Hurtado\",",
+                  "        \"segundoApellido\": \"Cerón\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202210002\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1059531744\",",
+                  "        \"email\": \"mjlopez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"María\",",
+                  "        \"segundoNombre\": \"José\",",
+                  "        \"primerApellido\": \"López\",",
+                  "        \"segundoApellido\": \"Rojas\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202110001\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061441956\",",
+                  "        \"email\": \"imejia@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Isabella\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Mejía\",",
+                  "        \"segundoApellido\": \"Ortiz\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202120002\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061589989\",",
+                  "        \"email\": \"mcaicedo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Miguel\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Caicedo\",",
+                  "        \"segundoApellido\": \"Rodríguez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202010015\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060109166\",",
+                  "        \"email\": \"fhernandez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Fabián\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Hernández\",",
+                  "        \"segundoApellido\": \"Zúñiga\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202010038\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002064954\",",
+                  "        \"email\": \"spdelgado@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Sandra\",",
+                  "        \"segundoNombre\": \"Patricia\",",
+                  "        \"primerApellido\": \"Delgado\",",
+                  "        \"segundoApellido\": \"Rengifo\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202020008\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002929011\",",
+                  "        \"email\": \"oinarvaez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Óscar\",",
+                  "        \"segundoNombre\": \"Iván\",",
+                  "        \"primerApellido\": \"Narváez\",",
+                  "        \"segundoApellido\": \"Díaz\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202020027\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061577459\",",
+                  "        \"email\": \"dmarboleda@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Diana\",",
+                  "        \"segundoNombre\": \"Marcela\",",
+                  "        \"primerApellido\": \"Arboleda\",",
+                  "        \"segundoApellido\": \"Gómez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202210006\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002730383\",",
+                  "        \"email\": \"nguzman@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Natalia\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Guzmán\",",
+                  "        \"segundoApellido\": \"Hurtado\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202120032\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002157506\",",
+                  "        \"email\": \"lfsalazar@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Luisa\",",
+                  "        \"segundoNombre\": \"Fernanda\",",
+                  "        \"primerApellido\": \"Salazar\",",
+                  "        \"segundoApellido\": \"Daza\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101202220022\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058803054\",",
+                  "        \"email\": \"mcollazos@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"María\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Collazos\",",
+                  "        \"segundoApellido\": \"Sarria\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101201910010\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060565572\",",
+                  "        \"email\": \"adiaz@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Alejandro\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Díaz\",",
+                  "        \"segundoApellido\": \"Agredo\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202210010\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1059886516\",",
+                  "        \"email\": \"jppaz@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"Pablo\",",
+                  "        \"primerApellido\": \"Paz\",",
+                  "        \"segundoApellido\": \"Valencia\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101202110008\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060832110\",",
+                  "        \"email\": \"oimunoz@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Óscar\",",
+                  "        \"segundoNombre\": \"Iván\",",
+                  "        \"primerApellido\": \"Muñoz\",",
+                  "        \"segundoApellido\": \"Gómez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202020044\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002392554\",",
+                  "        \"email\": \"vquintero@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Valentina\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Quintero\",",
+                  "        \"segundoApellido\": \"Patiño\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101201920043\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061148916\",",
+                  "        \"email\": \"jhurtado@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Julián\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Hurtado\",",
+                  "        \"segundoApellido\": \"Vargas\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106201910013\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061656025\",",
+                  "        \"email\": \"osarria@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Óscar\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Sarria\",",
+                  "        \"segundoApellido\": \"Mejía\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101202110028\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002147228\",",
+                  "        \"email\": \"ccollazos@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Camila\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Collazos\",",
+                  "        \"segundoApellido\": \"Arboleda\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103201920015\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060592495\",",
+                  "        \"email\": \"mquintero@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Manuela\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Quintero\",",
+                  "        \"segundoApellido\": \"García\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202020006\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002733909\",",
+                  "        \"email\": \"jerazo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Jairo\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Erazo\",",
+                  "        \"segundoApellido\": \"Anacona\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104201920007\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1059618908\",",
+                  "        \"email\": \"marboleda@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Mauricio\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Arboleda\",",
+                  "        \"segundoApellido\": \"Mosquera\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104201920018\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002285227\",",
+                  "        \"email\": \"amhurtado@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Ana\",",
+                  "        \"segundoNombre\": \"María\",",
+                  "        \"primerApellido\": \"Hurtado\",",
+                  "        \"segundoApellido\": \"Martínez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202220023\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060343910\",",
+                  "        \"email\": \"jcdaza@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"Camilo\",",
+                  "        \"primerApellido\": \"Daza\",",
+                  "        \"segundoApellido\": \"Muñoz\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101201920063\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1059966755\",",
+                  "        \"email\": \"mlopez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Mariana\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"López\",",
+                  "        \"segundoApellido\": \"Velasco\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202210027\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061643134\",",
+                  "        \"email\": \"lfpatino@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Luisa\",",
+                  "        \"segundoNombre\": \"Fernanda\",",
+                  "        \"primerApellido\": \"Patiño\",",
+                  "        \"segundoApellido\": \"Ortiz\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101202020024\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061950735\",",
+                  "        \"email\": \"fbravo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Fabián\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Bravo\",",
+                  "        \"segundoApellido\": \"Rengifo\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202210034\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060003380\",",
+                  "        \"email\": \"jvargas@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Jorge\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Vargas\",",
+                  "        \"segundoApellido\": \"Solarte\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202110014\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002141120\",",
+                  "        \"email\": \"dameneses@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Diego\",",
+                  "        \"segundoNombre\": \"Alejandro\",",
+                  "        \"primerApellido\": \"Meneses\",",
+                  "        \"segundoApellido\": \"Vargas\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202110023\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058938077\",",
+                  "        \"email\": \"rbolanos@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Ricardo\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Bolaños\",",
+                  "        \"segundoApellido\": \"Rojas\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202010059\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002326571\",",
+                  "        \"email\": \"iquintero@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Isabella\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Quintero\",",
+                  "        \"segundoApellido\": \"Bravo\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202210017\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061606433\",",
+                  "        \"email\": \"lrivera@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Laura\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Rivera\",",
+                  "        \"segundoApellido\": \"Imbachí\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202020061\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060791092\",",
+                  "        \"email\": \"mjsarria@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"María\",",
+                  "        \"segundoNombre\": \"José\",",
+                  "        \"primerApellido\": \"Sarria\",",
+                  "        \"segundoApellido\": \"López\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104201920023\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002305531\",",
+                  "        \"email\": \"dacaicedo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Diego\",",
+                  "        \"segundoNombre\": \"Alejandro\",",
+                  "        \"primerApellido\": \"Caicedo\",",
+                  "        \"segundoApellido\": \"Gómez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202010019\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002001275\",",
+                  "        \"email\": \"jsdaza@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"Sebastián\",",
+                  "        \"primerApellido\": \"Daza\",",
+                  "        \"segundoApellido\": \"López\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103201920019\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060813795\",",
+                  "        \"email\": \"rburbano@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Ricardo\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Burbano\",",
+                  "        \"segundoApellido\": \"Ortiz\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202020020\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061674315\",",
+                  "        \"email\": \"mjsolarte@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"María\",",
+                  "        \"segundoNombre\": \"José\",",
+                  "        \"primerApellido\": \"Solarte\",",
+                  "        \"segundoApellido\": \"Meneses\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202010008\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060066161\",",
+                  "        \"email\": \"rimbachi@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Ricardo\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Imbachí\",",
+                  "        \"segundoApellido\": \"Rojas\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202010016\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002202378\",",
+                  "        \"email\": \"dfernandez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Daniela\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Fernández\",",
+                  "        \"segundoApellido\": \"Guzmán\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202020021\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058036213\",",
+                  "        \"email\": \"msalazar@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Mauricio\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Salazar\",",
+                  "        \"segundoApellido\": \"Caicedo\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202020024\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058441483\",",
+                  "        \"email\": \"ahurtados@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Andrea\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Hurtado\",",
+                  "        \"segundoApellido\": \"Solarte\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103202020064\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061016473\",",
+                  "        \"email\": \"ssolarte@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Sandra\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Solarte\",",
+                  "        \"segundoApellido\": \"Velasco\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202120036\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058483997\",",
+                  "        \"email\": \"mfhurtado@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"María\",",
+                  "        \"segundoNombre\": \"Fernanda\",",
+                  "        \"primerApellido\": \"Hurtado\",",
+                  "        \"segundoApellido\": \"Sarria\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"106202120056\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1061802637\",",
+                  "        \"email\": \"npatino@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Nicolás\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Patiño\",",
+                  "        \"segundoApellido\": \"Salazar\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Tecnología en Telemática\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202010038\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1059925858\",",
+                  "        \"email\": \"csarria@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Catalina\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Sarria\",",
+                  "        \"segundoApellido\": \"Castillo\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"103201910011\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058390837\",",
+                  "        \"email\": \"nchicangana@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Nicolás\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Chicangana\",",
+                  "        \"segundoApellido\": \"Mejía\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería en Automática Industrial\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101201920085\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002909872\",",
+                  "        \"email\": \"mcampo@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Manuela\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Campo\",",
+                  "        \"segundoApellido\": \"Martínez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101201920103\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058534593\",",
+                  "        \"email\": \"lhurtado@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Liliana\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Hurtado\",",
+                  "        \"segundoApellido\": \"Hernández\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202120024\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060345201\",",
+                  "        \"email\": \"slopez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Sara\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"López\",",
+                  "        \"segundoApellido\": \"Bolaños\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101201910031\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058894989\",",
+                  "        \"email\": \"jcpatino@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"Camilo\",",
+                  "        \"primerApellido\": \"Patiño\",",
+                  "        \"segundoApellido\": \"Bolaños\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101202210005\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060366411\",",
+                  "        \"email\": \"dvelasco@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"David\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Velasco\",",
+                  "        \"segundoApellido\": \"Collazos\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202210013\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1059220575\",",
+                  "        \"email\": \"jmosquera@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Mosquera\",",
+                  "        \"segundoApellido\": \"Gómez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101202110040\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058075786\",",
+                  "        \"email\": \"mmejia@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Marcela\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Mejía\",",
+                  "        \"segundoApellido\": \"Sánchez\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101202010020\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060666238\",",
+                  "        \"email\": \"isarria@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Isabella\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Sarria\",",
+                  "        \"segundoApellido\": \"Fernández\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202020025\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058580246\",",
+                  "        \"email\": \"dmanacona@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Diana\",",
+                  "        \"segundoNombre\": \"Marcela\",",
+                  "        \"primerApellido\": \"Anacona\",",
+                  "        \"segundoApellido\": \"Solarte\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104202020047\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1058759626\",",
+                  "        \"email\": \"mimbachi@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Manuela\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Imbachí\",",
+                  "        \"segundoApellido\": \"Solarte\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"104201920027\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1002018947\",",
+                  "        \"email\": \"jdordonezl@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Juan\",",
+                  "        \"segundoNombre\": \"David\",",
+                  "        \"primerApellido\": \"Ordóñez\",",
+                  "        \"segundoApellido\": \"López\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería de Sistemas\"",
+                  "    },",
+                  "    {",
+                  "        \"codigo\": \"101201910039\",",
+                  "        \"tipoDocumento\": \"CC\",",
+                  "        \"numeroDocumento\": \"1060018148\",",
+                  "        \"email\": \"ngomez@unicauca.edu.co\",",
+                  "        \"primerNombre\": \"Natalia\",",
+                  "        \"segundoNombre\": \"\",",
+                  "        \"primerApellido\": \"Gómez\",",
+                  "        \"segundoApellido\": \"Zúñiga\",",
+                  "        \"roles\": [",
+                  "            \"ESTUDIANTE\"",
+                  "        ],",
+                  "        \"programa\": \"Ingeniería Electrónica y Telecomunicaciones\"",
+                  "    }",
+                  "];",
+                  "// Departamento al que está adscrito cada programa (su Comité de Programa es de ese departamento)",
+                  "const adscripcion = {",
+                  "    \"Ingeniería de Sistemas\": \"Departamento de Sistemas\",",
+                  "    \"Tecnología en Telemática\": \"Departamento de Telemática\",",
+                  "    \"Ingeniería Electrónica y Telecomunicaciones\": \"Departamento de Telecomunicaciones\",",
+                  "    \"Ingeniería en Automática Industrial\": \"Departamento de Electrónica, Instrumentación y Control\"",
+                  "};",
+                  "const clave = pm.variables.replaceIn('{{claveCargaMasiva}}');",
+                  "const api = pm.variables.replaceIn('{{baseUrl}}') + '/api/v1/sgtg';",
+                  "const resumen = { creados: [], existentes: [], errores: [] };",
+                  "",
+                  "const enviar = (metodo, ruta, cuerpo, cb) => pm.sendRequest({",
+                  "    url: api + ruta,",
+                  "    method: metodo,",
+                  "    header: [",
+                  "        { key: 'Authorization', value: 'Bearer ' + pm.collectionVariables.get('adminToken') },",
+                  "        { key: 'Content-Type', value: 'application/json' }",
+                  "    ],",
+                  "    body: cuerpo ? { mode: 'raw', raw: JSON.stringify(cuerpo) } : undefined",
+                  "}, cb);",
+                  "",
+                  "const mensaje = (err, res) => err ? String(err) : `${res.code} ${res.text()}`;",
+                  "",
+                  "// MySQL compara los nombres sin distinguir mayúsculas ni tildes (\"Departamento de sistemas\" ya es",
+                  "// \"Departamento de Sistemas\"): los catálogos se buscan igual para reutilizar los que ya existen.",
+                  "const normalizar = n => n.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();",
+                  "",
+                  "// Consulta un catálogo y crea los nombres que falten con el cuerpo que arma cuerpoDe(nombre);",
+                  "// devuelve los registros existentes y { nombre normalizado: id }",
+                  "const asegurarCatalogo = (tipo, nombres, cuerpoDe, cb) => enviar('GET', '/catalogos/' + tipo, null, (err, res) => {",
+                  "    if (err || res.code !== 200) {",
+                  "        resumen.errores.push(`Consultar ${tipo}: ${mensaje(err, res)}`);",
+                  "        return cb({}, []);",
+                  "    }",
+                  "    const ids = {};",
+                  "    const existentes = res.json();",
+                  "    existentes.forEach(c => { ids[normalizar(c.nombre)] = c.id; });",
+                  "    existentes.filter(c => nombres.some(n => n && normalizar(n) === normalizar(c.nombre) && n !== c.nombre))",
+                  "        .forEach(c => console.log(`Se usa el registro existente en ${tipo}: ${c.nombre}`));",
+                  "    const faltan = [...new Set(nombres)].filter(n => n && !(normalizar(n) in ids));",
+                  "    const siguiente = i => {",
+                  "        if (i >= faltan.length) return cb(ids, existentes);",
+                  "        enviar('POST', '/catalogos/' + tipo, cuerpoDe(faltan[i]), (e, r) => {",
+                  "            if (!e && r.code === 201) {",
+                  "                ids[normalizar(faltan[i])] = r.json().id;",
+                  "                console.log(`Creado en ${tipo}: ${faltan[i]}`);",
+                  "            } else {",
+                  "                resumen.errores.push(`Crear ${faltan[i]}: ${mensaje(e, r)}`);",
+                  "            }",
+                  "            siguiente(i + 1);",
+                  "        });",
+                  "    };",
+                  "    siguiente(0);",
+                  "});",
+                  "",
+                  "const crearUsuarios = (departamentos, programas) => {",
+                  "    const siguiente = i => {",
+                  "        if (i >= usuarios.length) {",
+                  "            pm.variables.set('resumenCarga', JSON.stringify(resumen));",
+                  "            console.log(`Carga terminada: ${resumen.creados.length} creados, ${resumen.existentes.length} ya existían, ${resumen.errores.length} errores`);",
+                  "            return;",
+                  "        }",
+                  "        const { departamento, programa, ...datos } = usuarios[i];",
+                  "        const nombre = `${datos.primerNombre} ${datos.primerApellido} <${datos.email}>`;",
+                  "        const cuerpo = { ...datos, password: clave };",
+                  "        if (departamento) cuerpo.departamentoId = departamentos[normalizar(departamento)];",
+                  "        if (programa) cuerpo.programaId = programas[normalizar(programa)];",
+                  "        // Sin su departamento o programa no se crea: quedaría sin perfil",
+                  "        if ((departamento && !cuerpo.departamentoId) || (programa && !cuerpo.programaId)) {",
+                  "            resumen.errores.push(`${nombre}: no se encontró ni se pudo crear ${departamento || programa}`);",
+                  "            return siguiente(i + 1);",
+                  "        }",
+                  "        enviar('POST', '/usuarios', cuerpo, (err, res) => {",
+                  "            if (!err && res.code === 201) resumen.creados.push(nombre);",
+                  "            else if (!err && res.code === 406) resumen.existentes.push(nombre);",
+                  "            else resumen.errores.push(`${nombre}: ${mensaje(err, res)}`);",
+                  "            siguiente(i + 1);",
+                  "        });",
+                  "    };",
+                  "    siguiente(0);",
+                  "};",
+                  "",
+                  "pm.variables.set('correosCarga', JSON.stringify(usuarios.map(u => u.email)));",
+                  "const nombresProgramas = usuarios.map(u => u.programa).filter(Boolean);",
+                  "const nombresDepartamentos = usuarios.map(u => u.departamento).concat(nombresProgramas.map(p => adscripcion[p]));",
+                  "asegurarCatalogo('departamentos', nombresDepartamentos, nombre => ({ nombre }), departamentos =>",
+                  "    asegurarCatalogo('programas', nombresProgramas,",
+                  "        nombre => ({ nombre, departamentoId: departamentos[normalizar(adscripcion[nombre])] }),",
+                  "        (programas, existentes) => {",
+                  "            // Un programa ya registrado sin su departamento deja a su Comité sin ver los trabajos",
+                  "            existentes.filter(c => nombresProgramas.some(n => normalizar(n) === normalizar(c.nombre)))",
+                  "                .forEach(c => {",
+                  "                    const esperado = nombresProgramas.find(n => normalizar(n) === normalizar(c.nombre));",
+                  "                    const departamentoId = departamentos[normalizar(adscripcion[esperado])];",
+                  "                    if (!c.departamento || c.departamento.id !== departamentoId)",
+                  "                        resumen.errores.push(`El programa ${c.nombre} ya existe pero no está adscrito a ` +",
+                  "                            `${adscripcion[esperado]}: su Comité no verá sus trabajos`);",
+                  "                });",
+                  "            crearUsuarios(departamentos, programas);",
+                  "        }));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const resumen = JSON.parse(pm.variables.get('resumenCarga') || '{\"creados\":[],\"existentes\":[],\"errores\":[\"La carga no terminó\"]}');",
+                  "pm.test(`${resumen.creados.length} usuarios creados, ${resumen.existentes.length} ya existían`, () =>",
+                  "    pm.expect(resumen.errores, 'Errores:\\n' + resumen.errores.join('\\n')).to.be.empty);",
+                  "",
+                  "const registrados = pm.response.json().map(u => u.email);",
+                  "const faltantes = JSON.parse(pm.variables.get('correosCarga')).filter(c => !registrados.includes(c));",
+                  "pm.test('Todos los usuarios de la carga están registrados', () => pm.expect(faltantes, faltantes.join(', ')).to.be.empty);",
+                  "resumen.errores.forEach(e => console.error(e));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sgtg/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sgtg",
+                "usuarios"
+              ]
+            },
+            "description": "Crea los 4 programas de la FIET (si faltan) y 60 estudiantes repartidos entre ellos, con su perfil de estudiante. Contraseña: variable claveCargaMasiva."
+          }
+        }
+      ],
+      "description": "Ejecutar en orden (o la carpeta completa con Run). Se puede repetir: los que ya existen se omiten."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Inicia sesión como administrador si no hay token o está por vencer, para que cualquier petición",
+          "// (o carpeta) se pueda ejecutar sola, sin correr antes el login.",
+          "const tokenVigente = () => {",
+          "    const token = pm.collectionVariables.get('adminToken');",
+          "    if (!token || typeof atob !== 'function') return false;",
+          "    try {",
+          "        let carga = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+          "        while (carga.length % 4) carga += '=';",
+          "        return JSON.parse(atob(carga)).exp * 1000 > Date.now() + 60000;",
+          "    } catch (e) {",
+          "        return false;",
+          "    }",
+          "};",
+          "",
+          "if (!pm.request.url.toString().includes('/auth/login') && !tokenVigente()) {",
+          "    pm.sendRequest({",
+          "        url: pm.variables.replaceIn('{{baseUrl}}/api/v1/sgtg/auth/login'),",
+          "        method: 'POST',",
+          "        header: [{ key: 'Content-Type', value: 'application/json' }],",
+          "        body: { mode: 'raw', raw: JSON.stringify({",
+          "            email: pm.variables.replaceIn('{{adminEmail}}'),",
+          "            password: pm.variables.replaceIn('{{adminPassword}}')",
+          "        }) }",
+          "    }, (err, res) => {",
+          "        if (!err && res.code === 200) {",
+          "            pm.collectionVariables.set('adminToken', res.json().token);",
+          "        } else {",
+          "            console.error('No se pudo iniciar sesión como administrador. Revise adminEmail y adminPassword.', err || res.text());",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@unicauca.edu.co"
+    },
+    {
+      "key": "adminPassword",
+      "value": "CambiarEstaClave123*"
+    },
+    {
+      "key": "diasAdelantar",
+      "value": "30"
+    },
+    {
+      "key": "fechaObjetivo",
+      "value": "2027-06-01"
+    },
+    {
+      "key": "claveCargaMasiva",
+      "value": "Unicauca2026*"
+    }
+  ]
+}
