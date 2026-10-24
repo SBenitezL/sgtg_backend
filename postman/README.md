@@ -5,8 +5,9 @@ Colecciones de Postman (plan gratuito) para probar la API contra el backend en e
 ## Archivos
 - `sgtg-pruebas-integracion.postman_collection.json`: las pruebas de integración de las Fases 0 a 8 (249 peticiones en 8 carpetas), convertidas de `thunder-tests/sgtg-coleccion.json`. La carpeta 6 adelanta el reloj para probar la sustentación y los vencimientos. El detalle de lo que cubre cada carpeta está en [thunder-tests/README.md](../thunder-tests/README.md#qué-cubre).
 - `sgtg-utilidades.postman_collection.json`: el reloj de desarrollo (adelantar la fecha del backend y ejecutar los vencimientos) y la carga masiva de usuarios con datos creíbles.
+- `sgtg-carga-adicional.postman_collection.json`: más docentes para los cuatro departamentos y asesores para las prácticas profesionales (ver [Carga adicional](#carga-adicional-docentes-y-asesores)).
 - `sgtg-local.postman_environment.json`: entorno con `baseUrl` y las credenciales del administrador.
-- `usuarios-carga-masiva.csv`: los usuarios de la carga masiva (nombre, correo, código, documento, roles, departamento o programa). Se abre con Excel.
+- `usuarios-carga-masiva.csv` y `usuarios-carga-adicional.csv`: los usuarios de cada carga (nombre, correo, código, documento, roles, departamento o programa y, en los asesores, su organización). Se abren con Excel.
 
 Los PDF que adjuntan las pruebas se leen de `thunder-tests/archivos`.
 
@@ -95,6 +96,38 @@ Los demás docentes y los 60 estudiantes están en `usuarios-carga-masiva.csv`.
 - El Comité solo ve y decide los trabajos del programa adscrito a su departamento (por ejemplo, `drojas` solo los de Ingeniería de Sistemas). El jefe solo ve los trabajos cuyo director es de su departamento, y solo sobre esos asigna evaluadores y remite al Consejo. El Consejo y Decanatura ven todos. Ver [docs/ajustes-2026-10-23.md](../docs/ajustes-2026-10-23.md).
 - Los roles DIRECTOR, EVALUADOR y JURADO no se cargan: el sistema los asigna al crear el trabajo, asignar evaluadores o programar la sustentación.
 - Un docente de cátedra necesita un codirector de planta para dirigir (Art. 6).
+
+## Carga adicional: docentes y asesores
+Colección `sgtg-carga-adicional`: más usuarios para repetir las pruebas sin crearlos a mano. Complementa la carga masiva (ningún correo, código ni documento se repite), pero también funciona sola: crea los departamentos si faltan. Se ejecuta con **Run**, se puede repetir (los que ya existen se omiten) y usa la misma contraseña (`claveCargaMasiva`, por defecto `Unicauca2026*`).
+
+1. **Cargar docentes adicionales**: 24 docentes con su perfil docente, 6 por departamento (3 de planta, 2 ocasionales y 1 de cátedra). Sirven de directores, codirectores, evaluadores y jurados.
+2. **Cargar asesores de práctica profesional**: 12 asesores externos con el rol ASESOR, 3 por programa, de organizaciones ficticias. El front los ofrece como asesores al crear una práctica. La organización no se guarda en el usuario: se escribe en el formulario de la práctica (está en la última columna de `usuarios-carga-adicional.csv`).
+
+| Departamento | Planta | Ocasionales | Cátedra |
+|---|---|---|---|
+| Sistemas | `agarcia`, `ljerazo`, `csanchez` | `fpatino`, `acaicedo` | `jguzman` |
+| Telemática | `oortiz`, `oiceron`, `nramirez` | `mfzuniga`, `dmartinez` | `esanchez` |
+| Telecomunicaciones | `lfmejia`, `lnarvaez`, `spvalencia` | `jburbanod`, `dcastillo` | `pavalencia` |
+| Electrónica, Instrumentación y Control | `lrodriguez`, `mameneses`, `pvelasco` | `simbachi`, `oanacona` | `mfmorales` |
+
+Los correos de los docentes son `<usuario>@unicauca.edu.co`.
+
+| Programa | Asesor | Correo | Organización |
+|---|---|---|---|
+| Ingeniería de Sistemas | Luisa Fernanda López Mejía | lflopez@kronossoftware.com.co | Kronos Software S.A.S. |
+| Ingeniería de Sistemas | Paola Bolaños Sarria | pbolanos@nodoandinotecnologia.com.co | Nodo Andino Tecnología S.A.S. |
+| Ingeniería de Sistemas | Juan Camilo Chicangana Sarria | jcchicanganas@datapacificoconsultores.com.co | Datapacífico Consultores S.A.S. |
+| Tecnología en Telemática | Mariana Hurtado Solarte | mhurtado@redcaucaconectividad.com.co | RedCauca Conectividad S.A.S. |
+| Tecnología en Telemática | Alejandra Imbachí Solarte | aimbachi@altiplanocloud.com.co | Altiplano Cloud S.A.S. |
+| Tecnología en Telemática | Juan Carlos Agredo Fernández | jcagredo@puraceredes.com.co | Puracé Redes S.A.S. |
+| Ingeniería Electrónica y Telecomunicaciones | Sandra Patricia Quintero Valencia | spquintero@senalandinatelecomunicaciones.com.co | Señal Andina Telecomunicaciones S.A.S. |
+| Ingeniería Electrónica y Telecomunicaciones | José Luis Collazos Mosquera | jlcollazos@ondasdelmacizo.com.co | Ondas del Macizo S.A.S. |
+| Ingeniería Electrónica y Telecomunicaciones | Juan Sebastián Arboleda Ortiz | jsarboleda@circuitosdelsuringenieria.com.co | Circuitos del Sur Ingeniería S.A.S. |
+| Ingeniería en Automática Industrial | Valentina Erazo Vargas | verazo@automatizacionpayanesa.com.co | Automatización Payanesa S.A.S. |
+| Ingeniería en Automática Industrial | Claudia Hurtado Collazos | churtado@procesosdelcauca.com.co | Procesos del Cauca S.A.S. |
+| Ingeniería en Automática Industrial | Yuliana Vargas Burbano | yvargas@mecatronicadelvalledepubenza.com.co | Mecatrónica del Valle de Pubenza S.A.S. |
+
+Un asesor con usuario inicia sesión con su rol ASESOR y ve las prácticas que asesora en "Mis trabajos".
 
 ## Diferencias con la colección de Thunder
 - Los tokens e ids se guardan en variables de la colección, no del entorno.
