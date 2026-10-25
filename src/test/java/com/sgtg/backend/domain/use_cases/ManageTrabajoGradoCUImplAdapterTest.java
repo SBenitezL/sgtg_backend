@@ -135,6 +135,17 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 .thenReturn(new PerfilDocente(61L, TipoVinculacion.PLANTA, TELEMATICA));
         when(userGateway.findById(20L)).thenReturn(usuario(20L, RoleAdmited.DOCENTE));
         when(userGateway.findById(21L)).thenReturn(usuario(21L, RoleAdmited.EVALUADOR));
+        // Evaluadores y jurados son docentes del departamento del director (Sistemas)
+        for (long docente : new long[] { 20L, 21L, 30L, 99L })
+            when(perfilGateway.buscarPerfilDocente(docente))
+                    .thenReturn(new PerfilDocente(docente, TipoVinculacion.PLANTA, SISTEMAS));
+        // Docente de Telemática (23) y asesor con perfil en Sistemas, sin rol para evaluar (22)
+        when(userGateway.findById(23L)).thenReturn(usuario(23L, RoleAdmited.DOCENTE));
+        when(perfilGateway.buscarPerfilDocente(23L))
+                .thenReturn(new PerfilDocente(23L, TipoVinculacion.PLANTA, TELEMATICA));
+        when(userGateway.findById(22L)).thenReturn(usuario(22L, RoleAdmited.ASESOR));
+        when(perfilGateway.buscarPerfilDocente(22L))
+                .thenReturn(new PerfilDocente(22L, TipoVinculacion.PLANTA, SISTEMAS));
         // Miembro del Consejo de Facultad (70) y jurado de otros trabajos (30)
         when(userGateway.findById(70L)).thenReturn(usuario(70L, RoleAdmited.CONSEJO));
         when(userGateway.findById(30L)).thenReturn(usuario(30L, RoleAdmited.JURADO));
@@ -397,10 +408,30 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoEnAnteproyecto();
         casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
 
-        // El usuario 50 solo tiene rol COMITE
+        // El usuario 22 solo tiene rol ASESOR
         ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
-                () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, 50L));
+                () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, 22L));
         assertEquals("error.dominio.participante.rol_no_permitido", error.getMessage());
+    }
+
+    @Test
+    void losEvaluadoresSonDocentesDelDepartamentoSinJefeNiComite() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
+
+        // Miembro del Comité (50) o jefe de departamento (61): deciden sobre el trabajo
+        for (long decisor : new long[] { 50L, 61L }) {
+            BusinessRuleException error = assertThrows(BusinessRuleException.class,
+                    () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, decisor));
+            assertEquals("error.trabajo_grado.evaluador_con_rol_decisor", error.getBusinessRule());
+        }
+        // Docente de otro departamento (23)
+        BusinessRuleException otroDepartamento = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, 23L));
+        assertEquals("error.trabajo_grado.evaluador_otro_departamento", otroDepartamento.getBusinessRule());
+        verify(userGateway, never()).agregarRol(20L, "EVALUADOR");
+
+        assertEquals(Proceso.EVALUACION, casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L).getEtapa());
     }
 
     @Test
@@ -705,10 +736,19 @@ class ManageTrabajoGradoCUImplAdapterTest {
         ManageTrabajoGradoCUImplAdapter enJulio = casoDeUsoEn(LocalDate.of(2026, 7, 6));
         solicitarSustentacion(enJulio, 1L);
 
-        // El usuario 50 solo tiene rol COMITE
+        // El usuario 22 solo tiene rol ASESOR
         ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> enJulio.programarSustentacion(
-                7L, 70L, 99L, 50L, LocalDate.of(2026, 7, 10).atTime(15, 0), "Salón 301", pdf("e.pdf")));
+                7L, 70L, 99L, 22L, LocalDate.of(2026, 7, 10).atTime(15, 0), "Salón 301", pdf("e.pdf")));
         assertEquals("error.dominio.participante.rol_no_permitido", error.getMessage());
+
+        // Igual que los evaluadores: ni miembros del Comité ni docentes de otro departamento
+        BusinessRuleException comite = assertThrows(BusinessRuleException.class, () -> enJulio.programarSustentacion(
+                7L, 70L, 99L, 50L, LocalDate.of(2026, 7, 10).atTime(15, 0), "Salón 301", pdf("e.pdf")));
+        assertEquals("error.trabajo_grado.evaluador_con_rol_decisor", comite.getBusinessRule());
+        BusinessRuleException otroDepartamento = assertThrows(BusinessRuleException.class,
+                () -> enJulio.programarSustentacion(7L, 70L, 99L, 23L, LocalDate.of(2026, 7, 10).atTime(15, 0),
+                        "Salón 301", pdf("e.pdf")));
+        assertEquals("error.trabajo_grado.evaluador_otro_departamento", otroDepartamento.getBusinessRule());
     }
 
     @Test

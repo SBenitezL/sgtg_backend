@@ -72,6 +72,9 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     /** Firma con la que inicia todo archivo PDF */
     private static final byte[] FIRMA_PDF = "%PDF-".getBytes(StandardCharsets.US_ASCII);
+    /** Roles que deciden sobre el trabajo y por eso no evalúan el anteproyecto ni son jurados */
+    private static final Set<RoleAdmited> ROLES_SIN_EVALUACION = Set.of(RoleAdmited.JEFE_DEP, RoleAdmited.COMITE,
+            RoleAdmited.CONSEJO);
 
     private final ManageTrabajoGradoGatewayIntPort trabajoGateway;
     private final ManageUserGatewayIntPort userGateway;
@@ -318,8 +321,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Usuario jefe = cargarUsuario(usuarioId);
         validarJefeDelDepartamento(trabajo, usuarioId);
-        Evaluador evaluador1 = evaluador1Id == null ? null : new Evaluador(cargarUsuario(evaluador1Id));
-        Evaluador evaluador2 = evaluador2Id == null ? null : new Evaluador(cargarUsuario(evaluador2Id));
+        Evaluador evaluador1 = cargarEvaluador(evaluador1Id, trabajo);
+        Evaluador evaluador2 = cargarEvaluador(evaluador2Id, trabajo);
         trabajo.asignarEvaluadores(evaluador1, evaluador2, jefe.getCodigo(), LocalDateTime.now(this.clock),
                 this.calendario);
         TrabajoGrado guardado = this.trabajoGateway.guardar(trabajo);
@@ -538,8 +541,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
             LocalDateTime fechaHora, String salon, ArchivoAdjunto formatoE) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Usuario responsable = cargarUsuario(usuarioId);
-        Evaluador coordinador = coordinadorId == null ? null : new Evaluador(cargarUsuario(coordinadorId));
-        Evaluador jurado = juradoId == null ? null : new Evaluador(cargarUsuario(juradoId));
+        Evaluador coordinador = cargarEvaluador(coordinadorId, trabajo);
+        Evaluador jurado = cargarEvaluador(juradoId, trabajo);
         List<String> rutas = new ArrayList<>();
         String rutaFormatoE = almacenar(trabajo, trabajoId, TipoDocumento.DOCUMENTO_FINAL, formatoE, rutas);
         TrabajoGrado guardado = conArchivos(rutas, () -> {
@@ -840,6 +843,32 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         if (usuario == null)
             this.exceptionFormatter.returnResponseErrorEntityNotFound("error.usuario.no_encontrado");
         return usuario;
+    }
+
+    /**
+     * Evaluador del anteproyecto o jurado de la sustentación: docente del
+     * departamento del director (el que asigna los evaluadores). No lo son el
+     * jefe de departamento ni los miembros del Comité o del Consejo, que deciden
+     * sobre el mismo trabajo.
+     *
+     * @return null si no se indicó (el dominio rechaza la asignación incompleta)
+     */
+    private Evaluador cargarEvaluador(Long usuarioId, TrabajoGrado trabajo) {
+        if (usuarioId == null)
+            return null;
+        Usuario usuario = cargarUsuario(usuarioId);
+        if (tieneAlgunRol(usuario, ROLES_SIN_EVALUACION))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.evaluador_con_rol_decisor");
+        PerfilDocente perfil = this.perfilGateway.buscarPerfilDocente(usuarioId);
+        if (perfil == null || perfil.getDepartamento() == null
+                || !perfil.getDepartamento().esMismo(trabajo.getDirector().getDepartamento()))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.evaluador_otro_departamento");
+        return new Evaluador(usuario);
+    }
+
+    private static boolean tieneAlgunRol(Usuario usuario, Set<RoleAdmited> roles) {
+        return usuario.getRole() != null && usuario.getRole().stream()
+                .anyMatch(role -> roles.stream().anyMatch(rol -> rol.name().equals(role.getTrole())));
     }
 
     private Director cargarDirector(Long usuarioId, String claveSinPerfil) {

@@ -194,7 +194,9 @@ class FlujoSustentacionIntegracionTest {
         long comiteId = crearUsuario("C", "COMITE");
         long jefeId = crearUsuario("J", "JEFE_DEP");
         long evaluador1Id = crearUsuario("V", "EVALUADOR");
+        perfilDocente(evaluador1Id);
         long evaluador2Id = crearUsuario("W", "DOCENTE");
+        perfilDocente(evaluador2Id);
         crearUsuario("F", "CONSEJO");
         crearUsuario("K", "DECANATURA");
         perfilDocente(docenteId);
@@ -262,7 +264,9 @@ class FlujoSustentacionIntegracionTest {
     void flujoCompletoDeLaSustentacion() throws Exception {
         long trabajoId = trabajoEnCurso();
         long coordinadorId = crearUsuario("X", "JURADO");
+        perfilDocente(coordinadorId);
         long juradoId = crearUsuario("Y", "DOCENTE");
+        perfilDocente(juradoId);
         long evaluadorId = id(enviar(get(TRABAJOS + trabajoId), login("F"), null), "$.anteproyecto.evaluadores[0].usuarioId");
         String docente = login("D");
         String consejo = login("F");
@@ -407,7 +411,9 @@ class FlujoSustentacionIntegracionTest {
     void laInasistenciaAplazaYLaSegundaCierraElTrabajo() throws Exception {
         long trabajoId = trabajoEnCurso();
         long coordinadorId = crearUsuario("X", "JURADO");
+        perfilDocente(coordinadorId);
         long juradoId = crearUsuario("Y", "DOCENTE");
+        perfilDocente(juradoId);
         String consejo = login("F");
         String sustentacion = TRABAJOS + trabajoId + "/sustentacion";
         reloj.fijar(LocalDate.of(2026, 7, 6));

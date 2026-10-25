@@ -192,7 +192,9 @@ class FlujoAnteproyectoIntegracionTest {
     void flujoCompletoDelAnteproyecto() throws Exception {
         long trabajoId = trabajoEnAnteproyecto();
         long evaluador1Id = crearUsuario("V", "EVALUADOR");
+        perfilDocente(evaluador1Id, departamentoId);
         long evaluador2Id = crearUsuario("W", "DOCENTE");
+        perfilDocente(evaluador2Id, departamentoId);
         String docente = login("D");
         String jefe = login("J");
 
@@ -325,7 +327,9 @@ class FlujoAnteproyectoIntegracionTest {
     void elConsejoDecideSobreElAnteproyecto() throws Exception {
         long trabajoId = trabajoEnAnteproyecto();
         long evaluador1Id = crearUsuario("V", "EVALUADOR");
+        perfilDocente(evaluador1Id, departamentoId);
         long evaluador2Id = crearUsuario("W", "EVALUADOR");
+        perfilDocente(evaluador2Id, departamentoId);
         crearUsuario("F", "CONSEJO");
         String docente = login("D");
         subir(TRABAJOS + trabajoId + "/anteproyecto", docente, null, archivo("anteproyecto.pdf"))
@@ -508,7 +512,9 @@ class FlujoAnteproyectoIntegracionTest {
     void permisosDeLaEtapaDeAnteproyecto() throws Exception {
         long trabajoId = trabajoEnAnteproyecto();
         long evaluador1Id = crearUsuario("V", "EVALUADOR");
+        perfilDocente(evaluador1Id, departamentoId);
         long evaluador2Id = crearUsuario("W", "EVALUADOR");
+        perfilDocente(evaluador2Id, departamentoId);
         crearUsuario("X", "DOCENTE");
         long otroJefeId = crearUsuario("O", "JEFE_DEP", "DOCENTE");
         perfilDocente(otroJefeId, crearDepartamento("Otro"));
