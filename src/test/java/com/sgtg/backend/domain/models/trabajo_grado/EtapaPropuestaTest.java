@@ -69,6 +69,34 @@ class EtapaPropuestaTest {
     }
 
     @Test
+    void laCartaDeAceptacionSeCorrigeComoNuevaVersionCuandoLaPropuestaSePuedeCorregir() {
+        PracticaProfesional practica = new PracticaProfesional(null, "Título", DatosPrueba.OBJETIVOS,
+                DatosPrueba.estudiante(10L), DatosPrueba.directorPlanta(1L), null, DatosPrueba.asesorOrganizacion(),
+                DatosPrueba.cartaAceptacion());
+        int inicial = practica.getCartaAceptacion().version();
+
+        // Antes de radicar
+        practica.actualizarCartaAceptacion("9/CARTA_ACEPTACION/v2/carta.pdf", LUNES);
+        assertEquals(inicial + 1, practica.getCartaAceptacion().version());
+        assertEquals("9/CARTA_ACEPTACION/v2/carta.pdf", practica.getCartaAceptacion().ruta());
+        assertEquals(TipoDocumento.CARTA_ACEPTACION, practica.getCartaAceptacion().tipo());
+
+        // Mientras el Comité la revisa no se corrige
+        practica.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
+        assertRegla("error.dominio.propuesta.edicion_no_permitida",
+                () -> practica.actualizarCartaAceptacion("9/CARTA_ACEPTACION/v3/carta.pdf", LUNES));
+
+        // Después de un NO APROBADO sí; sin archivo se rechaza
+        practica.registrarDecisionComite(decisionComite(ResultadoConcepto.NO_APROBADO, LUNES.plusDays(3)), "C001",
+                LUNES.plusDays(3).atTime(9, 0));
+        assertRegla("error.dominio.practica.carta_aceptacion_obligatoria",
+                () -> practica.actualizarCartaAceptacion(null, LUNES.plusDays(4)));
+        practica.actualizarCartaAceptacion("9/CARTA_ACEPTACION/v3/carta.pdf", LUNES.plusDays(4));
+        assertEquals(inicial + 2, practica.getCartaAceptacion().version());
+        assertEquals(LUNES.plusDays(4), practica.getCartaAceptacion().fechaCarga());
+    }
+
+    @Test
     void radicarCreaLaPrimeraVersionYCalculaElPlazoDelComite() {
         trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
 

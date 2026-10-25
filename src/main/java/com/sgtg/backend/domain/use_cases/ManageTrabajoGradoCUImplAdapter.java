@@ -255,6 +255,20 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
+    public TrabajoGrado actualizarCartaAceptacion(Long trabajoId, Long usuarioId, ArchivoAdjunto carta) {
+        TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        if (!(trabajo instanceof PracticaProfesional))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.carta_solo_practica");
+        PracticaProfesional practica = (PracticaProfesional) trabajo;
+        List<String> rutas = new ArrayList<>();
+        String ruta = almacenar(trabajo, trabajoId, TipoDocumento.CARTA_ACEPTACION, carta, rutas);
+        return conArchivos(rutas, () -> {
+            practica.actualizarCartaAceptacion(ruta, hoy());
+            return this.trabajoGateway.guardar(practica);
+        });
+    }
+
+    @Override
     public TrabajoGrado registrarDecisionComite(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
             String acta, ArchivoAdjunto soporte, String observaciones, LocalDate fecha) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);

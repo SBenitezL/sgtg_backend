@@ -170,6 +170,17 @@ public class TrabajoGradoController {
     }
 
     /**
+     * Carga una nueva versión de la carta de aceptación de una práctica
+     * profesional. Solo el director, mientras se puede corregir la propuesta.
+     */
+    @PostMapping(value = "/{trabajoId}/propuesta/carta-aceptacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TrabajoGradoDTOResponse> actualizarCartaAceptacion(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(vista(manageTrabajoGrado.actualizarCartaAceptacion(trabajoId, usuario.getCusuari(),
+                adjunto(archivo))));
+    }
+
+    /**
      * Corrige título, objetivos, descripción y línea de investigación. Solo el
      * director, antes de la primera radicación o después de un NO APROBADO.
      */

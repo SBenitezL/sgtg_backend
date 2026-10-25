@@ -218,6 +218,53 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
+    void elDirectorCargaUnaNuevaVersionDeLaCartaDeAceptacion() {
+        NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
+                List.of("Objetivo"), List.of(10L), null,
+                new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
+                        true),
+                pdf("carta.pdf"));
+        when(archivoGateway.guardarTemporal(any())).thenReturn("temporal/abc/carta.pdf");
+        when(archivoGateway.reubicar(any(), any(), any(), any())).thenReturn("9/CARTA_ACEPTACION/v1/carta.pdf");
+        TrabajoGrado practica = casoDeUso.crear(1L, datos);
+        when(trabajoGateway.buscarPorId(9L)).thenReturn(practica);
+
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.actualizarCartaAceptacion(9L, 10L, pdf("carta-2.pdf")));
+        PracticaProfesional corregida = assertInstanceOf(PracticaProfesional.class,
+                casoDeUso.actualizarCartaAceptacion(9L, 1L, pdf("carta-2.pdf")));
+
+        verify(archivoGateway).guardar(eq(9L), eq("CARTA_ACEPTACION"), eq("Carta de aceptación"), any());
+        assertEquals("9/CARTA_ACEPTACION/v1/carta-2.pdf", corregida.getCartaAceptacion().ruta());
+        assertEquals(2, corregida.getCartaAceptacion().version());
+    }
+
+    @Test
+    void laCartaDeAceptacionSoloEsDeLaPracticaYSiNoSeAceptaSeEliminaElArchivo() {
+        trabajoGuardado();
+        BusinessRuleException investigacion = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.actualizarCartaAceptacion(7L, 1L, pdf("carta.pdf")));
+        assertEquals("error.trabajo_grado.carta_solo_practica", investigacion.getBusinessRule());
+        verify(archivoGateway, never()).guardar(any(), eq("CARTA_ACEPTACION"), any(), any());
+
+        // Mientras el Comité revisa la propuesta no se corrige la carta: se elimina el archivo cargado
+        NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
+                List.of("Objetivo"), List.of(10L), null,
+                new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
+                        true),
+                pdf("carta.pdf"));
+        when(archivoGateway.guardarTemporal(any())).thenReturn("temporal/abc/carta.pdf");
+        when(archivoGateway.reubicar(any(), any(), any(), any())).thenReturn("9/CARTA_ACEPTACION/v1/carta.pdf");
+        TrabajoGrado practica = casoDeUso.crear(1L, datos);
+        when(trabajoGateway.buscarPorId(9L)).thenReturn(practica);
+        casoDeUso.radicarPropuesta(9L, 1L, pdf("p.pdf"));
+
+        assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.actualizarCartaAceptacion(9L, 1L, pdf("carta-2.pdf")));
+        verify(archivoGateway).eliminar("9/CARTA_ACEPTACION/v1/carta-2.pdf");
+    }
+
+    @Test
     void siLaPracticaNoSeCreaSeEliminaLaCartaTemporal() {
         // Sin asesor de la organización el dominio rechaza la práctica
         NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",

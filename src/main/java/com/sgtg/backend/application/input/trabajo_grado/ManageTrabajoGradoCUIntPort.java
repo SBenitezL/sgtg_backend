@@ -83,6 +83,14 @@ public interface ManageTrabajoGradoCUIntPort {
     public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
 
     /**
+     * Carga una nueva versión de la carta de aceptación de una práctica
+     * profesional, mientras se puede corregir la propuesta. Solo el director.
+     *
+     * @param carta archivo de la carta de aceptación (PDF)
+     */
+    public TrabajoGrado actualizarCartaAceptacion(Long trabajoId, Long usuarioId, ArchivoAdjunto carta);
+
+    /**
      * Corrige título, objetivos, descripción y línea de investigación de la
      * propuesta, mientras se puede radicar una versión. Solo el director.
      */

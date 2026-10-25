@@ -331,6 +331,49 @@ class FlujoPropuestaIntegracionTest {
     }
 
     @Test
+    void laCartaDeAceptacionSeCorrigeConLaPropuesta() throws Exception {
+        long docenteId = crearUsuario("D", "DOCENTE");
+        long estudianteId = crearUsuario("E", "ESTUDIANTE");
+        crearComite("C", departamentoId);
+        enviar(put(API + "/perfiles/docentes/" + docenteId), admin,
+                Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamentoId)).andExpect(status().isOk());
+        enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
+                .andExpect(status().isOk());
+        String docente = login(correo("D"), CLAVE);
+        Map<String, Object> asesor = new LinkedHashMap<>();
+        asesor.put("codigo", "1061" + sufijo);
+        asesor.put("primerNombre", "Asesor");
+        asesor.put("primerApellido", "Externo");
+        asesor.put("email", "asesor" + sufijo + "@empresa.com");
+        asesor.put("organizacion", "Empresa");
+        asesor.put("externo", true);
+
+        long trabajoId = id(subir(API + "/trabajos-grado/practica-profesional", docente,
+                Map.of("titulo", "Práctica", "objetivos", List.of("Objetivo"), "estudianteId", estudianteId,
+                        "asesor", asesor),
+                archivo("carta.pdf"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.cartaAceptacion.version").value(1)), "$.id");
+        String url = API + "/trabajos-grado/" + trabajoId + "/propuesta/carta-aceptacion";
+
+        // Antes de radicar se carga una nueva versión
+        subir(url, docente, null, archivo("carta-2.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cartaAceptacion.version").value(2))
+                .andExpect(jsonPath("$.cartaAceptacion.ruta", containsString(trabajoId + "/CARTA_ACEPTACION/")));
+
+        // Mientras el Comité la revisa no se corrige; tampoco la corrige otro usuario
+        subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
+                .andExpect(status().isOk());
+        subir(url, docente, null, archivo("carta-3.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "La propuesta solo se puede corregir antes de radicarla o después de que el Comité no la apruebe."));
+        subir(url, login(correo("C"), CLAVE), null, archivo("carta-3.pdf"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void lasReglasDeNegocioRespondenConElMensajeEnEspanol() throws Exception {
         long docenteId = crearUsuario("D", "DOCENTE");
         long estudianteId = crearUsuario("E", "ESTUDIANTE");

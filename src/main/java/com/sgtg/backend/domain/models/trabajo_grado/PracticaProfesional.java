@@ -1,5 +1,6 @@
 package com.sgtg.backend.domain.models.trabajo_grado;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
@@ -63,6 +64,26 @@ public class PracticaProfesional extends TrabajoGrado {
      */
     public void reubicarCartaAceptacion(String ruta) {
         this.cartaAceptacion = this.cartaAceptacion.conRuta(ruta);
+    }
+
+    /**
+     * Carga una nueva versión de la carta de aceptación al corregir la
+     * propuesta. Solo mientras se puede radicar una versión: antes de la
+     * primera radicación o después de que el Comité no la apruebe. La versión
+     * anterior deja de ser la vigente.
+     *
+     * @param ruta ruta de la nueva carta en el almacenamiento de archivos
+     * @param hoy  fecha de carga
+     */
+    public void actualizarCartaAceptacion(String ruta, LocalDate hoy) {
+        validarEtapa(Proceso.PROPUESTA);
+        if (!getPropuesta().puedeRadicar())
+            throw new ReglaNegocioException("error.dominio.propuesta.edicion_no_permitida");
+        if (CheckString.isBlank(ruta))
+            throw new ReglaNegocioException("error.dominio.practica.carta_aceptacion_obligatoria");
+        this.cartaAceptacion = this.cartaAceptacion == null
+                ? Documento.inicial(TipoDocumento.CARTA_ACEPTACION, ruta, hoy)
+                : this.cartaAceptacion.nuevaVersion(ruta, hoy);
     }
 
     public Documento getCartaAceptacion() {
