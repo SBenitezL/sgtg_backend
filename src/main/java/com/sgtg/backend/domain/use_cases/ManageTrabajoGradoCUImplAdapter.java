@@ -109,6 +109,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         Director director = cargarDirector(directorUsuarioId, "error.trabajo_grado.director_sin_perfil");
         Director codirector = datos.codirectorId() == null ? null
                 : cargarDirector(datos.codirectorId(), "error.trabajo_grado.codirector_sin_perfil");
+        validarDireccionSinJefe(directorUsuarioId, datos.codirectorId(), director, codirector);
         List<Estudiante> estudiantes = cargarEstudiantes(datos.estudiantesIds());
         validarDisponibilidad(estudiantes);
         Asesor asesor = crearAsesor(datos.asesor());
@@ -869,6 +870,21 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     private static boolean tieneAlgunRol(Usuario usuario, Set<RoleAdmited> roles) {
         return usuario.getRole() != null && usuario.getRole().stream()
                 .anyMatch(role -> roles.stream().anyMatch(rol -> rol.name().equals(role.getTrole())));
+    }
+
+    /**
+     * El jefe de departamento asigna los evaluadores y remite al Consejo los
+     * trabajos de su departamento (el del director): no dirige ni codirige
+     * ninguno de ellos. Un jefe de otro departamento sí puede ser codirector.
+     */
+    private void validarDireccionSinJefe(Long directorId, Long codirectorId, Director director, Director codirector) {
+        Set<RoleAdmited> jefe = Set.of(RoleAdmited.JEFE_DEP);
+        if (tieneAlgunRol(cargarUsuario(directorId), jefe))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.jefe_no_dirige");
+        if (codirector != null && tieneAlgunRol(cargarUsuario(codirectorId), jefe)
+                && codirector.getDepartamento() != null
+                && codirector.getDepartamento().esMismo(director.getDepartamento()))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.jefe_no_codirige");
     }
 
     private Director cargarDirector(Long usuarioId, String claveSinPerfil) {

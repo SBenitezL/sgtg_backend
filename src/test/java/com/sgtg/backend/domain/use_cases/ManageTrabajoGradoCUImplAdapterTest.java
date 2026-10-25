@@ -898,6 +898,21 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
+    void elJefeDelDepartamentoNoDirigeNiCodirigeTrabajosDeSuDepartamento() {
+        // El jefe de Sistemas (60) como director
+        BusinessRuleException director = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(60L,
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo"), List.of(10L),
+                        null, null, null)));
+        assertEquals("error.trabajo_grado.jefe_no_dirige", director.getBusinessRule());
+        // Como codirector de un director de Sistemas (1)
+        BusinessRuleException codirector = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(1L,
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo"), List.of(10L),
+                        60L, null, null)));
+        assertEquals("error.trabajo_grado.jefe_no_codirige", codirector.getBusinessRule());
+        verify(trabajoGateway, never()).guardar(any());
+    }
+
+    @Test
     void losEstudiantesDelTrabajoSonDelMismoPrograma() {
         NuevoTrabajoGrado mezclado = new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título",
                 List.of("Objetivo"), List.of(10L, 11L), null, null, null);
