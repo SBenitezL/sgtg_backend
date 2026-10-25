@@ -388,6 +388,10 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(jsonPath("$.sustentacion.calificaciones[0].rutaActa")
                         .value(trabajoId + "/TI-G/v1/Formato G - v1.pdf"))
                 .andExpect(jsonPath("$.sustentacion.fechaLimiteAjustes").isNotEmpty());
+        // La notificación de la calificación indica su sesión (el front lleva a su detalle)
+        enviar(get(API + "/notificaciones"), login("E"), null)
+                .andExpect(jsonPath("$[?(@.evento == 'SUSTENTACION_CALIFICADA')].sesion")
+                        .value(org.hamcrest.Matchers.hasItem(1)));
 
         // El director radica los ajustes con anexos y el coordinador los verifica
         reloj.fijar(LocalDate.of(2026, 7, 24));
@@ -410,6 +414,12 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("FINALIZADO"))
                 .andExpect(jsonPath("$.sustentacion.rutaVersionDefinitiva").value(trabajoId + "/TI-H/v1/Formato H - v1.pdf"));
+        // Cerrado el trabajo, el jurado y el evaluador pierden los roles de contexto (conservan DOCENTE)
+        enviar(get(API + "/usuarios/me"), jurado, null)
+                .andExpect(jsonPath("$.roles").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("JURADO"))))
+                .andExpect(jsonPath("$.roles").value(org.hamcrest.Matchers.hasItem("DOCENTE")));
+        enviar(get(API + "/usuarios/me"), login("W"), null)
+                .andExpect(jsonPath("$.roles").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("EVALUADOR"))));
 
         // El otro jurado ve el trabajo entre los suyos y descarga sus archivos
         enviar(get(API + "/trabajos-grado/mis-trabajos"), jurado, null)

@@ -1014,6 +1014,25 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
+    void alCerrarseElTrabajoSusEvaluadoresPierdenElRolSalvoQueEvaluenOtroActivo() {
+        trabajoEnAnteproyecto();
+        casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
+        casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L);
+        // Mientras el trabajo sigue activo no se quita ningún rol
+        verify(userGateway, never()).quitarRol(any(), any());
+
+        // El 21 también evalúa otro trabajo activo
+        TrabajoGrado otro = mock(TrabajoGrado.class);
+        when(otro.getId()).thenReturn(8L);
+        when(otro.esEvaluador(21L)).thenReturn(true);
+        when(trabajoGateway.listarTodos()).thenReturn(List.of(otro));
+        casoDeUso.anular(7L, 1L, "Sin financiación");
+
+        verify(userGateway).quitarRol(20L, "EVALUADOR");
+        verify(userGateway, never()).quitarRol(21L, "EVALUADOR");
+    }
+
+    @Test
     void cadaOperacionNotificaSuHechoConElActor() {
         TrabajoGrado trabajo = trabajoGuardado();
         verify(notificador).notificar(trabajo, EventoTrabajoGrado.TRABAJO_REGISTRADO, 1L, null);

@@ -45,6 +45,15 @@ public interface ManageUserGatewayIntPort {
      */
     public void agregarRol(Long usuarioId, String rol);
 
+    /**
+     * Quita un rol de contexto al usuario si lo tiene y conserva al menos otro
+     * (nunca lo deja sin roles).
+     *
+     * @param usuarioId usuario al que se quita
+     * @param rol       nombre del rol (ej. JURADO)
+     */
+    public void quitarRol(Long usuarioId, String rol);
+
     /** @return todos los usuarios, en orden de creación */
     public List<Usuario> listar();
 

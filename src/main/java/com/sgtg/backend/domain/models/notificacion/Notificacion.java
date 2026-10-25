@@ -22,10 +22,12 @@ import com.sgtg.backend.domain.utils.CheckString;
  *                  vencer); null en las demás
  * @param fecha     fecha y hora de creación
  * @param leida     true si el usuario ya la leyó
+ * @param sesion    número de la sesión de sustentación a la que se refiere (ej. la que se calificó); null si
+ *                  el hecho no es de una sesión
  */
 public record Notificacion(Long id, Long usuarioId, TipoNotificacion tipo, String titulo, String mensaje,
         Long trabajoId, Proceso etapa, EventoTrabajoGrado evento, String clave, LocalDateTime fecha,
-        boolean leida) {
+        boolean leida, Integer sesion) {
 
     public Notificacion {
         if (usuarioId == null || tipo == null || CheckString.isBlank(titulo) || CheckString.isBlank(mensaje)
@@ -33,16 +35,31 @@ public record Notificacion(Long id, Long usuarioId, TipoNotificacion tipo, Strin
             throw new ReglaNegocioException("error.dominio.notificacion.datos_incompletos");
     }
 
+    /** Notificación que no se refiere a una sesión de sustentación. */
+    public Notificacion(Long id, Long usuarioId, TipoNotificacion tipo, String titulo, String mensaje,
+            Long trabajoId, Proceso etapa, EventoTrabajoGrado evento, String clave, LocalDateTime fecha,
+            boolean leida) {
+        this(id, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, evento, clave, fecha, leida, null);
+    }
+
     /** Crea una notificación sin leer. */
     public static Notificacion nueva(Long usuarioId, TipoNotificacion tipo, String titulo, String mensaje,
             Long trabajoId, Proceso etapa, EventoTrabajoGrado evento, String clave, LocalDateTime fecha) {
+        return nueva(usuarioId, tipo, titulo, mensaje, trabajoId, etapa, evento, clave, fecha, null);
+    }
+
+    /** Crea una notificación sin leer sobre una sesión de sustentación. */
+    public static Notificacion nueva(Long usuarioId, TipoNotificacion tipo, String titulo, String mensaje,
+            Long trabajoId, Proceso etapa, EventoTrabajoGrado evento, String clave, LocalDateTime fecha,
+            Integer sesion) {
         return new Notificacion(null, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, evento, clave, fecha,
-                false);
+                false, sesion);
     }
 
     /** @return la notificación marcada como leída */
     public Notificacion leer() {
-        return new Notificacion(id, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, evento, clave, fecha, true);
+        return new Notificacion(id, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, evento, clave, fecha, true,
+                sesion);
     }
 
     /** @return true si la notificación es del usuario */

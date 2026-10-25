@@ -41,6 +41,11 @@ public class NotificadorTrabajoGrado {
     public static final int DIAS_AVISO_EJECUCION = 30;
 
     private static final System.Logger LOG = System.getLogger(NotificadorTrabajoGrado.class.getName());
+    /** Hechos de una sesión de sustentación: la notificación guarda el número de la sesión */
+    private static final Set<EventoTrabajoGrado> EVENTOS_DE_SESION = Set.of(EventoTrabajoGrado.SUSTENTACION_PROGRAMADA,
+            EventoTrabajoGrado.NUEVA_FECHA_SOLICITADA, EventoTrabajoGrado.NUEVA_FECHA_RESUELTA,
+            EventoTrabajoGrado.SUSTENTACION_CALIFICADA, EventoTrabajoGrado.INASISTENCIA_REGISTRADA,
+            EventoTrabajoGrado.AJUSTES_RADICADOS, EventoTrabajoGrado.AJUSTES_VERIFICADOS);
 
     private final ManageNotificacionGatewayIntPort notificacionGateway;
     private final ManageUserGatewayIntPort userGateway;
@@ -72,12 +77,24 @@ public class NotificadorTrabajoGrado {
             usuarios.remove(actorId);
             LocalDateTime ahora = LocalDateTime.now(this.clock);
             String mensaje = evento.mensaje(trabajo.getTitulo(), detalle);
+            Integer sesion = sesionDe(trabajo, evento);
             this.notificacionGateway.guardarTodas(usuarios.stream()
                     .map(usuario -> Notificacion.nueva(usuario, evento.getTipo(), evento.getTitulo(), mensaje,
-                            trabajo.getId(), trabajo.getEtapa(), evento, null, ahora))
+                            trabajo.getId(), trabajo.getEtapa(), evento, null, ahora, sesion))
                     .toList());
             return null;
         });
+    }
+
+    /**
+     * Sesión de sustentación a la que se refiere el hecho (la actual al
+     * notificar), para que el front lleve a su detalle; null si no es de una sesión.
+     */
+    private static Integer sesionDe(TrabajoGrado trabajo, EventoTrabajoGrado evento) {
+        if (!EVENTOS_DE_SESION.contains(evento) || trabajo.getSustentacion() == null
+                || trabajo.getSustentacion().getSesiones().isEmpty())
+            return null;
+        return trabajo.getSustentacion().getSesiones().size();
     }
 
     /**

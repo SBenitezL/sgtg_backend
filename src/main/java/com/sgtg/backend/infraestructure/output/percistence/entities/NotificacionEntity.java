@@ -62,4 +62,7 @@ public class NotificacionEntity {
 
     @Column(nullable = false)
     private boolean leida;
+
+    /** Sesión de sustentación a la que se refiere, null si no aplica */
+    private Integer sesion;
 }

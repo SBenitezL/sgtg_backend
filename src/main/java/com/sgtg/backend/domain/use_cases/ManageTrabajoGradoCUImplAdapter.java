@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -681,7 +682,9 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
                 Proceso.APLAZADO)) {
             for (TrabajoGrado trabajo : this.trabajoGateway.listarPorEtapa(etapa)) {
                 if (trabajo.verificarVencimientos(ahora)) {
-                    this.notificador.notificarCambioDelSistema(this.trabajoGateway.guardar(trabajo));
+                    TrabajoGrado guardado = this.trabajoGateway.guardar(trabajo);
+                    this.notificador.notificarCambioDelSistema(guardado);
+                    liberarRolesDeEvaluacion(guardado);
                     actualizados++;
                 }
             }
@@ -751,7 +754,41 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     private TrabajoGrado notificar(TrabajoGrado trabajo, EventoTrabajoGrado evento, Long actorId, String detalle) {
         this.notificador.notificar(trabajo, evento, actorId, detalle);
+        liberarRolesDeEvaluacion(trabajo);
         return trabajo;
+    }
+
+    /**
+     * Cerrado el trabajo (finalizado, no aprobado, cancelado o anulado), sus
+     * evaluadores y jurados pierden los roles de contexto que ganaron con él
+     * (EVALUADOR, JURADO, JURADO_COORDINADOR), salvo que los tengan en otro
+     * trabajo activo. El gateway nunca deja a un usuario sin roles.
+     */
+    private void liberarRolesDeEvaluacion(TrabajoGrado trabajo) {
+        if (!trabajo.estaCerrado())
+            return;
+        Set<Long> evaluadores = trabajo.getAnteproyecto().getEvaluadores().stream().map(Evaluador::getUsuarioId)
+                .collect(Collectors.toSet());
+        Set<Long> jurados = trabajo.getSustentacion() == null ? Set.of()
+                : trabajo.getSustentacion().getSesiones().stream().flatMap(sesion -> sesion.jurados().stream())
+                        .map(Evaluador::getUsuarioId).collect(Collectors.toSet());
+        if (evaluadores.isEmpty() && jurados.isEmpty())
+            return;
+        List<TrabajoGrado> activos = this.trabajoGateway.listarTodos().stream()
+                .filter(otro -> !otro.estaCerrado() && !Objects.equals(otro.getId(), trabajo.getId())).toList();
+        evaluadores.stream().filter(id -> activos.stream().noneMatch(otro -> otro.esEvaluador(id)))
+                .forEach(id -> this.userGateway.quitarRol(id, RoleAdmited.EVALUADOR.name()));
+        jurados.forEach(id -> {
+            if (activos.stream().noneMatch(otro -> otro.esJurado(id)))
+                this.userGateway.quitarRol(id, RoleAdmited.JURADO.name());
+            if (activos.stream().noneMatch(otro -> esCoordinadorActual(otro, id)))
+                this.userGateway.quitarRol(id, RoleAdmited.JURADO_COORDINADOR.name());
+        });
+    }
+
+    private static boolean esCoordinadorActual(TrabajoGrado trabajo, Long usuarioId) {
+        return trabajo.getSustentacion() != null && !trabajo.getSustentacion().getSesiones().isEmpty()
+                && trabajo.getSustentacion().sesionActual().esCoordinador(usuarioId);
     }
 
     private TrabajoGrado registrado(TrabajoGrado trabajo, Long directorUsuarioId) {

@@ -62,6 +62,20 @@ public class ManageUserGatewayImplAdapter implements ManageUserGatewayIntPort {
     }
 
     @Override
+    @Transactional
+    public void quitarRol(Long usuarioId, String rol) {
+        UserEntity entity = userRepository.findById(usuarioId).orElse(null);
+        if (entity == null)
+            return;
+        RoleType tipo = RoleType.valueOf(rol);
+        List<RoleEntity> restantes = entity.getRole().stream().filter(actual -> actual.getTrole() != tipo).toList();
+        if (restantes.size() == entity.getRole().size() || restantes.isEmpty())
+            return;
+        entity.setRole(new ArrayList<>(restantes));
+        userRepository.save(entity);
+    }
+
+    @Override
     public List<Usuario> listar() {
         return userRepository.findAll(Sort.by("cusuari")).stream().map(MapperUsuarioAuth::toDomain).toList();
     }
