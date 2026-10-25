@@ -88,7 +88,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
      * @param aTiempo     true si decidió a más tardar en la fecha límite; null si no hay fecha límite
      */
     public record DecisionDTO(Organo organo, ResultadoConcepto resultado, String acta, String rutaArchivo,
-            String observaciones, LocalDate fecha, LocalDate fechaLimite, Boolean aTiempo) {
+            String observaciones, LocalDate fecha, LocalDate fechaLimite, Boolean aTiempo, Long responsableId) {
     }
 
     /**
@@ -328,7 +328,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
 
     private static DecisionDTO decision(Decision d, LocalDate fechaLimite) {
         return new DecisionDTO(d.organo(), d.resultado(), d.acta(), d.rutaArchivo(), d.observaciones(),
-                d.fecha(), fechaLimite, aTiempo(d.fecha(), fechaLimite));
+                d.fecha(), fechaLimite, aTiempo(d.fecha(), fechaLimite), d.responsableId());
     }
 
     /** @return true si la fecha no supera la fecha límite; null si alguna no se conoce */

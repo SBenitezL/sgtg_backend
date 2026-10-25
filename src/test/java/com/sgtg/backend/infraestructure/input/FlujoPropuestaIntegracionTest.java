@@ -225,7 +225,7 @@ class FlujoPropuestaIntegracionTest {
     void flujoCompletoDeLaPropuesta() throws Exception {
         long docenteId = crearUsuario("D", "DOCENTE");
         long estudianteId = crearUsuario("E", "ESTUDIANTE");
-        crearComite("C", departamentoId);
+        long comiteId = crearComite("C", departamentoId);
         enviar(put(API + "/perfiles/docentes/" + docenteId), admin,
                 Map.of("tipoVinculacion", "PLANTA", "departamentoId", departamentoId)).andExpect(status().isOk());
         enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
@@ -276,6 +276,8 @@ class FlujoPropuestaIntegracionTest {
                         .value(trabajoId + "/ACTA_COMITE/v1/Respuesta del Comite - v1.pdf"))
                 // Decidió dentro del plazo; sin versión en revisión no hay días restantes
                 .andExpect(jsonPath("$.propuesta.decisiones[0].aTiempo").value(true))
+                // Quién emitió el concepto en nombre del Comité
+                .andExpect(jsonPath("$.propuesta.decisiones[0].responsableId").value(comiteId))
                 .andExpect(jsonPath("$.propuesta.decisiones[0].fechaLimite").isNotEmpty())
                 .andExpect(jsonPath("$.propuesta.diasHabilesRestantesConcepto").doesNotExist());
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta_v2.pdf"))

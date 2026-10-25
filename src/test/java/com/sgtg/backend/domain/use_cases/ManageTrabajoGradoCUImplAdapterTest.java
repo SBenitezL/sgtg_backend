@@ -328,6 +328,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals("U50", trabajo.getHistorial().get(0).responsable());
         assertEquals(LocalDate.of(2026, 3, 2), trabajo.getPropuesta().getDecisiones().get(0).fecha());
         assertEquals("7/ACTA_COMITE/v1/acta-1.pdf", trabajo.getPropuesta().getDecisiones().get(0).rutaArchivo());
+        // Queda registrado quién emitió el concepto en nombre del Comité
+        assertEquals(50L, trabajo.getPropuesta().getDecisiones().get(0).responsableId());
     }
 
     /** Trabajo guardado con la propuesta aprobada, en la etapa de anteproyecto. */
@@ -485,6 +487,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
                 pdf("res-100.pdf"), null, 9);
 
         assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
+        assertEquals(70L, trabajo.getAnteproyecto().getDecisionesConsejo().get(0).responsableId());
         // Reloj fijo: lunes 2-mar-2026; investigación dura 9 meses
         assertEquals(LocalDate.of(2026, 3, 2), trabajo.getEjecucion().getFechaNotificacion());
         assertEquals(LocalDate.of(2026, 12, 2), trabajo.getEjecucion().getFechaFin());

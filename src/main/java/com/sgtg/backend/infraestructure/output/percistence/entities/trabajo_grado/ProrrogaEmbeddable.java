@@ -36,6 +36,7 @@ public class ProrrogaEmbeddable {
                     column = @Column(name = "prorroga_decision_ruta_archivo", length = 1000)),
             @AttributeOverride(name = "observaciones",
                     column = @Column(name = "prorroga_decision_observaciones", length = 2000)),
-            @AttributeOverride(name = "fecha", column = @Column(name = "prorroga_decision_fecha")) })
+            @AttributeOverride(name = "fecha", column = @Column(name = "prorroga_decision_fecha")),
+            @AttributeOverride(name = "responsableId", column = @Column(name = "prorroga_decision_responsable_id")) })
     private DecisionEmbeddable decision;
 }

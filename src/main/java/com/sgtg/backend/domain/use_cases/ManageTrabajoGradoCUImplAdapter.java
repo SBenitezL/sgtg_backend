@@ -278,7 +278,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.ACTA_COMITE, soporte, rutas);
         return notificar(conArchivos(rutas, () -> {
             Decision decision = new Decision(Organo.COMITE_PROGRAMA, resultado, acta, ruta, observaciones,
-                    fecha == null ? hoy() : fecha);
+                    fecha == null ? hoy() : fecha, usuarioId);
             trabajo.registrarDecisionComite(decision, responsable.getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.DECISION_COMITE, usuarioId, texto(resultado));
@@ -378,7 +378,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
-            trabajo.registrarDecisionConsejo(decisionConsejo(resultado, ruta, observaciones),
+            trabajo.registrarDecisionConsejo(decisionConsejo(resultado, ruta, observaciones, usuarioId),
                     responsable.getCodigo(), LocalDateTime.now(this.clock), mesesEjecucion);
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.DECISION_CONSEJO_ANTEPROYECTO, usuarioId, texto(resultado));
@@ -399,7 +399,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
-            trabajo.resolverCambioObjetivos(decisionConsejo(resultado, ruta, observaciones));
+            trabajo.resolverCambioObjetivos(decisionConsejo(resultado, ruta, observaciones, usuarioId));
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.CAMBIO_OBJETIVOS_RESUELTO, usuarioId, texto(resultado));
     }
@@ -458,7 +458,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
-            trabajo.resolverProrroga(decisionConsejo(resultado, ruta, observaciones), responsable.getCodigo(),
+            trabajo.resolverProrroga(decisionConsejo(resultado, ruta, observaciones, usuarioId), responsable.getCodigo(),
                     LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.PRORROGA_RESUELTA, usuarioId, texto(resultado));
@@ -483,7 +483,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
-            trabajo.resolverSuspension(decisionConsejo(resultado, ruta, observaciones), responsable.getCodigo(),
+            trabajo.resolverSuspension(decisionConsejo(resultado, ruta, observaciones, usuarioId), responsable.getCodigo(),
                     LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.SUSPENSION_RESUELTA, usuarioId, texto(resultado));
@@ -573,7 +573,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
-            trabajo.resolverNuevaFechaSustentacion(decisionConsejo(resultado, ruta, observaciones), nuevaFechaHora,
+            trabajo.resolverNuevaFechaSustentacion(decisionConsejo(resultado, ruta, observaciones, usuarioId), nuevaFechaHora,
                     salon);
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.NUEVA_FECHA_RESUELTA, usuarioId, texto(resultado));
@@ -663,7 +663,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
-            trabajo.resolverCancelacion(decisionConsejo(resultado, ruta, observaciones), responsable.getCodigo(),
+            trabajo.resolverCancelacion(decisionConsejo(resultado, ruta, observaciones, usuarioId), responsable.getCodigo(),
                     LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.CANCELACION_RESUELTA, usuarioId, texto(resultado));
@@ -761,8 +761,10 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     // ----- Apoyo -----
 
-    private Decision decisionConsejo(ResultadoConcepto resultado, String rutaResolucion, String observaciones) {
-        return new Decision(Organo.CONSEJO_FACULTAD, resultado, null, rutaResolucion, observaciones, hoy());
+    private Decision decisionConsejo(ResultadoConcepto resultado, String rutaResolucion, String observaciones,
+            Long responsableId) {
+        return new Decision(Organo.CONSEJO_FACULTAD, resultado, null, rutaResolucion, observaciones, hoy(),
+                responsableId);
     }
 
     private boolean puedeConsultar(TrabajoGrado trabajo, Long usuarioId) {

@@ -246,7 +246,7 @@ public abstract class MapperTrabajoGrado {
 
     private static DecisionEmbeddable toEmbeddable(Decision d) {
         return new DecisionEmbeddable(d.organo(), d.resultado(), d.acta(), d.rutaArchivo(), d.observaciones(),
-                d.fecha());
+                d.fecha(), d.responsableId());
     }
 
     private static CambioEtapaEmbeddable toEmbeddable(CambioEtapa c) {
@@ -444,7 +444,7 @@ public abstract class MapperTrabajoGrado {
 
     private static Decision toDomain(DecisionEmbeddable d) {
         return new Decision(d.getOrgano(), d.getResultado(), d.getActa(), d.getRutaArchivo(), d.getObservaciones(),
-                d.getFecha());
+                d.getFecha(), d.getResponsableId());
     }
 
     private static CambioEtapa toDomain(CambioEtapaEmbeddable c) {

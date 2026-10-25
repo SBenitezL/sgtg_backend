@@ -29,4 +29,6 @@ public class DecisionEmbeddable {
     @Column(length = 2000)
     private String observaciones;
     private LocalDate fecha;
+    /** Usuario que registró la decisión; null en las anteriores a este dato */
+    private Long responsableId;
 }

@@ -18,9 +18,11 @@ import com.sgtg.backend.domain.utils.CheckString;
  *                      de archivos, opcional
  * @param observaciones observaciones del órgano
  * @param fecha         fecha de la decisión
+ * @param responsableId usuario que registró la decisión en nombre del órgano;
+ *                      null si no se conoce (decisiones anteriores a este dato)
  */
 public record Decision(Organo organo, ResultadoConcepto resultado, String acta, String rutaArchivo,
-        String observaciones, LocalDate fecha) {
+        String observaciones, LocalDate fecha, Long responsableId) {
 
     public Decision {
         if (organo == null || resultado == null || fecha == null)
@@ -29,6 +31,12 @@ public record Decision(Organo organo, ResultadoConcepto resultado, String acta, 
                 && CheckString.isBlank(observaciones))
             throw new ReglaNegocioException("error.dominio.decision.observaciones_obligatorias");
         rutaArchivo = CheckString.isBlank(rutaArchivo) ? null : rutaArchivo.trim();
+    }
+
+    /** Decisión sin responsable registrado. */
+    public Decision(Organo organo, ResultadoConcepto resultado, String acta, String rutaArchivo,
+            String observaciones, LocalDate fecha) {
+        this(organo, resultado, acta, rutaArchivo, observaciones, fecha, null);
     }
 
     public boolean esAprobatoria() {
