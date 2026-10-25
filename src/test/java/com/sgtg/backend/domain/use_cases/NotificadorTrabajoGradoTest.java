@@ -148,6 +148,7 @@ class NotificadorTrabajoGradoTest {
         assertEquals("Se radicó la propuesta \"Sistema de gestión\" para el concepto del Comité de Programa.",
                 una.mensaje());
         assertEquals(Proceso.PROPUESTA, una.etapa());
+        assertEquals(EventoTrabajoGrado.PROPUESTA_RADICADA, una.evento());
         assertEquals(LocalDateTime.of(2026, 3, 2, 10, 0), una.fecha());
         assertEquals(false, una.leida());
     }

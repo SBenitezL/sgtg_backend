@@ -74,7 +74,7 @@ public class NotificadorTrabajoGrado {
             String mensaje = evento.mensaje(trabajo.getTitulo(), detalle);
             this.notificacionGateway.guardarTodas(usuarios.stream()
                     .map(usuario -> Notificacion.nueva(usuario, evento.getTipo(), evento.getTitulo(), mensaje,
-                            trabajo.getId(), trabajo.getEtapa(), null, ahora))
+                            trabajo.getId(), trabajo.getEtapa(), evento, null, ahora))
                     .toList());
             return null;
         });
@@ -133,7 +133,7 @@ public class NotificadorTrabajoGrado {
         List<Notificacion> nuevas = destinatarios(trabajo, evento).stream()
                 .filter(usuario -> !this.notificacionGateway.existeClave(usuario, clave))
                 .map(usuario -> Notificacion.nueva(usuario, evento.getTipo(), evento.getTitulo(), mensaje,
-                        trabajo.getId(), trabajo.getEtapa(), clave, ahora))
+                        trabajo.getId(), trabajo.getEtapa(), evento, clave, ahora))
                 .toList();
         if (!nuevas.isEmpty())
             this.notificacionGateway.guardarTodas(nuevas);

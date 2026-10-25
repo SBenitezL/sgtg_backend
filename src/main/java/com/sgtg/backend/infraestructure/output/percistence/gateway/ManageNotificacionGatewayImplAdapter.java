@@ -61,11 +61,11 @@ public class ManageNotificacionGatewayImplAdapter implements ManageNotificacionG
 
     private NotificacionEntity aEntidad(Notificacion n) {
         return new NotificacionEntity(n.id(), n.usuarioId(), n.tipo(), n.titulo(), n.mensaje(), n.trabajoId(),
-                n.etapa(), n.clave(), n.fecha(), n.leida());
+                n.etapa(), n.evento(), n.clave(), n.fecha(), n.leida());
     }
 
     private Notificacion aDominio(NotificacionEntity e) {
         return new Notificacion(e.getId(), e.getUsuarioId(), e.getTipo(), e.getTitulo(), e.getMensaje(),
-                e.getTrabajoId(), e.getEtapa(), e.getClave(), e.getFecha(), e.isLeida());
+                e.getTrabajoId(), e.getEtapa(), e.getEvento(), e.getClave(), e.getFecha(), e.isLeida());
     }
 }

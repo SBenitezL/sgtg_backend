@@ -479,6 +479,8 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$[0].titulo").value("Trabajo de grado registrado"))
                 .andExpect(jsonPath("$[0].trabajoId").value(trabajoId))
                 .andExpect(jsonPath("$[0].etapa").value("PROPUESTA"))
+                // El hecho que la generó: con él el front decide a qué vista llevar
+                .andExpect(jsonPath("$[0].evento").value("TRABAJO_REGISTRADO"))
                 .andExpect(jsonPath("$[0].leida").value(false));
         enviar(get(API + "/notificaciones"), docente, null).andExpect(jsonPath("$.length()").value(0));
 

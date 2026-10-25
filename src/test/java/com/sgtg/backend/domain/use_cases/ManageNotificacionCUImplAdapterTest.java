@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import com.sgtg.backend.application.output.ManageNotificacionGatewayIntPort;
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
+import com.sgtg.backend.domain.models.notificacion.EventoTrabajoGrado;
 import com.sgtg.backend.domain.models.notificacion.Notificacion;
 import com.sgtg.backend.domain.models.notificacion.TipoNotificacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
@@ -33,7 +34,7 @@ class ManageNotificacionCUImplAdapterTest {
 
     private static Notificacion notificacion(long id, long usuarioId, boolean leida) {
         return new Notificacion(id, usuarioId, TipoNotificacion.INFO, "Título", "Mensaje", 7L, Proceso.PROPUESTA,
-                null, LocalDateTime.of(2026, 3, 2, 10, 0), leida);
+                EventoTrabajoGrado.PROPUESTA_RADICADA, null, LocalDateTime.of(2026, 3, 2, 10, 0), leida);
     }
 
     @BeforeEach
@@ -92,7 +93,7 @@ class ManageNotificacionCUImplAdapterTest {
     @Test
     void unaNotificacionExigeDestinatarioYTexto() {
         ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> Notificacion.nueva(null,
-                TipoNotificacion.INFO, "T", "M", 7L, Proceso.PROPUESTA, null, LocalDateTime.now()));
+                TipoNotificacion.INFO, "T", "M", 7L, Proceso.PROPUESTA, null, null, LocalDateTime.now()));
         assertEquals("error.dominio.notificacion.datos_incompletos", error.getMessage());
     }
 }

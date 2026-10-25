@@ -2,6 +2,7 @@ package com.sgtg.backend.infraestructure.output.percistence.entities;
 
 import java.time.LocalDateTime;
 
+import com.sgtg.backend.domain.models.notificacion.EventoTrabajoGrado;
 import com.sgtg.backend.domain.models.notificacion.TipoNotificacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 
@@ -50,6 +51,9 @@ public class NotificacionEntity {
 
     @Enumerated(EnumType.STRING)
     private Proceso etapa;
+
+    @Enumerated(EnumType.STRING)
+    private EventoTrabajoGrado evento;
 
     private String clave;
 

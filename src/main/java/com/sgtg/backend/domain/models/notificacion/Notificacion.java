@@ -15,14 +15,17 @@ import com.sgtg.backend.domain.utils.CheckString;
  * @param titulo    título corto
  * @param mensaje   texto del mensaje
  * @param trabajoId trabajo de grado al que se refiere
- * @param etapa     etapa del trabajo al notificar (el front decide a qué vista llevar)
+ * @param etapa     etapa del trabajo al notificar
+ * @param evento    hecho que la generó; con la etapa, el front decide a qué vista llevar
+ *                  (null en las creadas antes de registrarlo)
  * @param clave     identifica un aviso que no se debe repetir (ej. un plazo por
  *                  vencer); null en las demás
  * @param fecha     fecha y hora de creación
  * @param leida     true si el usuario ya la leyó
  */
 public record Notificacion(Long id, Long usuarioId, TipoNotificacion tipo, String titulo, String mensaje,
-        Long trabajoId, Proceso etapa, String clave, LocalDateTime fecha, boolean leida) {
+        Long trabajoId, Proceso etapa, EventoTrabajoGrado evento, String clave, LocalDateTime fecha,
+        boolean leida) {
 
     public Notificacion {
         if (usuarioId == null || tipo == null || CheckString.isBlank(titulo) || CheckString.isBlank(mensaje)
@@ -32,13 +35,14 @@ public record Notificacion(Long id, Long usuarioId, TipoNotificacion tipo, Strin
 
     /** Crea una notificación sin leer. */
     public static Notificacion nueva(Long usuarioId, TipoNotificacion tipo, String titulo, String mensaje,
-            Long trabajoId, Proceso etapa, String clave, LocalDateTime fecha) {
-        return new Notificacion(null, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, clave, fecha, false);
+            Long trabajoId, Proceso etapa, EventoTrabajoGrado evento, String clave, LocalDateTime fecha) {
+        return new Notificacion(null, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, evento, clave, fecha,
+                false);
     }
 
     /** @return la notificación marcada como leída */
     public Notificacion leer() {
-        return new Notificacion(id, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, clave, fecha, true);
+        return new Notificacion(id, usuarioId, tipo, titulo, mensaje, trabajoId, etapa, evento, clave, fecha, true);
     }
 
     /** @return true si la notificación es del usuario */
