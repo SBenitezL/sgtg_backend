@@ -32,6 +32,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.RegistroJurado;
 import com.sgtg.backend.domain.models.trabajo_grado.SesionSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.SolicitudNuevaFecha;
 import com.sgtg.backend.domain.models.trabajo_grado.RevisionPazYSalvo;
+import com.sgtg.backend.domain.models.trabajo_grado.SolicitudSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
@@ -58,6 +59,7 @@ import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grad
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SesionSustentacionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SolicitudNuevaFechaEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.RevisionPazYSalvoEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SolicitudSustentacionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SuspensionEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.TrabajoGradoEntity;
 
@@ -196,6 +198,9 @@ public abstract class MapperTrabajoGrado {
                 toEmbeddable(sesion.jurados().get(0)), toEmbeddable(sesion.jurados().get(1)))));
         s.getRevisionesPazYSalvo().forEach(r -> entity.getSustentacionRevisionesPazYSalvo()
                 .add(new RevisionPazYSalvoEmbeddable(r.rutaDocumento(), r.aprobado(), r.observaciones(), r.fecha())));
+        s.getSolicitudesAnteriores().forEach(a -> entity.getSustentacionSolicitudesAnteriores()
+                .add(new SolicitudSustentacionEmbeddable(a.rutaMonografia(), a.rutaDocumentoFinal(),
+                        a.rutaConceptoAsesor(), a.rutaAnexos(), a.fechaSolicitud())));
         s.getSolicitudesNuevaFecha().forEach(n -> entity.getSustentacionSolicitudesNuevaFecha()
                 .add(new SolicitudNuevaFechaEmbeddable(n.sesion(), n.rutaSolicitud(), n.fechaSolicitud(),
                         n.fechaHoraAnterior(), n.decision() == null ? null : toEmbeddable(n.decision()),
@@ -366,6 +371,10 @@ public abstract class MapperTrabajoGrado {
                 entity.getSustentacionRevisionesPazYSalvo().stream()
                         .map(r -> new RevisionPazYSalvo(r.getRutaDocumento(), r.isAprobado(), r.getObservaciones(),
                                 r.getFecha()))
+                        .toList(),
+                entity.getSustentacionSolicitudesAnteriores().stream()
+                        .map(a -> new SolicitudSustentacion(a.getRutaMonografia(), a.getRutaDocumentoFinal(),
+                                a.getRutaConceptoAsesor(), a.getRutaAnexos(), a.getFechaSolicitud()))
                         .toList());
     }
 

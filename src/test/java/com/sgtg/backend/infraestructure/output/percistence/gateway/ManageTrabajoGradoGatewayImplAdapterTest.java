@@ -38,6 +38,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Prorroga;
 import com.sgtg.backend.domain.models.trabajo_grado.EstadoSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
 import com.sgtg.backend.domain.models.trabajo_grado.Suspension;
+import com.sgtg.backend.domain.models.trabajo_grado.SolicitudSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TipoDocumento;
@@ -306,8 +307,10 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         LocalDate julio = LocalDate.of(2026, 7, 1);
         trabajo.solicitarSustentacion("monografias/tg.pdf", "finales/tg.pdf", null,
                 "anexos/tg.pdf", "D1", julio.atTime(9, 0));
-        // Decanatura no aprueba el paz y salvo y luego lo aprueba
+        // Decanatura no aprueba el paz y salvo: el director radica una nueva solicitud, cuyo paz y salvo se aprueba
         trabajo.revisarPazYSalvo("paz-y-salvo/f-1.pdf", false, "Deuda en biblioteca", julio.atTime(10, 0));
+        trabajo.solicitarSustentacion("monografias/tg-2.pdf", "finales/tg-2.pdf", null, "anexos/tg-2.pdf", "D1",
+                julio.atTime(10, 30));
         trabajo.revisarPazYSalvo("paz-y-salvo/tg.pdf", true, null, julio.atTime(11, 0));
         trabajo.programarSustentacion(evaluador(30L), evaluador(40L), julio.plusDays(9).atTime(14, 0), "Salón 301",
                 "formatos/e-1.pdf", "CF01", julio.plusDays(1).atTime(9, 0));
@@ -332,8 +335,10 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         assertEquals(List.of(false, true), sustentacion.getRevisionesPazYSalvo().stream()
                 .map(r -> r.aprobado()).toList());
         assertEquals("Deuda en biblioteca", sustentacion.getRevisionesPazYSalvo().get(0).observaciones());
-        assertEquals("monografias/tg.pdf", sustentacion.getRutaMonografia());
-        assertEquals("anexos/tg.pdf", sustentacion.getRutaAnexos());
+        assertEquals("monografias/tg-2.pdf", sustentacion.getRutaMonografia());
+        assertEquals("anexos/tg-2.pdf", sustentacion.getRutaAnexos());
+        assertEquals(List.of(new SolicitudSustentacion("monografias/tg.pdf", "finales/tg.pdf", null, "anexos/tg.pdf",
+                julio)), sustentacion.getSolicitudesAnteriores());
         assertEquals(2, sustentacion.getSesiones().size());
         assertEquals("Salón 205", sustentacion.sesionActual().salon());
         assertEquals("formatos/e-2.pdf", sustentacion.sesionActual().rutaFormatoE());

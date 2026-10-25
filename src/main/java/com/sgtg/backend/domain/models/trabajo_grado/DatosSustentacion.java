@@ -31,6 +31,8 @@ import com.sgtg.backend.domain.models.participantes.Evaluador;
  * @param rutaAnexosAjustes        ruta de los anexos de los ajustes, null si no se adjuntaron
  * @param solicitudesNuevaFecha    solicitudes de nueva fecha de sesión, en orden
  * @param revisionesPazYSalvo      revisiones del paz y salvo de Decanatura, en orden
+ * @param solicitudesAnteriores    solicitudes cuyo paz y salvo no se aprobó y que se reemplazaron por una
+ *                                 nueva, en orden (la revisión i del paz y salvo es de la solicitud i)
  */
 public record DatosSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo, String rutaConceptoAsesor,
         LocalDate fechaSolicitud, EstadoSustentacion estado, List<SesionSustentacion> sesiones,
@@ -39,7 +41,8 @@ public record DatosSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo,
         LocalDate fechaLimiteAjustes, LocalDate fechaLimiteSegundaSesion, String rutaVersionDefinitiva,
         LocalDate fechaVersionDefinitiva, Evaluador juradoVersionDefinitiva, MotivoCierre motivoNoAprobacion,
         String rutaMonografia, String rutaAnexos, String rutaAnexosAjustes,
-        List<SolicitudNuevaFecha> solicitudesNuevaFecha, List<RevisionPazYSalvo> revisionesPazYSalvo) {
+        List<SolicitudNuevaFecha> solicitudesNuevaFecha, List<RevisionPazYSalvo> revisionesPazYSalvo,
+        List<SolicitudSustentacion> solicitudesAnteriores) {
 
     public DatosSustentacion {
         if (rutaDocumentoFinal == null || fechaSolicitud == null || estado == null)
@@ -50,6 +53,22 @@ public record DatosSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo,
         verificaciones = verificaciones == null ? List.of() : List.copyOf(verificaciones);
         solicitudesNuevaFecha = solicitudesNuevaFecha == null ? List.of() : List.copyOf(solicitudesNuevaFecha);
         revisionesPazYSalvo = revisionesPazYSalvo == null ? List.of() : List.copyOf(revisionesPazYSalvo);
+        solicitudesAnteriores = solicitudesAnteriores == null ? List.of() : List.copyOf(solicitudesAnteriores);
+    }
+
+    /** Estado sin solicitudes anteriores (compatibilidad). */
+    public DatosSustentacion(String rutaDocumentoFinal, String rutaPazYSalvo, String rutaConceptoAsesor,
+            LocalDate fechaSolicitud, EstadoSustentacion estado, List<SesionSustentacion> sesiones,
+            List<CalificacionJurado> calificaciones, List<RegistroJurado> inasistencias,
+            List<RegistroJurado> verificaciones, String rutaAjustes, LocalDate fechaAjustes,
+            LocalDate fechaLimiteAjustes, LocalDate fechaLimiteSegundaSesion, String rutaVersionDefinitiva,
+            LocalDate fechaVersionDefinitiva, Evaluador juradoVersionDefinitiva, MotivoCierre motivoNoAprobacion,
+            String rutaMonografia, String rutaAnexos, String rutaAnexosAjustes,
+            List<SolicitudNuevaFecha> solicitudesNuevaFecha, List<RevisionPazYSalvo> revisionesPazYSalvo) {
+        this(rutaDocumentoFinal, rutaPazYSalvo, rutaConceptoAsesor, fechaSolicitud, estado, sesiones, calificaciones,
+                inasistencias, verificaciones, rutaAjustes, fechaAjustes, fechaLimiteAjustes, fechaLimiteSegundaSesion,
+                rutaVersionDefinitiva, fechaVersionDefinitiva, juradoVersionDefinitiva, motivoNoAprobacion,
+                rutaMonografia, rutaAnexos, rutaAnexosAjustes, solicitudesNuevaFecha, revisionesPazYSalvo, List.of());
     }
 
     /** Estado sin monografía, anexos ni solicitudes de nueva fecha (compatibilidad). */

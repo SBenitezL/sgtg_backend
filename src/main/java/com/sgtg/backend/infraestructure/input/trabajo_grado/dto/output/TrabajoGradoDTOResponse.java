@@ -234,6 +234,10 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
      * @param solicitudesNuevaFecha solicitudes de nueva fecha de la sesión, en orden
      * @param motivoNoAprobacion    motivo del cierre si no se aprobó
      * @param revisionesPazYSalvo   revisiones del paz y salvo de Decanatura; {@code rutaPazYSalvo} es el aprobado
+     * @param solicitudesAnteriores solicitudes cuyo paz y salvo no se aprobó, en orden (la revisión i es de la
+     *                              solicitud i; la última revisión puede ser de la solicitud vigente)
+     * @param solicitudNoAprobada   true si Decanatura no aprobó el paz y salvo de la solicitud vigente: el
+     *                              director debe radicar una nueva
      * @param diasHabilesRestantesAjustes días hábiles que le quedan al director para radicar los ajustes
      *                              (negativo si venció); null si no hay ajustes pendientes
      */
@@ -245,7 +249,12 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
             LocalDate fechaAjustes, LocalDate fechaLimiteAjustes, Integer diasHabilesRestantesAjustes,
             LocalDate fechaLimiteSegundaSesion,
             String rutaVersionDefinitiva, LocalDate fechaVersionDefinitiva, MotivoCierre motivoNoAprobacion,
-            List<RevisionPazYSalvoDTO> revisionesPazYSalvo) {
+            List<RevisionPazYSalvoDTO> revisionesPazYSalvo, List<SolicitudSustentacionDTO> solicitudesAnteriores,
+            boolean solicitudNoAprobada) {
+    }
+
+    public record SolicitudSustentacionDTO(String rutaMonografia, String rutaDocumentoFinal, String rutaConceptoAsesor,
+            String rutaAnexos, LocalDate fechaSolicitud) {
     }
 
     public record RevisionPazYSalvoDTO(String rutaDocumento, boolean aprobado, String observaciones, LocalDate fecha) {
@@ -407,7 +416,12 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 s.getFechaLimiteSegundaSesion(), s.getRutaVersionDefinitiva(), s.getFechaVersionDefinitiva(),
                 s.getMotivoNoAprobacion(), s.getRevisionesPazYSalvo().stream()
                         .map(r -> new RevisionPazYSalvoDTO(r.rutaDocumento(), r.aprobado(), r.observaciones(), r.fecha()))
-                        .toList());
+                        .toList(),
+                s.getSolicitudesAnteriores().stream()
+                        .map(a -> new SolicitudSustentacionDTO(a.rutaMonografia(), a.rutaDocumentoFinal(),
+                                a.rutaConceptoAsesor(), a.rutaAnexos(), a.fechaSolicitud()))
+                        .toList(),
+                s.solicitudNoAprobada());
     }
 
     private static SesionSustentacionDTO sesion(SesionSustentacion s) {

@@ -20,7 +20,9 @@ import com.sgtg.backend.domain.utils.CheckString;
  * E), en práctica profesional el concepto favorable del asesor y, si quiere,
  * los anexos.</li>
  * <li>Decanatura revisa el paz y salvo (formato F): lo aprueba o no, siempre
- * con el documento; si no lo aprueba, puede revisarlo de nuevo más adelante.</li>
+ * con el documento. Si no lo aprueba, esa solicitud no sigue: el director
+ * radica una nueva (con sus documentos) y Decanatura revisa el paz y salvo de
+ * la nueva. Las solicitudes anteriores se conservan.</li>
  * <li>Con el paz y salvo aprobado, el Consejo de Facultad la programa: dos
  * jurados (el primero es el coordinador), fecha, hora, salón y el formato E.</li>
  * <li>El jurado coordinador califica con el acta (formato G) o registra la
@@ -49,12 +51,14 @@ public class Sustentacion {
     /** Días calendario para realizar la segunda sesión después de un aplazamiento (Art. 23) */
     public static final int DIAS_SEGUNDA_SESION = 60;
 
-    private final String rutaMonografia;
-    private final String rutaDocumentoFinal;
+    private String rutaMonografia;
+    private String rutaDocumentoFinal;
     private String rutaPazYSalvo;
-    private final String rutaConceptoAsesor;
-    private final String rutaAnexos;
-    private final LocalDate fechaSolicitud;
+    private String rutaConceptoAsesor;
+    private String rutaAnexos;
+    private LocalDate fechaSolicitud;
+    /** Solicitudes cuyo paz y salvo no se aprobó; la revisión i del paz y salvo es de la solicitud i */
+    private final List<SolicitudSustentacion> solicitudesAnteriores;
     private EstadoSustentacion estado;
     private final List<SesionSustentacion> sesiones;
     private final List<CalificacionJurado> calificaciones;
@@ -87,6 +91,7 @@ public class Sustentacion {
         this.verificaciones = new ArrayList<>(datos.verificaciones());
         this.solicitudesNuevaFecha = new ArrayList<>(datos.solicitudesNuevaFecha());
         this.revisionesPazYSalvo = new ArrayList<>(datos.revisionesPazYSalvo());
+        this.solicitudesAnteriores = new ArrayList<>(datos.solicitudesAnteriores());
         this.rutaAjustes = datos.rutaAjustes();
         this.rutaAnexosAjustes = datos.rutaAnexosAjustes();
         this.fechaAjustes = datos.fechaAjustes();
@@ -106,6 +111,15 @@ public class Sustentacion {
      */
     static Sustentacion solicitar(String rutaMonografia, String rutaDocumentoFinal, String rutaConceptoAsesor,
             String rutaAnexos, LocalDate fecha, boolean requiereConceptoAsesor) {
+        validarSolicitud(rutaMonografia, rutaDocumentoFinal, rutaConceptoAsesor, fecha, requiereConceptoAsesor);
+        return new Sustentacion(new DatosSustentacion(rutaDocumentoFinal.trim(), null,
+                opcional(rutaConceptoAsesor), fecha, EstadoSustentacion.SOLICITADA, List.of(), List.of(), List.of(),
+                List.of(), null, null, null, null, null, null, null, null, rutaMonografia.trim(), opcional(rutaAnexos),
+                null, List.of(), List.of()));
+    }
+
+    private static void validarSolicitud(String rutaMonografia, String rutaDocumentoFinal, String rutaConceptoAsesor,
+            LocalDate fecha, boolean requiereConceptoAsesor) {
         if (CheckString.isBlank(rutaMonografia))
             throw new ReglaNegocioException("error.dominio.sustentacion.monografia_obligatoria");
         if (CheckString.isBlank(rutaDocumentoFinal))
@@ -114,10 +128,37 @@ public class Sustentacion {
             throw new ReglaNegocioException("error.dominio.sustentacion.concepto_asesor_obligatorio");
         if (fecha == null)
             throw new ReglaNegocioException("error.dominio.sustentacion.solicitud_incompleta");
-        return new Sustentacion(new DatosSustentacion(rutaDocumentoFinal.trim(), null,
-                opcional(rutaConceptoAsesor), fecha, EstadoSustentacion.SOLICITADA, List.of(), List.of(), List.of(),
-                List.of(), null, null, null, null, null, null, null, null, rutaMonografia.trim(), opcional(rutaAnexos),
-                null, List.of(), List.of()));
+    }
+
+    /**
+     * Radica una nueva solicitud después de que Decanatura no aprobó el paz y
+     * salvo de la vigente, que pasa a las solicitudes anteriores.
+     *
+     * @param rutaAnexos             ruta de los anexos, opcional
+     * @param requiereConceptoAsesor true en práctica profesional
+     */
+    void solicitarDeNuevo(String rutaMonografia, String rutaDocumentoFinal, String rutaConceptoAsesor,
+            String rutaAnexos, LocalDate fecha, boolean requiereConceptoAsesor) {
+        if (!solicitudNoAprobada())
+            throw new ReglaNegocioException("error.dominio.sustentacion.solicitud_vigente");
+        validarSolicitud(rutaMonografia, rutaDocumentoFinal, rutaConceptoAsesor, fecha, requiereConceptoAsesor);
+        this.solicitudesAnteriores.add(new SolicitudSustentacion(this.rutaMonografia, this.rutaDocumentoFinal,
+                this.rutaConceptoAsesor, this.rutaAnexos, this.fechaSolicitud));
+        this.rutaMonografia = rutaMonografia.trim();
+        this.rutaDocumentoFinal = rutaDocumentoFinal.trim();
+        this.rutaConceptoAsesor = opcional(rutaConceptoAsesor);
+        this.rutaAnexos = opcional(rutaAnexos);
+        this.fechaSolicitud = fecha;
+    }
+
+    /**
+     * @return true si Decanatura no aprobó el paz y salvo de la solicitud
+     *         vigente: no sigue y el director debe radicar una nueva
+     */
+    public boolean solicitudNoAprobada() {
+        return this.estado == EstadoSustentacion.SOLICITADA && !pazYSalvoAprobado()
+                && this.revisionesPazYSalvo.size() > this.solicitudesAnteriores.size()
+                && !this.revisionesPazYSalvo.get(this.revisionesPazYSalvo.size() - 1).aprobado();
     }
 
     // ----- Paz y salvo -----
@@ -131,6 +172,9 @@ public class Sustentacion {
             throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_obligatorio");
         if (this.estado != EstadoSustentacion.SOLICITADA || pazYSalvoAprobado())
             throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_no_permitido");
+        // Sin aprobación, la solicitud no sigue: se revisa el paz y salvo de la nueva
+        if (solicitudNoAprobada())
+            throw new ReglaNegocioException("error.dominio.sustentacion.solicitud_no_aprobada");
         if (revision.fecha().isBefore(this.fechaSolicitud))
             throw new ReglaNegocioException("error.dominio.sustentacion.paz_y_salvo_fecha_invalida");
         this.revisionesPazYSalvo.add(revision);
@@ -423,7 +467,11 @@ public class Sustentacion {
                 sesiones, calificaciones, inasistencias, verificaciones, rutaAjustes, fechaAjustes,
                 fechaLimiteAjustes, fechaLimiteSegundaSesion, rutaVersionDefinitiva, fechaVersionDefinitiva,
                 juradoVersionDefinitiva, motivoNoAprobacion, rutaMonografia, rutaAnexos, rutaAnexosAjustes,
-                solicitudesNuevaFecha, revisionesPazYSalvo);
+                solicitudesNuevaFecha, revisionesPazYSalvo, solicitudesAnteriores);
+    }
+
+    public List<SolicitudSustentacion> getSolicitudesAnteriores() {
+        return Collections.unmodifiableList(solicitudesAnteriores);
     }
 
     public List<RevisionPazYSalvo> getRevisionesPazYSalvo() {

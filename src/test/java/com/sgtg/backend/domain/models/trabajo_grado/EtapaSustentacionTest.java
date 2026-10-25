@@ -165,10 +165,24 @@ class EtapaSustentacionTest {
     void sinPazYSalvoAprobadoNoSeProgramaYDecanaturaPuedeNoAprobarlo() {
         trabajo.solicitarSustentacion("m.pdf", "f.pdf", null, null, "D1", dia(SOLICITUD));
         assertRegla("error.dominio.sustentacion.paz_y_salvo_pendiente", () -> programar(SESION, PROGRAMACION));
+        // Con la solicitud vigente no se radica otra
+        assertRegla("error.dominio.trabajo_grado.etapa_invalida",
+                () -> trabajo.solicitarSustentacion("m-2.pdf", "f-2.pdf", null, null, "D1", dia(SOLICITUD)));
 
         trabajo.revisarPazYSalvo("paz/f-1.pdf", false, " Deuda en biblioteca ", dia(SOLICITUD.plusDays(1)));
         assertNull(trabajo.getSustentacion().getRutaPazYSalvo());
+        assertTrue(trabajo.getSustentacion().solicitudNoAprobada());
         assertRegla("error.dominio.sustentacion.paz_y_salvo_pendiente", () -> programar(SESION, PROGRAMACION));
+        // La solicitud no sigue: Decanatura no la vuelve a revisar, el director radica una nueva
+        assertRegla("error.dominio.sustentacion.solicitud_no_aprobada",
+                () -> trabajo.revisarPazYSalvo("paz/f-2.pdf", true, null, dia(SOLICITUD.plusDays(2))));
+        trabajo.solicitarSustentacion("m-2.pdf", "f-2.pdf", null, "a-2.pdf", "D1", dia(SOLICITUD.plusDays(2)));
+        assertEquals(Proceso.SUSTENTACION, trabajo.getEtapa());
+        assertEquals("f-2.pdf", trabajo.getSustentacion().getRutaDocumentoFinal());
+        assertEquals(SOLICITUD.plusDays(2), trabajo.getSustentacion().getFechaSolicitud());
+        assertEquals(List.of(new SolicitudSustentacion("m.pdf", "f.pdf", null, null, SOLICITUD)),
+                trabajo.getSustentacion().getSolicitudesAnteriores());
+        assertFalse(trabajo.getSustentacion().solicitudNoAprobada());
 
         trabajo.revisarPazYSalvo("paz/f-2.pdf", true, null, dia(SOLICITUD.plusDays(2)));
         assertEquals("paz/f-2.pdf", trabajo.getSustentacion().getRutaPazYSalvo());

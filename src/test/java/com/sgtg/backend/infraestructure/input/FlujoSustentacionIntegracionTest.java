@@ -310,12 +310,25 @@ class FlujoSustentacionIntegracionTest {
                 archivo("f-1.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.revisionesPazYSalvo[0].aprobado").value(false))
+                .andExpect(jsonPath("$.sustentacion.solicitudNoAprobada").value(true))
                 .andExpect(jsonPath("$.sustentacion.rutaPazYSalvo").doesNotExist());
         // Sin paz y salvo aprobado el Consejo no programa
         subir(sustentacion + "/programacion", consejo, programar, archivo("formato-e.pdf"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "La sustentación no se puede programar hasta que Decanatura apruebe el paz y salvo."));
+        // La solicitud no sigue: Decanatura no la vuelve a revisar y el director radica una nueva
+        subir(pazYSalvo, decanatura, Map.of("aprobado", true), archivo("paz-y-salvo.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "El paz y salvo de esta solicitud no fue aprobado: el director debe radicar una nueva solicitud de sustentación."));
+        subir(sustentacion, docente, null, pdf("monografia", "monografia-2.pdf"), pdf("documentoFinal", "tg-2.pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.etapa").value("SUSTENTACION"))
+                .andExpect(jsonPath("$.sustentacion.solicitudNoAprobada").value(false))
+                .andExpect(jsonPath("$.sustentacion.solicitudesAnteriores[0].rutaDocumentoFinal")
+                        .value(trabajoId + "/TI-E/v1/Formato E - v1.pdf"))
+                .andExpect(jsonPath("$.sustentacion.rutaDocumentoFinal").value(trabajoId + "/TI-E/v2/Formato E - v2.pdf"));
         subir(pazYSalvo, decanatura, Map.of("aprobado", true), archivo("paz-y-salvo.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sustentacion.revisionesPazYSalvo[1].aprobado").value(true))
@@ -338,7 +351,7 @@ class FlujoSustentacionIntegracionTest {
                 .andExpect(jsonPath("$.sustentacion.estado").value("PROGRAMADA"))
                 .andExpect(jsonPath("$.sustentacion.sesiones[0].salon").value("Salón 301"))
                 .andExpect(jsonPath("$.sustentacion.sesiones[0].juradoCoordinadorId").value(coordinadorId))
-                .andExpect(jsonPath("$.sustentacion.sesiones[0].rutaFormatoE").value(trabajoId + "/TI-E/v2/Formato E - v2.pdf"));
+                .andExpect(jsonPath("$.sustentacion.sesiones[0].rutaFormatoE").value(trabajoId + "/TI-E/v3/Formato E - v3.pdf"));
         // Los jurados reciben sus roles
         enviar(get(API + "/usuarios/me"), login("X"), null)
                 .andExpect(jsonPath("$.roles").value(org.hamcrest.Matchers.hasItems("JURADO", "JURADO_COORDINADOR")));

@@ -629,6 +629,13 @@ public abstract class TrabajoGrado {
      */
     public void solicitarSustentacion(String rutaMonografia, String rutaDocumentoFinal, String rutaConceptoAsesor,
             String rutaAnexos, String responsable, LocalDateTime ahora) {
+        // Decanatura no aprobó el paz y salvo: el director radica una nueva solicitud (sigue en sustentación)
+        if (this.etapa == Proceso.SUSTENTACION && this.sustentacion != null && this.sustentacion.solicitudNoAprobada()) {
+            validarAhora(ahora);
+            this.sustentacion.solicitarDeNuevo(rutaMonografia, rutaDocumentoFinal, rutaConceptoAsesor, rutaAnexos,
+                    ahora.toLocalDate(), getModalidad() == Modalidad.PRACTICA_PROFESIONAL);
+            return;
+        }
         validarEnDesarrollo();
         validarAhora(ahora);
         LocalDate hoy = ahora.toLocalDate();
