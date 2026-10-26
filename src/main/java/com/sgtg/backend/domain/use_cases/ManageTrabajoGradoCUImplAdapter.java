@@ -112,6 +112,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
                 : cargarDirector(datos.codirectorId(), "error.trabajo_grado.codirector_sin_perfil");
         validarDireccionSinJefe(directorUsuarioId, datos.codirectorId(), director, codirector);
         List<Estudiante> estudiantes = cargarEstudiantes(datos.estudiantesIds());
+        validarCodirectorFueraDelComite(datos.codirectorId(), codirector, estudiantes);
         validarDisponibilidad(estudiantes);
         Asesor asesor = crearAsesor(datos.asesor());
 
@@ -922,6 +923,21 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
                 && codirector.getDepartamento() != null
                 && codirector.getDepartamento().esMismo(director.getDepartamento()))
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.jefe_no_codirige");
+    }
+
+    /**
+     * El Comité del programa de los estudiantes emite el concepto sobre la
+     * propuesta (Art. 11): sus miembros (docentes con rol COMITE del
+     * departamento al que está adscrito el programa) no pueden ser codirector
+     * del trabajo. Un miembro del Comité de otro departamento sí puede.
+     */
+    private void validarCodirectorFueraDelComite(Long codirectorId, Director codirector, List<Estudiante> estudiantes) {
+        if (codirector == null || estudiantes.isEmpty() || codirector.getDepartamento() == null
+                || !tieneAlgunRol(cargarUsuario(codirectorId), Set.of(RoleAdmited.COMITE)))
+            return;
+        Programa programa = this.catalogoGateway.buscarPrograma(estudiantes.get(0).getPrograma().id());
+        if (programa != null && programa.esDelDepartamento(codirector.getDepartamento()))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.comite_no_codirige");
     }
 
     private Director cargarDirector(Long usuarioId, String claveSinPerfil) {

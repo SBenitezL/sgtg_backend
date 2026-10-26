@@ -12,7 +12,8 @@ public enum TipoDocumento {
     ANTEPROYECTO(null, false, "Anteproyecto"),
     EVALUACION_ANTEPROYECTO("B", false, "Formato B"),
     REMISION_CONSEJO("C", false, "Formato C"),
-    INFORME_MENSUAL("D", false, "Formato D"),
+    /** Informe mensual de avance: no es un formato del reglamento (el formato D es la evaluación del asesor en práctica profesional) */
+    INFORME_MENSUAL(null, false, "Informe mensual"),
     DOCUMENTO_FINAL("E", false, "Formato E"),
     /** Monografía del trabajo, que acompaña al formato E en la solicitud de sustentación */
     MONOGRAFIA(null, false, "Monografía"),

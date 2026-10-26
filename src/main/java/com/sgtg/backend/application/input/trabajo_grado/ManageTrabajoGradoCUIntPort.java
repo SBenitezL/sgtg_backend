@@ -186,7 +186,7 @@ public interface ManageTrabajoGradoCUIntPort {
      * radica un estudiante del trabajo; en práctica profesional también el director.
      *
      * @param observaciones observaciones opcionales de quien radica
-     * @param documento     archivo del informe (formato D)
+     * @param documento     PDF del informe mensual
      */
     public TrabajoGrado registrarInformeMensual(Long trabajoId, Long usuarioId, String observaciones,
             ArchivoAdjunto documento);

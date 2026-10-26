@@ -36,7 +36,9 @@ import com.sgtg.backend.infraestructure.output.exception.structure.ErrorUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 @ControllerAdvice
 @RequiredArgsConstructor
@@ -76,10 +78,27 @@ public class RestApiException {
         // Error no previsto: se registra completo, al cliente solo le llega el código genérico
         log.error("Error no controlado en {} {}", req.getMethod(), req.getRequestURI(), ex);
         final Error error = ErrorUtils.createError(ErrorCode.GENERIC_ERROR.getCode(),
-                ErrorCode.GENERIC_ERROR.getMessageKey(),
+                mensaje("error.general.inesperado", locale),
                 HttpStatus.INTERNAL_SERVER_ERROR.value()).setUrl(req.getRequestURL().toString())
                 .setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Dos operaciones simultáneas sobre el mismo trabajo (ej. un doble envío del
+     * mismo formulario): la primera se guardó y la segunda chocó con ella al
+     * escribir. Se responde 409 con un mensaje claro en lugar del error genérico.
+     *
+     * @return una ResponseEntity con el error y el código HTTP 409 (Conflict)
+     */
+    @ExceptionHandler({ DataIntegrityViolationException.class, OptimisticLockingFailureException.class })
+    public ResponseEntity<Error> handleConflictException(final HttpServletRequest req, final Exception ex,
+            final Locale locale) {
+        log.warn("Conflicto al guardar en {} {}: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
+        final Error error = ErrorUtils.createError(ErrorCode.CONFLICT.getCode(),
+                mensaje("error.general.conflicto", locale), HttpStatus.CONFLICT.value())
+                .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
     /**

@@ -576,7 +576,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals(1, informe.numero());
         assertEquals("U10", informe.radicadoPor());
         assertEquals("Avance de marzo", informe.observaciones());
-        verify(archivoGateway).guardar(eq(7L), eq("TI-D"), eq("Formato D"), any());
+        verify(archivoGateway).guardar(eq(7L), eq("INFORME_MENSUAL"), eq("Informe mensual"), any());
     }
 
     @Test
@@ -910,6 +910,23 @@ class ManageTrabajoGradoCUImplAdapterTest {
                         60L, null, null)));
         assertEquals("error.trabajo_grado.jefe_no_codirige", codirector.getBusinessRule());
         verify(trabajoGateway, never()).guardar(any());
+    }
+
+    @Test
+    void unMiembroDelComiteDelProgramaNoEsCodirector() {
+        // El 53 es docente y del Comité de Sistemas, departamento del programa del estudiante 10
+        when(userGateway.findById(53L)).thenReturn(usuario(53L, RoleAdmited.COMITE, RoleAdmited.DOCENTE));
+        when(perfilGateway.buscarPerfilDocente(53L)).thenReturn(new PerfilDocente(53L, TipoVinculacion.PLANTA, SISTEMAS));
+        BusinessRuleException comite = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(1L,
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo"), List.of(10L),
+                        53L, null, null)));
+        assertEquals("error.trabajo_grado.comite_no_codirige", comite.getBusinessRule());
+        verify(trabajoGateway, never()).guardar(any());
+
+        // El 51 es del Comité de Telemática: no evalúa la propuesta y sí puede ser codirector
+        TrabajoGrado trabajo = casoDeUso.crear(1L, new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título",
+                List.of("Objetivo"), List.of(10L), 51L, null, null));
+        assertEquals(51L, trabajo.getCodirector().getUsuarioId());
     }
 
     @Test

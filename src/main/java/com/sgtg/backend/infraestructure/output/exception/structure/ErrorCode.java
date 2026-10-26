@@ -15,7 +15,8 @@ public enum ErrorCode {
     NO_DATA("GC-0007", "ERROR, NO DATA"),
     NO_ACCESS("GC-0008", "ERROR, NO ACCESS"),
     TOKEN_EXPIRED("GC-0009", "ERROR, TOKEN HAS EXPIRED"),
-    RESOURCE_NOT_FOUND("GC-0010", "ERROR, RESOURCE NOT FOUND");
+    RESOURCE_NOT_FOUND("GC-0010", "ERROR, RESOURCE NOT FOUND"),
+    CONFLICT("GC-0011", "ERROR, CONCURRENT MODIFICATION");
 
     private final String code;
     private final String messageKey;
