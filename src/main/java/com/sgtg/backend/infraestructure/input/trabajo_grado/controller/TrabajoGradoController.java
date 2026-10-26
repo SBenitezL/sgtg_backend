@@ -211,6 +211,18 @@ public class TrabajoGradoController {
         return ResponseEntity.ok(vista(manageTrabajoGrado.radicarAnteproyecto(trabajoId, usuario.getCusuari(), adjunto(archivo))));
     }
 
+    /**
+     * Corrige título, objetivos, descripción y línea de investigación junto con
+     * el anteproyecto. Solo el director, mientras se puede radicar una versión.
+     */
+    @PutMapping("/{trabajoId}/anteproyecto")
+    public ResponseEntity<TrabajoGradoDTOResponse> actualizarAnteproyecto(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long trabajoId, @Valid @RequestBody ActualizarPropuestaDTORequest request) {
+        return ResponseEntity.ok(vista(manageTrabajoGrado.actualizarAnteproyecto(trabajoId,
+                usuario.getCusuari(), request.titulo(), request.objetivos(), request.descripcion(),
+                request.lineaInvestigacion())));
+    }
+
     /** Asigna los dos evaluadores. Solo el jefe del departamento del director. */
     @PostMapping("/{trabajoId}/anteproyecto/evaluadores")
     @PreAuthorize("hasAuthority('JEFE_DEP')")

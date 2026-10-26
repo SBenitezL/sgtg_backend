@@ -200,6 +200,10 @@ public abstract class TrabajoGrado {
         validarEtapa(Proceso.PROPUESTA);
         if (!this.propuesta.puedeRadicar())
             throw new ReglaNegocioException("error.dominio.propuesta.edicion_no_permitida");
+        corregirDatos(titulo, objetivos, descripcion, lineaInvestigacion);
+    }
+
+    private void corregirDatos(String titulo, List<String> objetivos, String descripcion, String lineaInvestigacion) {
         validarDescripcion(titulo, objetivos);
         this.titulo = titulo;
         this.objetivos = new ArrayList<>(objetivos);
@@ -239,6 +243,21 @@ public abstract class TrabajoGrado {
     }
 
     // ----- Fase 2: anteproyecto y evaluación -----
+
+    /**
+     * Corrige el título, los objetivos, la descripción y la línea de
+     * investigación junto con el anteproyecto. Solo mientras se puede radicar
+     * una versión: la primera, después de que los evaluadores soliciten
+     * correcciones o después de que el Consejo de Facultad no lo apruebe. Los
+     * participantes no cambian.
+     */
+    public void actualizarAnteproyecto(String titulo, List<String> objetivos, String descripcion,
+            String lineaInvestigacion) {
+        validarEtapa(Proceso.ANTEPROYECTO);
+        if (!this.anteproyecto.puedeRadicar())
+            throw new ReglaNegocioException("error.dominio.anteproyecto.edicion_no_permitida");
+        corregirDatos(titulo, objetivos, descripcion, lineaInvestigacion);
+    }
 
     /**
      * Radica una versión del anteproyecto ante el Departamento (Art. 13). La

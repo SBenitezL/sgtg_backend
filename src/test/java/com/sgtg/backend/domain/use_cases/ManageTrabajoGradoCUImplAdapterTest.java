@@ -352,6 +352,17 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
+    void soloElDirectorCorrigeLosDatosDelAnteproyecto() {
+        trabajoEnAnteproyecto();
+        assertThrows(NoAccessException.class,
+                () -> casoDeUso.actualizarAnteproyecto(7L, 10L, "T", List.of("O"), null, null));
+
+        TrabajoGrado trabajo = casoDeUso.actualizarAnteproyecto(7L, 1L, "Nuevo", List.of("O", "E"), "D", null);
+        assertEquals("Nuevo", trabajo.getTitulo());
+        assertEquals(List.of("O", "E"), trabajo.getObjetivos());
+    }
+
+    @Test
     void soloElDirectorRadicaElAnteproyecto() {
         trabajoEnAnteproyecto();
         assertThrows(NoAccessException.class,

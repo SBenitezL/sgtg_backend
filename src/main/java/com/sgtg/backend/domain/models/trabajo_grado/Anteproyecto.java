@@ -275,7 +275,11 @@ public class Anteproyecto {
         this.versiones.set(ultima, this.versiones.get(ultima).conEstado(resultado));
     }
 
-    private boolean puedeRadicar() {
+    /**
+     * @return true si se puede radicar una versión: la primera, tras correcciones de los evaluadores o tras un NO
+     *         APROBADO del Consejo
+     */
+    boolean puedeRadicar() {
         Estado estado = getEstado();
         return estado == null || estado == Estado.CON_CORRECCIONES || estado == Estado.NO_APROBADO;
     }

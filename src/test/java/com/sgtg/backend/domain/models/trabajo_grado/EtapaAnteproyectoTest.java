@@ -269,6 +269,28 @@ class EtapaAnteproyectoTest {
     }
 
     @Test
+    void losDatosSeCorrigenJuntoConUnaNuevaVersionYNoMientrasSeEvalua() {
+        radicarYAsignar();
+        assertRegla("error.dominio.trabajo_grado.etapa_invalida", () -> trabajo.actualizarAnteproyecto("Otro",
+                List.of("O"), null, null));
+
+        LocalDate fecha = LocalDate.of(2026, 3, 12);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
+                dia(fecha), calendario);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.CON_CORRECCIONES, fecha),
+                RUTA_FORMATO_B, dia(fecha), calendario);
+        trabajo.actualizarAnteproyecto("Título corregido", List.of("Objetivo general", "Específico"), "Descripción",
+                "IA");
+
+        assertEquals("Título corregido", trabajo.getTitulo());
+        assertEquals(List.of("Objetivo general", "Específico"), trabajo.getObjetivos());
+        assertEquals("Descripción", trabajo.getDescripcion());
+        assertEquals("IA", trabajo.getLineaInvestigacion());
+        assertRegla("error.dominio.trabajo_grado.titulo_obligatorio",
+                () -> trabajo.actualizarAnteproyecto(" ", List.of("O"), null, null));
+    }
+
+    @Test
     void conCorreccionesVuelveAAnteproyectoYLaNuevaVersionLaRevisanLosMismosEvaluadores() {
         radicarYAsignar();
         // Jueves 12-mar-2026: un evaluador aprueba y el otro pide correcciones

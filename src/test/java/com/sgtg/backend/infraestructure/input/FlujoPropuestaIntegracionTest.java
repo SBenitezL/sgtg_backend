@@ -273,7 +273,7 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("PROPUESTA"))
                 .andExpect(jsonPath("$.propuesta.versiones[0].estado").value("NO_APROBADO"))
                 .andExpect(jsonPath("$.propuesta.decisiones[0].rutaArchivo")
-                        .value(trabajoId + "/ACTA_COMITE/v1/Respuesta del Comite - v1.pdf"))
+                        .value(trabajoId + "/ACTA_COMITE/v1/Formato A firmado - v1.pdf"))
                 // Decidió dentro del plazo; sin versión en revisión no hay días restantes
                 .andExpect(jsonPath("$.propuesta.decisiones[0].aTiempo").value(true))
                 // Quién emitió el concepto en nombre del Comité

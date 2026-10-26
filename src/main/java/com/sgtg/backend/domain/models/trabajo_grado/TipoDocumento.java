@@ -24,7 +24,8 @@ public enum TipoDocumento {
     VERSION_DEFINITIVA("H", false, "Formato H"),
     CARTA_ACEPTACION(null, true, "Carta de aceptación"),
     RESOLUCION(null, false, "Resolución"),
-    ACTA_COMITE(null, false, "Respuesta del Comité"),
+    /** Formato A con el concepto y la firma del Comité de Programa (o su acta) */
+    ACTA_COMITE(null, false, "Formato A firmado"),
     SOLICITUD_PRORROGA(null, false, "Solicitud de prórroga"),
     SOLICITUD_SUSPENSION(null, false, "Solicitud de suspensión"),
     REANUDACION(null, false, "Reanudación"),

@@ -118,6 +118,13 @@ public interface ManageTrabajoGradoCUIntPort {
     public TrabajoGrado radicarAnteproyecto(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
 
     /**
+     * Corrige título, objetivos, descripción y línea de investigación junto con
+     * el anteproyecto, mientras se puede radicar una versión. Solo el director.
+     */
+    public TrabajoGrado actualizarAnteproyecto(Long trabajoId, Long usuarioId, String titulo, List<String> objetivos,
+            String descripcion, String lineaInvestigacion);
+
+    /**
      * Asigna los dos evaluadores del anteproyecto. Solo el jefe del departamento
      * al que está adscrito el director del trabajo.
      *
