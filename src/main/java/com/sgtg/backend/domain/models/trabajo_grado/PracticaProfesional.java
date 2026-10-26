@@ -4,9 +4,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
+import com.sgtg.backend.domain.models.comun.Decision;
 import com.sgtg.backend.domain.models.participantes.Asesor;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
+import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.utils.CheckString;
 
 /**
@@ -64,6 +66,37 @@ public class PracticaProfesional extends TrabajoGrado {
      */
     public void reubicarCartaAceptacion(String ruta) {
         this.cartaAceptacion = this.cartaAceptacion.conRuta(ruta);
+    }
+
+    /**
+     * Radica una versión de la propuesta sin carta nueva: solo la primera. La
+     * corrección de una propuesta que el Comité no aprobó se radica con la nueva
+     * carta ({@link #radicarPropuesta(String, String, LocalDate, CalendarioHabil)}).
+     */
+    @Override
+    public void radicarPropuesta(String ruta, LocalDate hoy, CalendarioHabil calendario) {
+        radicarPropuesta(ruta, null, hoy, calendario);
+    }
+
+    /**
+     * Radica una versión de la propuesta con una nueva versión de la carta de
+     * aceptación, en la misma operación. La corrección de una propuesta que el
+     * Comité no aprobó exige la nueva carta; la primera radicación no.
+     *
+     * @param rutaCarta ruta de la nueva carta, null si no se carga una
+     */
+    public void radicarPropuesta(String ruta, String rutaCarta, LocalDate hoy, CalendarioHabil calendario) {
+        if (CheckString.isBlank(rutaCarta) && esCorreccionDePropuesta())
+            throw new ReglaNegocioException("error.dominio.practica.carta_aceptacion_corregida");
+        if (!CheckString.isBlank(rutaCarta))
+            actualizarCartaAceptacion(rutaCarta, hoy);
+        super.radicarPropuesta(ruta, hoy, calendario);
+    }
+
+    /** @return true si la última decisión del Comité no aprobó la propuesta: la siguiente versión la corrige */
+    private boolean esCorreccionDePropuesta() {
+        List<Decision> decisiones = getPropuesta().getDecisiones();
+        return !decisiones.isEmpty() && !decisiones.get(decisiones.size() - 1).esAprobatoria();
     }
 
     /**

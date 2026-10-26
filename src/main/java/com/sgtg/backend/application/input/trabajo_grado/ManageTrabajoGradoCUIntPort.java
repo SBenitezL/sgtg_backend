@@ -80,7 +80,19 @@ public interface ManageTrabajoGradoCUIntPort {
      *
      * @param documento archivo de la propuesta (formato A)
      */
-    public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento);
+    public default TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento) {
+        return radicarPropuesta(trabajoId, usuarioId, documento, null);
+    }
+
+    /**
+     * Radica una versión de la propuesta junto con una nueva versión de la carta
+     * de aceptación (práctica profesional), en una sola operación: si la
+     * radicación falla, la carta tampoco se registra.
+     *
+     * @param cartaAceptacion nueva carta de aceptación, null si no se carga
+     */
+    public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento,
+            ArchivoAdjunto cartaAceptacion);
 
     /**
      * Carga una nueva versión de la carta de aceptación de una práctica

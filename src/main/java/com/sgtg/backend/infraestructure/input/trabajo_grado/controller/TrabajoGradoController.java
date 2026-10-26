@@ -162,11 +162,17 @@ public class TrabajoGradoController {
                 .body(archivo.contenido());
     }
 
-    /** Radica una versión de la propuesta (formato A). Solo el director del trabajo. */
+    /**
+     * Radica una versión de la propuesta (formato A). Solo el director del
+     * trabajo. En práctica profesional, la corrección lleva la nueva carta de
+     * aceptación (`cartaAceptacion`), que se registra en la misma operación.
+     */
     @PostMapping(value = "/{trabajoId}/propuesta", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> radicarPropuesta(@AuthenticationPrincipal UserEntity usuario,
-            @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
-        return ResponseEntity.ok(vista(manageTrabajoGrado.radicarPropuesta(trabajoId, usuario.getCusuari(), adjunto(archivo))));
+            @PathVariable Long trabajoId, @RequestPart(value = "archivo", required = false) MultipartFile archivo,
+            @RequestPart(value = "cartaAceptacion", required = false) MultipartFile cartaAceptacion) {
+        return ResponseEntity.ok(vista(manageTrabajoGrado.radicarPropuesta(trabajoId, usuario.getCusuari(),
+                adjunto(archivo), adjunto(cartaAceptacion))));
     }
 
     /**

@@ -97,6 +97,27 @@ class EtapaPropuestaTest {
     }
 
     @Test
+    void enPracticaProfesionalLaPropuestaCorregidaSeRadicaConUnaNuevaCartaDeAceptacion() {
+        PracticaProfesional practica = new PracticaProfesional(null, "Título", DatosPrueba.OBJETIVOS,
+                DatosPrueba.estudiante(10L), DatosPrueba.directorPlanta(1L), null, DatosPrueba.asesorOrganizacion(),
+                DatosPrueba.cartaAceptacion());
+        practica.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
+        practica.registrarDecisionComite(decisionComite(ResultadoConcepto.NO_APROBADO, LUNES.plusDays(3)), "C001",
+                LUNES.plusDays(3).atTime(9, 0));
+
+        // Sin la nueva carta no se radica la corrección, aunque la carta vigente sea del mismo día
+        assertRegla("error.dominio.practica.carta_aceptacion_corregida",
+                () -> practica.radicarPropuesta(RUTA_PROPUESTA, LUNES.plusDays(3), calendario));
+        practica.actualizarCartaAceptacion("9/CARTA_ACEPTACION/v2/carta.pdf", LUNES.plusDays(4));
+        assertRegla("error.dominio.practica.carta_aceptacion_corregida",
+                () -> practica.radicarPropuesta(RUTA_PROPUESTA, LUNES.plusDays(4), calendario));
+
+        practica.radicarPropuesta(RUTA_PROPUESTA, "9/CARTA_ACEPTACION/v3/carta.pdf", LUNES.plusDays(4), calendario);
+        assertEquals(Estado.EN_REVISION, practica.getPropuesta().getEstado());
+        assertEquals("9/CARTA_ACEPTACION/v3/carta.pdf", practica.getCartaAceptacion().ruta());
+    }
+
+    @Test
     void radicarCreaLaPrimeraVersionYCalculaElPlazoDelComite() {
         trabajo.radicarPropuesta(RUTA_PROPUESTA, LUNES, calendario);
 

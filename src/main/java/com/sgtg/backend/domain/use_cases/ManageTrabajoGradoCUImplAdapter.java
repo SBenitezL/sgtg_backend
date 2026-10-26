@@ -250,12 +250,21 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
-    public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento) {
+    public TrabajoGrado radicarPropuesta(Long trabajoId, Long usuarioId, ArchivoAdjunto documento,
+            ArchivoAdjunto cartaAceptacion) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        PracticaProfesional practica = hayArchivo(cartaAceptacion) ? comoPractica(trabajo) : null;
+        // Se validan los archivos antes de almacenar cualquiera
+        Arrays.asList(documento, cartaAceptacion).stream().filter(this::hayArchivo).forEach(this::validarPdf);
         List<String> rutas = new ArrayList<>();
+        String rutaCarta = almacenar(trabajo, trabajoId, TipoDocumento.CARTA_ACEPTACION, cartaAceptacion, rutas);
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.PROPUESTA, documento, rutas);
         return notificar(conArchivos(rutas, () -> {
-            trabajo.radicarPropuesta(ruta, hoy(), this.calendario);
+            // La corrección de una práctica se radica con la nueva carta, en la misma operación
+            if (practica != null)
+                practica.radicarPropuesta(ruta, rutaCarta, hoy(), this.calendario);
+            else
+                trabajo.radicarPropuesta(ruta, hoy(), this.calendario);
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.PROPUESTA_RADICADA, usuarioId, null);
     }
@@ -263,9 +272,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     @Override
     public TrabajoGrado actualizarCartaAceptacion(Long trabajoId, Long usuarioId, ArchivoAdjunto carta) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
-        if (!(trabajo instanceof PracticaProfesional))
-            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.carta_solo_practica");
-        PracticaProfesional practica = (PracticaProfesional) trabajo;
+        PracticaProfesional practica = comoPractica(trabajo);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.CARTA_ACEPTACION, carta, rutas);
         return conArchivos(rutas, () -> {
@@ -359,7 +366,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
             trabajo.registrarConceptoEvaluador(concepto, ruta, rutaAnotaciones, LocalDateTime.now(this.clock),
                     this.calendario);
             return this.trabajoGateway.guardar(trabajo);
-        }), EventoTrabajoGrado.CONCEPTO_EVALUADOR, usuarioId, texto(resultado));
+        }), EventoTrabajoGrado.CONCEPTO_EVALUADOR, usuarioId, textoConcepto(resultado));
     }
 
     @Override
@@ -738,6 +745,15 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         return ruta;
     }
 
+    /** La práctica profesional del trabajo; la carta de aceptación solo existe en esa modalidad. */
+    private PracticaProfesional comoPractica(TrabajoGrado trabajo) {
+        if (!(trabajo instanceof PracticaProfesional practica)) {
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.carta_solo_practica");
+            return null;
+        }
+        return practica;
+    }
+
     /** Ejecuta la operación; si falla, elimina los archivos que se almacenaron para ella. */
     private TrabajoGrado conArchivos(List<String> rutas, Supplier<TrabajoGrado> operacion) {
         try {
@@ -805,6 +821,12 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     /** Resultado de una decisión o calificación para el texto de la notificación. */
+    /** Concepto de un evaluador: si pide correcciones, el anteproyecto no se aprueba y el director radica otra versión */
+    private static String textoConcepto(ResultadoConcepto resultado) {
+        return resultado == ResultadoConcepto.CON_CORRECCIONES
+                ? "no aprobado; el director debe corregirlo y radicar una nueva versión" : texto(resultado);
+    }
+
     private static String texto(Enum<?> resultado) {
         return resultado == null ? "" : resultado.name().replace('_', ' ').toLowerCase(Locale.ROOT);
     }

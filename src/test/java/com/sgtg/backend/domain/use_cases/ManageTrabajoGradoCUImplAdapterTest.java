@@ -251,6 +251,32 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
+    void laCorreccionDeUnaPracticaSeRadicaConLaNuevaCartaEnUnaSolaOperacion() {
+        NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
+                List.of("Objetivo"), List.of(10L), null,
+                new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
+                        true),
+                pdf("carta.pdf"));
+        when(archivoGateway.guardarTemporal(any())).thenReturn("temporal/abc/carta.pdf");
+        when(archivoGateway.reubicar(any(), any(), any(), any())).thenReturn("9/CARTA_ACEPTACION/v1/carta.pdf");
+        TrabajoGrado practica = casoDeUso.crear(1L, datos);
+        when(trabajoGateway.buscarPorId(9L)).thenReturn(practica);
+        casoDeUso.radicarPropuesta(9L, 1L, pdf("p.pdf"));
+        casoDeUso.registrarDecisionComite(9L, 50L, ResultadoConcepto.NO_APROBADO, "Acta 1", pdf("acta-1.pdf"),
+                "Ajustar el alcance", null);
+
+        // Sin la nueva carta la corrección no se radica
+        assertThrows(ReglaNegocioException.class, () -> casoDeUso.radicarPropuesta(9L, 1L, pdf("p-2.pdf")));
+        assertEquals(1, ((PracticaProfesional) practica).getCartaAceptacion().version());
+
+        PracticaProfesional corregida = assertInstanceOf(PracticaProfesional.class,
+                casoDeUso.radicarPropuesta(9L, 1L, pdf("p-2.pdf"), pdf("carta-2.pdf")));
+        assertEquals(2, corregida.getCartaAceptacion().version());
+        assertEquals(Estado.EN_REVISION, corregida.getPropuesta().getEstado());
+        assertEquals(2, corregida.getPropuesta().getVersiones().size());
+    }
+
+    @Test
     void laCartaDeAceptacionSoloEsDeLaPracticaYSiNoSeAceptaSeEliminaElArchivo() {
         trabajoGuardado();
         BusinessRuleException investigacion = assertThrows(BusinessRuleException.class,
