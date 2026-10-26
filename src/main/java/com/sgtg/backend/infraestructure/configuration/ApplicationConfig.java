@@ -1,7 +1,10 @@
 package com.sgtg.backend.infraestructure.configuration;
 
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.ZoneId;
+
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -92,11 +95,16 @@ public class ApplicationConfig {
     /**
      * Reloj de la aplicación en la zona horaria de Colombia. Los casos de uso lo
      * usan para obtener la fecha actual que pasan al dominio. Solo se puede
-     * adelantar en desarrollo ({@code sgtg.reloj.ajustable=true}).
+     * adelantar en desarrollo ({@code sgtg.reloj.ajustable=true}); ahí el
+     * desplazamiento se guarda junto a los archivos para que sobreviva a los
+     * reinicios.
      */
     @Bean
-    public RelojAjustable clock() {
-        return new RelojAjustable(Clock.system(ZoneId.of("America/Bogota")));
+    public RelojAjustable clock(@Value("${sgtg.reloj.ajustable:false}") boolean ajustable,
+            @Value("${sgtg.archivos.directorio:./archivos}") String directorioArchivos) {
+        Clock sistema = Clock.system(ZoneId.of("America/Bogota"));
+        return ajustable ? new RelojAjustable(sistema, Path.of(directorioArchivos, ".reloj-desplazamiento-dias"))
+                : new RelojAjustable(sistema);
     }
 
     @Bean
