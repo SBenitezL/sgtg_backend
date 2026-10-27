@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
@@ -13,6 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sgtg.backend.domain.models.comun.Concepto;
 import com.sgtg.backend.domain.models.comun.NombrePersona;
@@ -46,6 +50,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.VersionDocumento;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoInvestigacion;
 import com.sgtg.backend.domain.services.CalendarioHabilFalso;
+import com.sgtg.backend.infraestructure.output.percistence.repositories.TrabajoGradoRepository;
 
 /** Guarda y recupera el agregado completo en H2 con el gateway y el mapper reales. */
 @DataJpaTest
@@ -61,6 +66,9 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
 
     @Autowired
     private ManageTrabajoGradoGatewayImplAdapter gateway;
+
+    @Autowired
+    private TrabajoGradoRepository repositorio;
 
     private static Estudiante estudiante(long id) {
         return new Estudiante(id, "E" + id, new NombrePersona("Estudiante", null, "Prueba", null), "e" + id + "@unicauca.edu.co", ING_SISTEMAS);
@@ -433,5 +441,40 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         assertEquals(List.of(t2.getId()), gateway.listarPorParticipante(2L).stream().map(TrabajoGrado::getId).toList());
         assertTrue(gateway.listarPorParticipante(99L).isEmpty());
         assertNull(gateway.buscarPorId(404L));
+    }
+
+    @Test
+    void cadaGuardadoAumentaLaVersionYUnaVersionVencidaNoSobrescribe() {
+        TrabajoGrado nuevo = new TrabajoInvestigacion(null, "Concurrente", List.of("O"), List.of(estudiante(10L)),
+                director(1L, TipoVinculacion.PLANTA), null, null);
+        assertNull(nuevo.getVersion());
+        TrabajoGrado guardado = gateway.guardar(nuevo);
+        assertEquals(0L, guardado.getVersion());
+
+        // Dos operaciones leen la misma versión (ej. los dos evaluadores conceptúan a la vez)
+        TrabajoGrado primera = gateway.buscarPorId(guardado.getId());
+        TrabajoGrado segunda = gateway.buscarPorId(guardado.getId());
+        primera.radicarPropuesta("1/v1.pdf", LUNES, new CalendarioHabilFalso());
+        assertEquals(1L, gateway.guardar(primera).getVersion());
+
+        // La segunda falla en lugar de borrar lo que guardó la primera
+        segunda.radicarPropuesta("1/v1-bis.pdf", LUNES, new CalendarioHabilFalso());
+        assertThrows(OptimisticLockingFailureException.class, () -> gateway.guardar(segunda));
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void listaTodosFueraDeUnaPeticionWeb() {
+        // Como la tarea programada de vencimientos: no hay una sesión abierta para las colecciones perezosas
+        TrabajoGrado guardado = gateway.guardar(new TrabajoInvestigacion(null, "Sin sesión", List.of("Objetivo"),
+                List.of(estudiante(10L)), director(1L, TipoVinculacion.PLANTA), null, null));
+        try {
+            TrabajoGrado leido = gateway.listarTodos().stream()
+                    .filter(trabajo -> trabajo.getId().equals(guardado.getId())).findFirst().orElseThrow();
+            assertEquals(List.of("Objetivo"), leido.getObjetivos());
+        } finally {
+            // Esta prueba confirma sus cambios: se borran para no afectar a las demás
+            repositorio.deleteById(guardado.getId());
+        }
     }
 }

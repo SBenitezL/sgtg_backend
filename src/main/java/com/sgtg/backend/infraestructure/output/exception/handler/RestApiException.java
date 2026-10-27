@@ -85,9 +85,11 @@ public class RestApiException {
     }
 
     /**
-     * Dos operaciones simultáneas sobre el mismo trabajo (ej. un doble envío del
-     * mismo formulario): la primera se guardó y la segunda chocó con ella al
-     * escribir. Se responde 409 con un mensaje claro en lugar del error genérico.
+     * Dos operaciones simultáneas sobre el mismo trabajo: un doble envío del
+     * mismo formulario (la segunda choca con un registro único) o dos usuarios
+     * que lo modificaron a la vez (la versión con la que se leyó ya cambió). La
+     * segunda no se guarda y se responde 409 con un mensaje claro en lugar del
+     * error genérico.
      *
      * @return una ResponseEntity con el error y el código HTTP 409 (Conflict)
      */
@@ -95,8 +97,10 @@ public class RestApiException {
     public ResponseEntity<Error> handleConflictException(final HttpServletRequest req, final Exception ex,
             final Locale locale) {
         log.warn("Conflicto al guardar en {} {}: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
+        String clave = ex instanceof OptimisticLockingFailureException ? "error.general.modificacion_simultanea"
+                : "error.general.conflicto";
         final Error error = ErrorUtils.createError(ErrorCode.CONFLICT.getCode(),
-                mensaje("error.general.conflicto", locale), HttpStatus.CONFLICT.value())
+                mensaje(clave, locale), HttpStatus.CONFLICT.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }

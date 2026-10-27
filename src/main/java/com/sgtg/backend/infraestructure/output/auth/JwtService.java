@@ -18,11 +18,26 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class JwtService {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
+
+    /**
+     * Una clave vacía o débil falla al arrancar con un mensaje claro, en lugar
+     * de fallar en el primer inicio de sesión.
+     */
+    @PostConstruct
+    void validarClave() {
+        try {
+            getKey();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException(
+                    "jwt.secret (variable JWT_SECRET) debe ser una clave en Base64 de al menos 32 bytes", e);
+        }
+    }
 
     public String getToken(UserDetails user) {
         Map<String, Collection<?>> extraClaims = new HashMap<>();

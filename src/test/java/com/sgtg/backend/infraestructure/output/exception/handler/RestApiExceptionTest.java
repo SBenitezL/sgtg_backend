@@ -7,6 +7,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -24,6 +25,7 @@ class RestApiExceptionTest {
     RestApiExceptionTest() {
         mensajes.addMessage("error.general.conflicto", Locale.ROOT, "Ya se registró");
         mensajes.addMessage("error.general.inesperado", Locale.ROOT, "Error inesperado");
+        mensajes.addMessage("error.general.modificacion_simultanea", Locale.ROOT, "Se modificó mientras tanto");
     }
 
     @Test
@@ -34,6 +36,16 @@ class RestApiExceptionTest {
         assertEquals(HttpStatus.CONFLICT, respuesta.getStatusCode());
         assertEquals("GC-0011", respuesta.getBody().getErrorCode());
         assertEquals("Ya se registró", respuesta.getBody().getMessage());
+    }
+
+    @Test
+    void unTrabajoModificadoPorOtraOperacionRespondeConflictoConSuMensaje() {
+        ResponseEntity<Error> respuesta = manejador.handleConflictException(peticion,
+                new ObjectOptimisticLockingFailureException("TrabajoGradoEntity", 2L), Locale.ROOT);
+
+        assertEquals(HttpStatus.CONFLICT, respuesta.getStatusCode());
+        assertEquals("GC-0011", respuesta.getBody().getErrorCode());
+        assertEquals("Se modificó mientras tanto", respuesta.getBody().getMessage());
     }
 
     @Test

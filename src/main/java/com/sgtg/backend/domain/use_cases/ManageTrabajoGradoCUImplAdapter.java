@@ -71,6 +71,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     private static final Set<String> ROLES_CONSULTA_GENERAL = Set.of(RoleAdmited.CONSEJO.name(),
             RoleAdmited.ADMINISTRADOR.name(), RoleAdmited.DECANATURA.name());
 
+    private static final System.Logger LOG = System.getLogger(ManageTrabajoGradoCUImplAdapter.class.getName());
+
     /** Firma con la que inicia todo archivo PDF */
     private static final byte[] FIRMA_PDF = "%PDF-".getBytes(StandardCharsets.US_ASCII);
     /** Roles que deciden sobre el trabajo y por eso no evalúan el anteproyecto ni son jurados */
@@ -697,11 +699,18 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         for (Proceso etapa : List.of(Proceso.SUSPENDIDO, Proceso.EN_CURSO, Proceso.PRORROGA, Proceso.SUSTENTACION,
                 Proceso.APLAZADO)) {
             for (TrabajoGrado trabajo : this.trabajoGateway.listarPorEtapa(etapa)) {
-                if (trabajo.verificarVencimientos(ahora)) {
+                // Un trabajo que no se puede actualizar (ej. otro usuario lo modificó a la vez) no detiene a
+                // los demás; se vuelve a revisar en la siguiente verificación
+                try {
+                    if (!trabajo.verificarVencimientos(ahora))
+                        continue;
                     TrabajoGrado guardado = this.trabajoGateway.guardar(trabajo);
+                    actualizados++;
                     this.notificador.notificarCambioDelSistema(guardado);
                     liberarRolesDeEvaluacion(guardado);
-                    actualizados++;
+                } catch (RuntimeException e) {
+                    LOG.log(System.Logger.Level.ERROR,
+                            "No se pudieron aplicar los vencimientos del trabajo de grado " + trabajo.getId(), e);
                 }
             }
         }
@@ -820,13 +829,13 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
         return notificar(trabajo, EventoTrabajoGrado.TRABAJO_REGISTRADO, directorUsuarioId, null);
     }
 
-    /** Resultado de una decisión o calificación para el texto de la notificación. */
     /** Concepto de un evaluador: si pide correcciones, el anteproyecto no se aprueba y el director radica otra versión */
     private static String textoConcepto(ResultadoConcepto resultado) {
         return resultado == ResultadoConcepto.CON_CORRECCIONES
                 ? "no aprobado; el director debe corregirlo y radicar una nueva versión" : texto(resultado);
     }
 
+    /** Resultado de una decisión o calificación para el texto de la notificación. */
     private static String texto(Enum<?> resultado) {
         return resultado == null ? "" : resultado.name().replace('_', ' ').toLowerCase(Locale.ROOT);
     }

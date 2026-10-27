@@ -20,7 +20,6 @@ import com.sgtg.backend.domain.models.participantes.Participante;
 import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.domain.utils.CheckString;
-import com.sgtg.backend.domain.utils.CheckString;
 
 /**
  * Raíz del agregado del trabajo de grado. Contiene todas sus etapas y es la
@@ -66,6 +65,11 @@ public abstract class TrabajoGrado {
     private List<CambioEtapa> historial;
     /** Motivo por el que se cerró el trabajo sin aprobarse, null si sigue activo */
     private MotivoCierre motivoCierre;
+    /**
+     * Versión con la que se leyó el trabajo, null si es nuevo. La persistencia la
+     * usa para rechazar el guardado si otra operación lo modificó entre tanto.
+     */
+    private Long version;
 
     /**
      * Crea un trabajo de grado nuevo en la etapa de propuesta.
@@ -116,6 +120,7 @@ public abstract class TrabajoGrado {
         this.cancelaciones = new ArrayList<>(datos.cancelaciones());
         this.historial = new ArrayList<>(datos.historial());
         this.motivoCierre = datos.motivoCierre();
+        this.version = datos.version();
     }
 
     /**
@@ -285,18 +290,6 @@ public abstract class TrabajoGrado {
     }
 
     /**
-     * Registra los dos evaluadores asignados por el Departamento (Art. 13) y
-     * pasa el anteproyecto a evaluación. Los evaluadores deben ser personas
-     * distintas y no pueden ser director, codirector, asesor ni estudiantes
-     * del trabajo.
-     *
-     * @param evaluador1  primer evaluador
-     * @param evaluador2  segundo evaluador
-     * @param responsable código del usuario que asigna (jefe de departamento)
-     * @param ahora       fecha y hora de la asignación
-     * @param calendario  calendario para calcular el plazo de los evaluadores
-     */
-    /**
      * Fecha límite que tuvo el evaluador para emitir un concepto: los días
      * hábiles del plazo contados desde que la versión evaluada quedó en manos
      * de los evaluadores, es decir, desde su radicación o, si se radicó antes,
@@ -322,6 +315,18 @@ public abstract class TrabajoGrado {
         return Optional.of(calendario.sumarDiasHabiles(inicio, Anteproyecto.DIAS_HABILES_EVALUACION));
     }
 
+    /**
+     * Registra los dos evaluadores asignados por el Departamento (Art. 13) y
+     * pasa el anteproyecto a evaluación. Los evaluadores deben ser personas
+     * distintas y no pueden ser director, codirector, asesor ni estudiantes
+     * del trabajo.
+     *
+     * @param evaluador1  primer evaluador
+     * @param evaluador2  segundo evaluador
+     * @param responsable código del usuario que asigna (jefe de departamento)
+     * @param ahora       fecha y hora de la asignación
+     * @param calendario  calendario para calcular el plazo de los evaluadores
+     */
     public void asignarEvaluadores(Evaluador evaluador1, Evaluador evaluador2, String responsable,
             LocalDateTime ahora, CalendarioHabil calendario) {
         validarEtapa(Proceso.ANTEPROYECTO);
@@ -615,8 +620,22 @@ public abstract class TrabajoGrado {
     public void reanudar(String rutaDocumento, String responsable, LocalDateTime ahora) {
         if (CheckString.isBlank(rutaDocumento))
             throw new ReglaNegocioException("error.dominio.suspension.documento_reanudacion_obligatorio");
-        reanudar(rutaDocumento, responsable, ahora, ahora == null ? null : ahora.toLocalDate(),
+        reanudar(rutaDocumento, responsable, ahora, fechaDeReanudacion(ahora),
                 "Reanudación solicitada por el director");
+    }
+
+    /**
+     * Fecha desde la que rige la reanudación del director: la del día o, si ya
+     * pasó la fecha máxima de la suspensión sin que la verificación diaria la
+     * aplicara, esa fecha máxima (el trabajo se reanuda a más tardar ese día).
+     */
+    private LocalDate fechaDeReanudacion(LocalDateTime ahora) {
+        if (ahora == null)
+            return null;
+        LocalDate hoy = ahora.toLocalDate();
+        LocalDate maxima = this.ejecucion == null ? null
+                : this.ejecucion.suspensionActiva().map(Suspension::fechaMaximaReanudacion).orElse(null);
+        return maxima != null && hoy.isAfter(maxima) ? maxima : hoy;
     }
 
     private void reanudar(String rutaDocumento, String responsable, LocalDateTime ahora, LocalDate fecha,
@@ -1096,6 +1115,10 @@ public abstract class TrabajoGrado {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 
     public String getTitulo() {

@@ -16,7 +16,10 @@ import lombok.RequiredArgsConstructor;
 /**
  * Persistencia del agregado trabajo de grado. Las colecciones se cargan de
  * forma perezosa, por eso la conversión a dominio ocurre dentro de la
- * transacción.
+ * transacción (también fuera de una petición web, como en la tarea programada).
+ * El guardado verifica la versión con la que se leyó el trabajo: si otra
+ * operación lo modificó entre tanto, falla con
+ * {@link org.springframework.dao.OptimisticLockingFailureException}.
  */
 @Service
 @RequiredArgsConstructor
@@ -27,7 +30,8 @@ public class ManageTrabajoGradoGatewayImplAdapter implements ManageTrabajoGradoG
     @Override
     @Transactional
     public TrabajoGrado guardar(TrabajoGrado trabajo) {
-        return MapperTrabajoGrado.toDomain(trabajoGradoRepository.save(MapperTrabajoGrado.toEntity(trabajo)));
+        // Se sincroniza de inmediato para devolver la versión nueva y detectar aquí el conflicto
+        return MapperTrabajoGrado.toDomain(trabajoGradoRepository.saveAndFlush(MapperTrabajoGrado.toEntity(trabajo)));
     }
 
     @Override
@@ -53,6 +57,7 @@ public class ManageTrabajoGradoGatewayImplAdapter implements ManageTrabajoGradoG
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TrabajoGrado> listarTodos() {
         return trabajoGradoRepository.findAllByOrderByIdDesc().stream().map(MapperTrabajoGrado::toDomain).toList();
     }

@@ -877,6 +877,30 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
+    void unTrabajoQueNoSePuedeGuardarNoDetieneLaVerificacionDeLosDemas() {
+        Director director = new Director(1L, "D1", new NombrePersona("Docente", null, "Prueba", null),
+                "d1@unicauca.edu.co", TipoVinculacion.PLANTA, SISTEMAS);
+        Estudiante estudiante = new Estudiante(10L, "E10", new NombrePersona("Estudiante", null, "Prueba", null),
+                "e10@unicauca.edu.co", ING_SISTEMAS);
+        DatosEjecucion vencida = new DatosEjecucion(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 10, 1),
+                LocalDate.of(2025, 4, 1));
+        TrabajoGrado enConflicto = TrabajoGrado.reconstruir(new DatosTrabajoGrado(7L,
+                Modalidad.TRABAJO_DE_INVESTIGACION, "En conflicto", List.of("Objetivo"), List.of(estudiante), director,
+                null, null, null, Proceso.EN_CURSO, null, null, vencida, List.of(), null));
+        TrabajoGrado otro = TrabajoGrado.reconstruir(new DatosTrabajoGrado(8L,
+                Modalidad.TRABAJO_DE_INVESTIGACION, "Otro", List.of("Objetivo"), List.of(estudiante), director,
+                null, null, null, Proceso.EN_CURSO, null, null, vencida, List.of(), null));
+        when(trabajoGateway.listarPorEtapa(Proceso.EN_CURSO)).thenReturn(List.of(enConflicto, otro));
+        // Otro usuario modificó el primero mientras tanto
+        when(trabajoGateway.guardar(enConflicto)).thenThrow(new IllegalStateException("Versión desactualizada"));
+
+        assertEquals(1, casoDeUso.verificarVencimientos());
+
+        verify(trabajoGateway).guardar(otro);
+        assertEquals(Proceso.NO_APROBADO, otro.getEtapa());
+    }
+
+    @Test
     void listarTodosDelegaAlGateway() {
         casoDeUso.listarTodos(70L);
         verify(trabajoGateway).listarTodos();

@@ -182,6 +182,21 @@ class EtapaSuspensionTest {
     }
 
     @Test
+    void siElDirectorReanudaDespuesDeLaFechaMaximaRigeDesdeEsaFecha() {
+        suspender();
+
+        // La fecha máxima es el 1-jul-2027 y la verificación diaria aún no la aplicó
+        trabajo.reanudar(RUTA_REANUDACION, "D1", dia(LocalDate.of(2027, 7, 5)));
+
+        assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
+        Suspension reanudada = trabajo.getEjecucion().getSuspensiones().get(0);
+        assertEquals(LocalDate.of(2027, 7, 1), reanudada.fechaReanudacion());
+        assertEquals(RUTA_REANUDACION, reanudada.rutaReanudacion());
+        // 1-jul-2027 + 71 días, igual que la reanudación automática
+        assertEquals(LocalDate.of(2027, 9, 10), trabajo.getEjecucion().getFechaFin());
+    }
+
+    @Test
     void laReanudacionExigeDocumentoYUnaSuspensionVigente() {
         assertRegla("error.dominio.trabajo_grado.etapa_invalida",
                 () -> trabajo.reanudar(RUTA_REANUDACION, "D1", dia(DECISION)));

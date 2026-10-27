@@ -230,7 +230,8 @@ public class Sustentacion {
 
     /**
      * Registra la decisión del Consejo sobre la nueva fecha. Si la aprueba, la
-     * sesión actual se reprograma con la fecha (y salón) indicados.
+     * sesión actual se reprograma con la fecha (y salón) indicados; la segunda
+     * sesión sigue dentro de los 60 días siguientes al aplazamiento.
      */
     void resolverNuevaFecha(Decision decision, LocalDateTime nuevaFechaHora, String nuevoSalon) {
         SolicitudNuevaFecha pendiente = nuevaFechaPendiente()
@@ -239,6 +240,9 @@ public class Sustentacion {
         SesionSustentacion reprogramada = resuelta.fueAprobada()
                 ? sesionActual().reprogramada(nuevaFechaHora, nuevoSalon, decision.fecha())
                 : null;
+        if (reprogramada != null && reprogramada.numero() > 1 && this.fechaLimiteSegundaSesion != null
+                && reprogramada.fecha().isAfter(this.fechaLimiteSegundaSesion))
+            throw new ReglaNegocioException("error.dominio.sustentacion.segunda_sesion_fuera_de_plazo");
         this.solicitudesNuevaFecha.set(this.solicitudesNuevaFecha.size() - 1, resuelta);
         if (reprogramada != null)
             this.sesiones.set(this.sesiones.size() - 1, reprogramada);

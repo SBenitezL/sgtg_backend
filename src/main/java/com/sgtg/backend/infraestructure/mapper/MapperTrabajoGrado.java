@@ -75,6 +75,7 @@ public abstract class MapperTrabajoGrado {
     public static TrabajoGradoEntity toEntity(TrabajoGrado trabajo) {
         TrabajoGradoEntity entity = new TrabajoGradoEntity();
         entity.setId(trabajo.getId());
+        entity.setVersion(trabajo.getVersion());
         entity.setModalidad(trabajo.getModalidad());
         entity.setTitulo(trabajo.getTitulo());
         entity.setDescripcion(trabajo.getDescripcion());
@@ -277,7 +278,8 @@ public abstract class MapperTrabajoGrado {
                 toDatosSustentacion(entity),
                 entity.getCancelaciones().stream().map(MapperTrabajoGrado::toDomain).toList(),
                 entity.getHistorial().stream().map(MapperTrabajoGrado::toDomain).toList(),
-                entity.getMotivoCierre(), entity.getDescripcion(), entity.getLineaInvestigacion()));
+                entity.getMotivoCierre(), entity.getDescripcion(), entity.getLineaInvestigacion(),
+                entity.getVersion()));
     }
 
     private static DatosAnteproyecto toDatosAnteproyecto(TrabajoGradoEntity entity) {

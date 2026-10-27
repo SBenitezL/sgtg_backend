@@ -462,6 +462,23 @@ class EtapaSustentacionTest {
     }
 
     @Test
+    void laNuevaFechaDeLaSegundaSesionTambienQuedaDentroDeLosSesentaDias() {
+        primeraSesion(Calificacion.APLAZADO);
+        programar(LocalDate.of(2026, 10, 15), LocalDate.of(2026, 9, 1));
+        trabajo.solicitarNuevaFechaSustentacion("solicitudes/nueva-fecha.pdf", dia(LocalDate.of(2026, 10, 1)));
+
+        // El límite de la segunda sesión es el 19-oct-2026
+        assertRegla("error.dominio.sustentacion.segunda_sesion_fuera_de_plazo", () -> trabajo
+                .resolverNuevaFechaSustentacion(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 10, 2)),
+                        LocalDate.of(2026, 10, 20).atTime(9, 0), null));
+        assertTrue(trabajo.getSustentacion().nuevaFechaPendiente().isPresent());
+
+        trabajo.resolverNuevaFechaSustentacion(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 10, 2)),
+                LocalDate.of(2026, 10, 19).atTime(9, 0), null);
+        assertEquals(LocalDate.of(2026, 10, 19), trabajo.getSustentacion().sesionActual().fecha());
+    }
+
+    @Test
     void unSegundoAplazamientoCierraElTrabajo() {
         primeraSesion(Calificacion.APLAZADO);
         programar(LocalDate.of(2026, 10, 15), LocalDate.of(2026, 9, 1));

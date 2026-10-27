@@ -9,6 +9,8 @@ import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CollectionTable;
@@ -24,6 +26,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -41,6 +44,16 @@ public class TrabajoGradoEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * Control de concurrencia: dos operaciones que leen el mismo trabajo y lo
+     * guardan a la vez no se pisan; la segunda falla en lugar de borrar lo que
+     * guardó la primera. Las filas existentes empiezan en 0.
+     */
+    @Version
+    @ColumnDefault("0")
+    @Column(nullable = false)
+    private Long version;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
