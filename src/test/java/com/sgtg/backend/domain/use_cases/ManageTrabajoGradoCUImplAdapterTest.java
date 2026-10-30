@@ -168,8 +168,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     private NuevoTrabajoGrado investigacion() {
-        return new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo"),
-                List.of(10L), null, null, null);
+        return new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo", "Objetivo específico"),
+                List.of(10L), null, null, null, null, "Ingeniería de software");
     }
 
     private TrabajoGrado trabajoGuardado() {
@@ -195,7 +195,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void creaElTrabajoConDescripcionYLineaDeInvestigacion() {
         TrabajoGrado trabajo = casoDeUso.crear(1L, new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION,
-                "Título", List.of("Objetivo"), List.of(10L), null, null, null, "Descripción", "Ingeniería de software"));
+                "Título", List.of("Objetivo", "Objetivo específico"), List.of(10L), null, null, null, "Descripción", "Ingeniería de software"));
         assertEquals("Descripción", trabajo.getDescripcion());
         assertEquals("Ingeniería de software", trabajo.getLineaInvestigacion());
     }
@@ -205,14 +205,32 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoGuardado();
         assertThrows(NoAccessException.class,
                 () -> casoDeUso.actualizarPropuesta(7L, 10L, "T", List.of("O"), null, null));
-        TrabajoGrado trabajo = casoDeUso.actualizarPropuesta(7L, 1L, "Nuevo", List.of("O"), "D", null);
+        TrabajoGrado trabajo = casoDeUso.actualizarPropuesta(7L, 1L, "Nuevo", List.of("O", "E"), "D", "IA");
         assertEquals("Nuevo", trabajo.getTitulo());
+    }
+
+    @Test
+    void laPropuestaExigeUnObjetivoEspecificoYEnInvestigacionLaLineaDeInvestigacion() {
+        BusinessRuleException sinEspecificos = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(1L,
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo general", " "),
+                        List.of(10L), null, null, null, null, "Ingeniería de software")));
+        assertEquals("error.trabajo_grado.objetivos_especificos_obligatorios", sinEspecificos.getBusinessRule());
+        BusinessRuleException sinLinea = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(1L,
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("General", "Específico"),
+                        List.of(10L), null, null, null, null, " ")));
+        assertEquals("error.trabajo_grado.linea_investigacion_obligatoria", sinLinea.getBusinessRule());
+
+        // Al corregir la propuesta se exige lo mismo
+        trabajoGuardado();
+        BusinessRuleException correccion = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.actualizarPropuesta(7L, 1L, "Nuevo", List.of("O", "E"), null, null));
+        assertEquals("error.trabajo_grado.linea_investigacion_obligatoria", correccion.getBusinessRule());
     }
 
     @Test
     void creaPracticaProfesionalConAsesorExternoYCarta() {
         NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
-                List.of("Objetivo"), List.of(10L), null,
+                List.of("Objetivo", "Objetivo específico"), List.of(10L), null,
                 new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
                         true),
                 pdf("carta.pdf"));
@@ -231,7 +249,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void elDirectorCargaUnaNuevaVersionDeLaCartaDeAceptacion() {
         NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
-                List.of("Objetivo"), List.of(10L), null,
+                List.of("Objetivo", "Objetivo específico"), List.of(10L), null,
                 new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
                         true),
                 pdf("carta.pdf"));
@@ -253,7 +271,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     @Test
     void laCorreccionDeUnaPracticaSeRadicaConLaNuevaCartaEnUnaSolaOperacion() {
         NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
-                List.of("Objetivo"), List.of(10L), null,
+                List.of("Objetivo", "Objetivo específico"), List.of(10L), null,
                 new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
                         true),
                 pdf("carta.pdf"));
@@ -286,7 +304,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
 
         // Mientras el Comité revisa la propuesta no se corrige la carta: se elimina el archivo cargado
         NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
-                List.of("Objetivo"), List.of(10L), null,
+                List.of("Objetivo", "Objetivo específico"), List.of(10L), null,
                 new DatosAsesor(null, "1061000000", "Asesor", null, "Externo", null, "a@empresa.com", "Empresa",
                         true),
                 pdf("carta.pdf"));
@@ -305,7 +323,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     void siLaPracticaNoSeCreaSeEliminaLaCartaTemporal() {
         // Sin asesor de la organización el dominio rechaza la práctica
         NuevoTrabajoGrado datos = new NuevoTrabajoGrado(Modalidad.PRACTICA_PROFESIONAL, "Título",
-                List.of("Objetivo"), List.of(10L), null, null, pdf("carta.pdf"));
+                List.of("Objetivo", "Objetivo específico"), List.of(10L), null, null, pdf("carta.pdf"));
         when(archivoGateway.guardarTemporal(any())).thenReturn("temporal/abc/carta.pdf");
 
         assertThrows(ReglaNegocioException.class, () -> casoDeUso.crear(1L, datos));
@@ -964,13 +982,13 @@ class ManageTrabajoGradoCUImplAdapterTest {
     void elJefeDelDepartamentoNoDirigeNiCodirigeTrabajosDeSuDepartamento() {
         // El jefe de Sistemas (60) como director
         BusinessRuleException director = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(60L,
-                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo"), List.of(10L),
-                        null, null, null)));
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo", "Objetivo específico"), List.of(10L),
+                        null, null, null, null, "Ingeniería de software")));
         assertEquals("error.trabajo_grado.jefe_no_dirige", director.getBusinessRule());
         // Como codirector de un director de Sistemas (1)
         BusinessRuleException codirector = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(1L,
-                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo"), List.of(10L),
-                        60L, null, null)));
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo", "Objetivo específico"), List.of(10L),
+                        60L, null, null, null, "Ingeniería de software")));
         assertEquals("error.trabajo_grado.jefe_no_codirige", codirector.getBusinessRule());
         verify(trabajoGateway, never()).guardar(any());
     }
@@ -981,21 +999,21 @@ class ManageTrabajoGradoCUImplAdapterTest {
         when(userGateway.findById(53L)).thenReturn(usuario(53L, RoleAdmited.COMITE, RoleAdmited.DOCENTE));
         when(perfilGateway.buscarPerfilDocente(53L)).thenReturn(new PerfilDocente(53L, TipoVinculacion.PLANTA, SISTEMAS));
         BusinessRuleException comite = assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(1L,
-                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo"), List.of(10L),
-                        53L, null, null)));
+                new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título", List.of("Objetivo", "Objetivo específico"), List.of(10L),
+                        53L, null, null, null, "Ingeniería de software")));
         assertEquals("error.trabajo_grado.comite_no_codirige", comite.getBusinessRule());
         verify(trabajoGateway, never()).guardar(any());
 
         // El 51 es del Comité de Telemática: no evalúa la propuesta y sí puede ser codirector
         TrabajoGrado trabajo = casoDeUso.crear(1L, new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título",
-                List.of("Objetivo"), List.of(10L), 51L, null, null));
+                List.of("Objetivo", "Objetivo específico"), List.of(10L), 51L, null, null, null, "Ingeniería de software"));
         assertEquals(51L, trabajo.getCodirector().getUsuarioId());
     }
 
     @Test
     void losEstudiantesDelTrabajoSonDelMismoPrograma() {
         NuevoTrabajoGrado mezclado = new NuevoTrabajoGrado(Modalidad.TRABAJO_DE_INVESTIGACION, "Título",
-                List.of("Objetivo"), List.of(10L, 11L), null, null, null);
+                List.of("Objetivo", "Objetivo específico"), List.of(10L, 11L), null, null, null, null, "Ingeniería de software");
 
         ReglaNegocioException error = assertThrows(ReglaNegocioException.class, () -> casoDeUso.crear(1L, mezclado));
         assertEquals("error.dominio.trabajo_grado.estudiantes_de_otro_programa", error.getMessage());

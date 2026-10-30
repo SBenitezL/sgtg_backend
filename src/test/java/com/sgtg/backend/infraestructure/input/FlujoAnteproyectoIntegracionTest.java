@@ -163,7 +163,7 @@ class FlujoAnteproyectoIntegracionTest {
 
         String docente = login("D");
         long trabajoId = id(enviar(post(API + "/trabajos-grado/investigacion"), docente,
-                Map.of("titulo", "Sistema de gestión", "objetivos", List.of("Objetivo general"),
+                Map.of("titulo", "Sistema de gestión", "objetivos", List.of("Objetivo general", "Objetivo específico"), "lineaInvestigacion", "Ingeniería de software",
                         "estudiantesIds", List.of(estudianteId)))
                 .andExpect(status().isCreated()), "$.id");
         subir(TRABAJOS + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))

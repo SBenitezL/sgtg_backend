@@ -112,6 +112,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     public TrabajoGrado crear(Long directorUsuarioId, NuevoTrabajoGrado datos) {
         if (datos == null || datos.modalidad() == null)
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.modalidad_obligatoria");
+        validarContenidoPropuesta(datos.modalidad(), datos.objetivos(), datos.lineaInvestigacion());
         Director director = cargarDirector(directorUsuarioId, "error.trabajo_grado.director_sin_perfil");
         Director codirector = datos.codirectorId() == null ? null
                 : cargarDirector(datos.codirectorId(), "error.trabajo_grado.codirector_sin_perfil");
@@ -175,8 +176,26 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     public TrabajoGrado actualizarPropuesta(Long trabajoId, Long usuarioId, String titulo, List<String> objetivos,
             String descripcion, String lineaInvestigacion) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        validarContenidoPropuesta(trabajo.getModalidad(), objetivos, lineaInvestigacion);
         trabajo.actualizarPropuesta(titulo, objetivos, descripcion, lineaInvestigacion);
         return this.trabajoGateway.guardar(trabajo);
+    }
+
+    /**
+     * La propuesta que se registra o se corrige tiene el objetivo general (el
+     * primero) y al menos un objetivo específico y, si es un trabajo de
+     * investigación, su línea de investigación. Los trabajos ya registrados no
+     * se vuelven a validar al leerlos.
+     */
+    private void validarContenidoPropuesta(Modalidad modalidad, List<String> objetivos, String lineaInvestigacion) {
+        long registrados = objetivos == null ? 0 : objetivos.stream().filter(objetivo -> !CheckString.isBlank(objetivo))
+                .count();
+        if (registrados < 2)
+            this.exceptionFormatter.returnResponseBusinessRuleViolated(
+                    "error.trabajo_grado.objetivos_especificos_obligatorios");
+        if (modalidad == Modalidad.TRABAJO_DE_INVESTIGACION && CheckString.isBlank(lineaInvestigacion))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated(
+                    "error.trabajo_grado.linea_investigacion_obligatoria");
     }
 
     @Override

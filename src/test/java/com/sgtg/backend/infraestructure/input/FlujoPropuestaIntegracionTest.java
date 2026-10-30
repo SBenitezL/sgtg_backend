@@ -184,14 +184,14 @@ class FlujoPropuestaIntegracionTest {
         String docente = login(correo("D"), CLAVE);
 
         // Los estudiantes de un trabajo son del mismo programa
-        enviar(post(API + "/trabajos-grado/investigacion"), docente, Map.of("titulo", "T", "objetivos", List.of("O"),
+        enviar(post(API + "/trabajos-grado/investigacion"), docente, Map.of("titulo", "T", "objetivos", List.of("O", "E"), "lineaInvestigacion", "L",
                 "estudiantesIds", List.of(estudianteId, otroEstudianteId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("Todos los estudiantes del trabajo de grado deben ser del mismo programa."));
 
         long trabajoId = id(enviar(post(API + "/trabajos-grado/investigacion"), docente,
-                Map.of("titulo", "Sistema de gestión", "objetivos", List.of("Objetivo general"),
+                Map.of("titulo", "Sistema de gestión", "objetivos", List.of("Objetivo general", "Objetivo específico"), "lineaInvestigacion", "Ingeniería de software",
                         "estudiantesIds", List.of(estudianteId)))
                 .andExpect(status().isCreated()), "$.id");
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, archivo("propuesta.pdf"))
@@ -234,7 +234,7 @@ class FlujoPropuestaIntegracionTest {
         // El docente crea el trabajo y queda como director
         String docente = login(correo("D"), CLAVE);
         long trabajoId = id(enviar(post(API + "/trabajos-grado/investigacion"), docente,
-                Map.of("titulo", "Sistema de gestión", "objetivos", List.of("Objetivo general"),
+                Map.of("titulo", "Sistema de gestión", "objetivos", List.of("Objetivo general", "Objetivo específico"), "lineaInvestigacion", "Ingeniería de software",
                         "estudiantesIds", List.of(estudianteId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.etapa").value("PROPUESTA"))
@@ -351,7 +351,7 @@ class FlujoPropuestaIntegracionTest {
         asesor.put("externo", true);
 
         long trabajoId = id(subir(API + "/trabajos-grado/practica-profesional", docente,
-                Map.of("titulo", "Práctica", "objetivos", List.of("Objetivo"), "estudianteId", estudianteId,
+                Map.of("titulo", "Práctica", "objetivos", List.of("Objetivo", "Específico"), "estudianteId", estudianteId,
                         "asesor", asesor),
                 archivo("carta.pdf"))
                 .andExpect(status().isCreated())
@@ -386,7 +386,8 @@ class FlujoPropuestaIntegracionTest {
 
         // Director de cátedra sin codirector: regla del Art. 6
         enviar(post(API + "/trabajos-grado/investigacion"), login(correo("D"), CLAVE),
-                Map.of("titulo", "Título", "objetivos", List.of("Objetivo"), "estudiantesIds", List.of(estudianteId)))
+                Map.of("titulo", "Título", "objetivos", List.of("Objetivo", "Específico"), "lineaInvestigacion", "L",
+                        "estudiantesIds", List.of(estudianteId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("GC-0004"))
                 .andExpect(jsonPath("$.message")
@@ -471,7 +472,7 @@ class FlujoPropuestaIntegracionTest {
         String estudiante = login(correo("E"), CLAVE);
         String comite = login(correo("C"), CLAVE);
         long trabajoId = id(enviar(post(API + "/trabajos-grado/investigacion"), docente,
-                Map.of("titulo", "Sistema de alertas", "objetivos", List.of("Objetivo general"),
+                Map.of("titulo", "Sistema de alertas", "objetivos", List.of("Objetivo general", "Objetivo específico"), "lineaInvestigacion", "Ingeniería de software",
                         "estudiantesIds", List.of(estudianteId)))
                 .andExpect(status().isCreated()), "$.id");
 
@@ -538,7 +539,8 @@ class FlujoPropuestaIntegracionTest {
         enviar(put(API + "/perfiles/estudiantes/" + estudianteId), admin, Map.of("programaId", programaId))
                 .andExpect(status().isOk());
         String docente = login(correo("D"), CLAVE);
-        Map<String, Object> datos = Map.of("titulo", "Primero", "objetivos", List.of("Objetivo"),
+        Map<String, Object> datos = Map.of("titulo", "Primero", "objetivos", List.of("Objetivo", "Específico"),
+                "lineaInvestigacion", "L",
                 "estudiantesIds", List.of(estudianteId));
         long primero = id(enviar(post(API + "/trabajos-grado/investigacion"), docente, datos)
                 .andExpect(status().isCreated()), "$.id");

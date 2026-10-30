@@ -251,7 +251,8 @@ class UsuariosIntegracionTest {
 
         Map<String, Object> trabajo = new LinkedHashMap<>();
         trabajo.put("titulo", "Sistema de gestión");
-        trabajo.put("objetivos", List.of("Objetivo general"));
+        trabajo.put("objetivos", List.of("Objetivo general", "Objetivo específico"));
+        trabajo.put("lineaInvestigacion", "Ingeniería de software");
         trabajo.put("estudiantesIds", List.of(estudianteId));
         enviar(post(API + "/trabajos-grado/investigacion"), director, trabajo)
                 .andExpect(status().isBadRequest())
