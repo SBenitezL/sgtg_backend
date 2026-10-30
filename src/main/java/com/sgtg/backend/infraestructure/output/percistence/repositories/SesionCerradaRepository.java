@@ -1,0 +1,17 @@
+package com.sgtg.backend.infraestructure.output.percistence.repositories;
+
+import java.time.LocalDateTime;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.sgtg.backend.infraestructure.output.percistence.entities.SesionCerradaEntity;
+
+public interface SesionCerradaRepository extends JpaRepository<SesionCerradaEntity, String> {
+
+    @Modifying
+    @Query("DELETE FROM SesionCerradaEntity s WHERE s.expira < :antesDe")
+    int depurar(@Param("antesDe") LocalDateTime antesDe);
+}

@@ -2,6 +2,7 @@ package com.sgtg.backend.infraestructure.input.auth.dto.input;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Builder;
@@ -17,6 +18,7 @@ public class LoginDTORequest {
      */
     @NotBlank(message = "El correo electrónico es obligatorio")
     @Email(message = "El correo electrónico no es válido")
+    @Size(max = 255, message = "El correo electrónico no es válido")
     String email;
     /**
      * Contraseña del usuario, es obligatoria

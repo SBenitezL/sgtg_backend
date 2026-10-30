@@ -37,6 +37,8 @@ class AutenticacionIntegracionTest {
     private static final String API = "/api/v1/sgtg";
     private static final String CLAVE = "Clave123*";
     private static final String CREDENCIALES_INVALIDAS = "Correo o contraseña incorrectos.";
+    private static final String ACCESO_BLOQUEADO = "Demasiados intentos fallidos. Por seguridad, el acceso con este"
+            + " correo quedó bloqueado durante 15 minutos.";
 
     @Autowired
     private MockMvc mvc;
@@ -185,5 +187,44 @@ class AutenticacionIntegracionTest {
         // Sin token no se puede cambiar
         enviar(put(cambio), null, Map.of("passwordActual", "NuevaClave1", "passwordNueva", "OtraClave12"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void trasCincoFallosSeguidosElCorreoQuedaBloqueado() throws Exception {
+        crearDocente();
+        for (int i = 1; i < 5; i++)
+            intentarLogin(correo(), "Incorrecta1").andExpect(jsonPath("$.message").value(CREDENCIALES_INVALIDAS));
+        intentarLogin(correo(), "Incorrecta1")
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value(ACCESO_BLOQUEADO));
+        // Ni con la contraseña correcta entra mientras dure el bloqueo
+        intentarLogin(correo(), CLAVE)
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value(ACCESO_BLOQUEADO));
+        // Los demás usuarios no se ven afectados
+        login("admin@sgtg.test", "Admin123*");
+    }
+
+    @Test
+    void cerrarSesionInvalidaElTokenAunqueNoHayaVencido() throws Exception {
+        crearDocente();
+        String token = login(correo(), CLAVE);
+        String otraSesion = login(correo(), CLAVE);
+        enviar(get(API + "/usuarios/me"), token, null).andExpect(status().isOk());
+
+        enviar(post(API + "/auth/logout"), token, null).andExpect(status().isNoContent());
+
+        enviar(get(API + "/usuarios/me"), token, null).andExpect(status().isUnauthorized());
+        // Solo se cierra esa sesión
+        enviar(get(API + "/usuarios/me"), otraSesion, null).andExpect(status().isOk());
+        // Sin token, o con uno ya cerrado, también responde 204
+        enviar(post(API + "/auth/logout"), null, null).andExpect(status().isNoContent());
+        enviar(post(API + "/auth/logout"), token, null).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void yaNoExistenLosEndpointsDePrueba() throws Exception {
+        enviar(get(API + "/auth/"), null, null).andExpect(status().isNotFound());
+        enviar(get(API + "/test/"), admin, null).andExpect(status().isNotFound());
     }
 }

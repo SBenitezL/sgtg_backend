@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.sgtg.backend.infraestructure.input.auditoria.AuditoriaFilter;
 import com.sgtg.backend.infraestructure.output.auth.JwtService;
 
 import io.jsonwebtoken.JwtException;
@@ -38,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String token = getTokenFromRequest(request);
+        final String token = tokenDe(request);
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null)
             autenticar(token, request);
         filterChain.doFilter(request, response);
@@ -47,9 +48,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void autenticar(String token, HttpServletRequest request) {
         try {
             String email = jwtService.getUsernameFromToken(token);
+            String sesion = jwtService.getSesion(token);
+            // La sesión queda en la auditoría aunque esté cerrada o el usuario inactivo: así se ve
+            // si alguien intenta usar un token que ya no debería servir
+            if (sesion != null)
+                request.setAttribute(AuditoriaFilter.ATRIBUTO_SESION, sesion);
             UserDetails user = userDetailsService.loadUserByUsername(email);
-            // Un usuario inactivado deja de poder usar los tokens que ya tenía
-            if (!user.isEnabled() || !jwtService.isTokenValid(token, user))
+            // Un usuario inactivado o una sesión cerrada dejan de poder usar el token
+            if (!user.isEnabled() || !jwtService.isTokenValid(token, user) || jwtService.isSesionCerrada(sesion))
                 return;
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null,
                     user.getAuthorities());
@@ -61,7 +67,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-    private String getTokenFromRequest(HttpServletRequest request) {
+    /** @return el token del encabezado {@code Authorization: Bearer ...}, o null si no lo trae */
+    public static String tokenDe(HttpServletRequest request) {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);

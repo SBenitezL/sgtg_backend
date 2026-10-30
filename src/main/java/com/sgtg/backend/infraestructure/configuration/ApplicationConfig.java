@@ -21,6 +21,7 @@ import com.sgtg.backend.application.input.auth.ManageAuthCUIntPort;
 import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
 import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
+import com.sgtg.backend.application.output.ManageIntentosAccesoGatewayIntPort;
 import com.sgtg.backend.domain.use_cases.ManageAuthCUImplAdapter;
 import com.sgtg.backend.domain.use_cases.ManageUsuarioCUImplAdapter;
 import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
@@ -79,8 +80,11 @@ public class ApplicationConfig {
 
     @Bean
     public ManageAuthCUIntPort manageAuthCUIntPort(ManageAuthServiceGatewayIntPort authServiceGateway,
-            ManageAuthGatewayIntPort persistenceAuthService, ExceptionFormatterIntPort exceptionFormatter) {
-        return new ManageAuthCUImplAdapter(authServiceGateway, persistenceAuthService, exceptionFormatter);
+            ManageAuthGatewayIntPort persistenceAuthService, ManageIntentosAccesoGatewayIntPort intentosGateway,
+            ExceptionFormatterIntPort exceptionFormatter) {
+        // Con el reloj real: el bloqueo por intentos no usa el reloj ajustable de desarrollo
+        return new ManageAuthCUImplAdapter(authServiceGateway, persistenceAuthService, intentosGateway,
+                exceptionFormatter, Clock.system(ZoneId.of("America/Bogota")));
     }
 
     @Bean

@@ -28,6 +28,21 @@ public interface ManageAuthServiceGatewayIntPort {
     String generarToken(String email);
 
     /**
+     * Cierra la sesión del token: deja de ser aceptado aunque no haya vencido.
+     * Un token inválido o vencido se ignora.
+     *
+     * @param token token de la sesión
+     */
+    void cerrarSesion(String token);
+
+    /**
+     * Olvida las sesiones cerradas cuyos tokens ya vencieron.
+     *
+     * @return cantidad de sesiones borradas
+     */
+    int depurarSesionesCerradas();
+
+    /**
      * Cifra y guarda una nueva contraseña para el usuario.
      *
      * @param usuarioId identificador del usuario

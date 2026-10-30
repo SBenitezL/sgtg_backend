@@ -1,5 +1,11 @@
 package com.sgtg.backend.infraestructure.configuration;
 
+import java.time.Clock;
+import java.time.ZoneId;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sgtg.backend.application.output.ManageAuditoriaGatewayIntPort;
+import com.sgtg.backend.infraestructure.input.auditoria.AuditoriaFilter;
 import com.sgtg.backend.infraestructure.jwt.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -19,7 +25,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * Seguridad de la API: stateless con JWT. Las rutas de autenticación son
  * públicas; el resto requiere token. Los permisos por rol se declaran en los
  * controladores con {@code @PreAuthorize} (habilitado por
- * {@link EnableMethodSecurity}).
+ * {@link EnableMethodSecurity}). Después del filtro JWT va la auditoría
+ * ({@link AuditoriaFilter}), que registra las operaciones con su usuario.
  */
 @Configuration
 @EnableMethodSecurity
@@ -27,6 +34,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
         private final AuthenticationProvider authProvider;
+        private final ManageAuditoriaGatewayIntPort auditoria;
+        private final ObjectMapper json;
 
         @Bean
         SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -41,7 +50,10 @@ public class SecurityConfig {
                                 .exceptionHandling(exceptions -> exceptions
                                                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                                 .authenticationProvider(authProvider)
-                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                                // Con el reloj real: la auditoría no usa el reloj ajustable de desarrollo
+                                .addFilterAfter(new AuditoriaFilter(auditoria, json,
+                                                Clock.system(ZoneId.of("America/Bogota"))), JwtAuthenticationFilter.class);
                 return http.build();
         }
 }

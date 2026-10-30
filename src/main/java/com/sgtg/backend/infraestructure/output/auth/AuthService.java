@@ -53,6 +53,16 @@ public class AuthService implements ManageAuthServiceGatewayIntPort {
     }
 
     @Override
+    public void cerrarSesion(String token) {
+        jwtService.cerrarSesion(token);
+    }
+
+    @Override
+    public int depurarSesionesCerradas() {
+        return jwtService.depurarSesionesCerradas();
+    }
+
+    @Override
     @Transactional
     public void actualizarPassword(Long usuarioId, String password) {
         UserEntity user = userRepository.findById(usuarioId).orElseThrow();
