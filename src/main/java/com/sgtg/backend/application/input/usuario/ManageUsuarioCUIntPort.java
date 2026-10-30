@@ -18,6 +18,16 @@ public interface ManageUsuarioCUIntPort {
     public FichaUsuario crear(NuevoUsuario datos);
 
     /**
+     * Crea un usuario a nombre de un gestor. El administrador crea cualquiera;
+     * Comité, jefe de departamento, Consejo y Decanatura solo con los roles
+     * Estudiante y Docente, y el Comité y el jefe solo con un perfil de su
+     * departamento (docente) o de uno de sus programas (estudiante).
+     *
+     * @param gestorId usuario autenticado que crea
+     */
+    public FichaUsuario crear(Long gestorId, NuevoUsuario datos);
+
+    /**
      * Actualiza los datos, los roles y el perfil académico de un usuario. Una
      * contraseña vacía conserva la actual. Lo hace el administrador.
      *
@@ -26,6 +36,16 @@ public interface ManageUsuarioCUIntPort {
      * @return el usuario actualizado con sus perfiles
      */
     public FichaUsuario actualizar(Long usuarioId, NuevoUsuario datos);
+
+    /**
+     * Actualiza un usuario a nombre de un gestor: si no es el administrador, el
+     * usuario debe estar en su alcance y no tener roles administrativos, solo se
+     * asignan o quitan los roles Estudiante y Docente y el perfil sigue en su
+     * alcance.
+     *
+     * @param gestorId usuario autenticado que actualiza
+     */
+    public FichaUsuario actualizar(Long gestorId, Long usuarioId, NuevoUsuario datos);
 
     /**
      * Consulta un usuario por su identificador.
@@ -43,6 +63,24 @@ public interface ManageUsuarioCUIntPort {
      */
     public FichaUsuario consultarFicha(Long usuarioId);
 
+    /**
+     * Consulta un usuario del alcance del gestor (ver {@link #listarGestionados}).
+     *
+     * @param gestorId usuario autenticado que consulta
+     */
+    public FichaUsuario consultarFicha(Long gestorId, Long usuarioId);
+
+    /**
+     * Usuarios que gestiona el gestor, con si puede modificarlos. El
+     * administrador, el Consejo y Decanatura gestionan a todos los usuarios; el
+     * Comité y el jefe de departamento, a los docentes de su departamento y a
+     * los estudiantes de los programas de ese departamento. A los usuarios con
+     * roles administrativos solo los modifica el administrador.
+     *
+     * @param gestorId usuario autenticado
+     */
+    public List<UsuarioGestionado> listarGestionados(Long gestorId);
+
     /** @return todos los usuarios con sus perfiles, en orden de creación */
     public List<FichaUsuario> listar();
 
@@ -58,6 +96,14 @@ public interface ManageUsuarioCUIntPort {
     public FichaUsuario asignarRoles(Long usuarioId, List<String> roles);
 
     /**
+     * Reemplaza los roles de un usuario a nombre de un gestor, con las mismas
+     * reglas de {@link #actualizar(Long, Long, NuevoUsuario)}.
+     *
+     * @param gestorId usuario autenticado que asigna
+     */
+    public FichaUsuario asignarRoles(Long gestorId, Long usuarioId, List<String> roles);
+
+    /**
      * Cambia la contraseña del usuario autenticado. Exige la contraseña actual;
      * la nueva debe tener al menos {@link Usuario#LONGITUD_MINIMA_PASSWORD}
      * caracteres y ser distinta de la actual.
@@ -70,10 +116,11 @@ public interface ManageUsuarioCUIntPort {
 
     /**
      * Activa o inactiva un usuario. Un usuario inactivo no puede iniciar sesión
-     * y sus tokens dejan de ser válidos. Un administrador no puede inactivarse a
-     * sí mismo.
+     * y sus tokens dejan de ser válidos. Nadie puede inactivarse a sí mismo; un
+     * gestor que no es el administrador solo cambia el estado de los usuarios de
+     * su alcance sin roles administrativos.
      *
-     * @param administradorId usuario autenticado que hace el cambio
+     * @param administradorId usuario autenticado que hace el cambio (el gestor)
      * @param usuarioId       usuario a modificar
      * @param activo          nuevo estado
      * @return el usuario con su nuevo estado

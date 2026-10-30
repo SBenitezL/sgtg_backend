@@ -452,12 +452,13 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
-    void losEvaluadoresSonDocentesDelDepartamentoSinJefeNiComite() {
+    void losEvaluadoresSonDocentesDelDepartamentoSinComiteConsejoNiDecanatura() {
         trabajoEnAnteproyecto();
         casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf"));
+        when(userGateway.findById(80L)).thenReturn(usuario(80L, RoleAdmited.DECANATURA, RoleAdmited.DOCENTE));
 
-        // Miembro del Comité (50) o jefe de departamento (61): deciden sobre el trabajo
-        for (long decisor : new long[] { 50L, 61L }) {
+        // Miembro del Comité (50), del Consejo (70) o de Decanatura (80): deciden sobre el trabajo
+        for (long decisor : new long[] { 50L, 70L, 80L }) {
             BusinessRuleException error = assertThrows(BusinessRuleException.class,
                     () -> casoDeUso.asignarEvaluadores(7L, 60L, 20L, decisor));
             assertEquals("error.trabajo_grado.evaluador_con_rol_decisor", error.getBusinessRule());
@@ -468,7 +469,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals("error.trabajo_grado.evaluador_otro_departamento", otroDepartamento.getBusinessRule());
         verify(userGateway, never()).agregarRol(20L, "EVALUADOR");
 
-        assertEquals(Proceso.EVALUACION, casoDeUso.asignarEvaluadores(7L, 60L, 20L, 21L).getEtapa());
+        // El jefe del departamento (60) sí puede ser evaluador
+        assertEquals(Proceso.EVALUACION, casoDeUso.asignarEvaluadores(7L, 60L, 20L, 60L).getEtapa());
     }
 
     @Test

@@ -22,29 +22,45 @@ import com.sgtg.backend.infraestructure.input.usuario.dto.input.CambiarEstadoDTO
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.CambiarPasswordDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.CrearUsuarioDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.output.UsuarioDTOResponse;
+import com.sgtg.backend.infraestructure.input.usuario.dto.output.UsuarioGestionadoDTOResponse;
 import com.sgtg.backend.infraestructure.output.percistence.entities.UserEntity;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Creación, edición, consulta, asignación de roles y activación de usuarios por
- * el administrador (con su perfil académico); listado para los usuarios
- * autenticados; consulta y cambio de contraseña del usuario autenticado.
+ * Gestión de usuarios (creación, edición, consulta, asignación de roles y
+ * activación, con su perfil académico) por el administrador y los roles
+ * administrativos, cada uno en su alcance (ver {@link ManageUsuarioCUIntPort});
+ * listado para los usuarios autenticados; consulta y cambio de contraseña del
+ * usuario autenticado.
  */
 @RestController
 @RequestMapping("/api/v1/sgtg/usuarios")
 @RequiredArgsConstructor
 public class UsuarioController {
 
+    /** Roles que gestionan usuarios; el caso de uso limita lo que puede hacer cada uno */
+    private static final String GESTORES = "hasAnyAuthority('ADMINISTRADOR', 'COMITE', 'JEFE_DEP', 'CONSEJO', 'DECANATURA')";
+
     private final ManageUsuarioCUIntPort manageUsuario;
 
-    /** Crea un usuario con sus roles. No hay registro público: solo el administrador. */
+    /** Crea un usuario con sus roles. No hay registro público: lo crea un gestor. */
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMINISTRADOR')")
-    public ResponseEntity<UsuarioDTOResponse> crear(@Valid @RequestBody CrearUsuarioDTORequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(UsuarioDTOResponse.desde(manageUsuario.crear(request.toNuevoUsuario())));
+    @PreAuthorize(GESTORES)
+    public ResponseEntity<UsuarioDTOResponse> crear(@AuthenticationPrincipal UserEntity usuario,
+            @Valid @RequestBody CrearUsuarioDTORequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                UsuarioDTOResponse.desde(manageUsuario.crear(usuario.getCusuari(), request.toNuevoUsuario())));
+    }
+
+    /** Usuarios que gestiona el usuario autenticado, con su documento y si los puede modificar. */
+    @GetMapping("/gestion")
+    @PreAuthorize(GESTORES)
+    public ResponseEntity<List<UsuarioGestionadoDTOResponse>> listarGestionados(
+            @AuthenticationPrincipal UserEntity usuario) {
+        return ResponseEntity.ok(manageUsuario.listarGestionados(usuario.getCusuari()).stream()
+                .map(UsuarioGestionadoDTOResponse::desde).toList());
     }
 
     /**
@@ -67,25 +83,27 @@ public class UsuarioController {
     }
 
     @GetMapping("/{usuarioId}")
-    @PreAuthorize("hasAuthority('ADMINISTRADOR')")
-    public ResponseEntity<UsuarioDTOResponse> consultar(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(UsuarioDTOResponse.desde(manageUsuario.consultarFicha(usuarioId)));
+    @PreAuthorize(GESTORES)
+    public ResponseEntity<UsuarioDTOResponse> consultar(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long usuarioId) {
+        return ResponseEntity.ok(UsuarioDTOResponse.desde(manageUsuario.consultarFicha(usuario.getCusuari(), usuarioId)));
     }
 
     /** Actualiza datos, roles y perfil. Una contraseña vacía conserva la actual. */
     @PutMapping("/{usuarioId}")
-    @PreAuthorize("hasAuthority('ADMINISTRADOR')")
-    public ResponseEntity<UsuarioDTOResponse> actualizar(@PathVariable Long usuarioId,
-            @Valid @RequestBody ActualizarUsuarioDTORequest request) {
-        return ResponseEntity
-                .ok(UsuarioDTOResponse.desde(manageUsuario.actualizar(usuarioId, request.toDatosUsuario())));
+    @PreAuthorize(GESTORES)
+    public ResponseEntity<UsuarioDTOResponse> actualizar(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long usuarioId, @Valid @RequestBody ActualizarUsuarioDTORequest request) {
+        return ResponseEntity.ok(UsuarioDTOResponse
+                .desde(manageUsuario.actualizar(usuario.getCusuari(), usuarioId, request.toDatosUsuario())));
     }
 
     @PutMapping("/{usuarioId}/roles")
-    @PreAuthorize("hasAuthority('ADMINISTRADOR')")
-    public ResponseEntity<UsuarioDTOResponse> asignarRoles(@PathVariable Long usuarioId,
-            @Valid @RequestBody AsignarRolesDTORequest request) {
-        return ResponseEntity.ok(UsuarioDTOResponse.desde(manageUsuario.asignarRoles(usuarioId, request.roles())));
+    @PreAuthorize(GESTORES)
+    public ResponseEntity<UsuarioDTOResponse> asignarRoles(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long usuarioId, @Valid @RequestBody AsignarRolesDTORequest request) {
+        return ResponseEntity.ok(UsuarioDTOResponse
+                .desde(manageUsuario.asignarRoles(usuario.getCusuari(), usuarioId, request.roles())));
     }
 
     /** Cambia la contraseña del usuario autenticado; exige la contraseña actual. */
@@ -98,7 +116,7 @@ public class UsuarioController {
 
     /** Activa o inactiva un usuario. Un usuario inactivo no puede iniciar sesión. */
     @PutMapping("/{usuarioId}/estado")
-    @PreAuthorize("hasAuthority('ADMINISTRADOR')")
+    @PreAuthorize(GESTORES)
     public ResponseEntity<UsuarioDTOResponse> cambiarEstado(@AuthenticationPrincipal UserEntity usuario,
             @PathVariable Long usuarioId, @Valid @RequestBody CambiarEstadoDTORequest request) {
         return ResponseEntity.ok(UsuarioDTOResponse

@@ -1,6 +1,8 @@
 package com.sgtg.backend.domain.use_cases;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -9,6 +11,7 @@ import com.sgtg.backend.application.input.usuario.DatosPerfil;
 import com.sgtg.backend.application.input.usuario.FichaUsuario;
 import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
 import com.sgtg.backend.application.input.usuario.NuevoUsuario;
+import com.sgtg.backend.application.input.usuario.UsuarioGestionado;
 import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
 import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
@@ -26,16 +29,33 @@ import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 import com.sgtg.backend.domain.utils.CheckString;
 
 /**
- * Casos de uso de administración de usuarios. Solo un administrador crea,
- * edita, activa o inactiva usuarios y les asigna roles; no existe registro
- * público. El perfil académico (docente o estudiante) se registra junto con el
- * usuario.
+ * Casos de uso de administración de usuarios; no existe registro público. El
+ * administrador gestiona a todos los usuarios. Los roles administrativos también
+ * los gestionan, con límites: Consejo y Decanatura a toda la facultad, el Comité
+ * y el jefe de departamento a los docentes de su departamento y a los
+ * estudiantes de sus programas; solo asignan los roles Estudiante y Docente y no
+ * modifican a otros usuarios con roles administrativos. El perfil académico
+ * (docente o estudiante) se registra junto con el usuario.
  */
 public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
 
     /** Nombres de los roles que existen en el sistema */
     private static final Set<String> ROLES_EXISTENTES = Arrays.stream(RoleAdmited.values()).map(Enum::name)
             .collect(Collectors.toSet());
+
+    /** Roles que administran la facultad: a estos usuarios solo los modifica el administrador */
+    private static final Set<String> ROLES_ADMINISTRATIVOS = Set.of(RoleAdmited.ADMINISTRADOR.name(),
+            RoleAdmited.COMITE.name(), RoleAdmited.JEFE_DEP.name(), RoleAdmited.CONSEJO.name(),
+            RoleAdmited.DECANATURA.name());
+    /** Gestores que, sin ser administradores, gestionan a todos los usuarios de la facultad */
+    private static final Set<String> GESTORES_DE_LA_FACULTAD = Set.of(RoleAdmited.CONSEJO.name(),
+            RoleAdmited.DECANATURA.name());
+    /** Gestores que gestionan a los usuarios de su departamento y de sus programas */
+    private static final Set<String> GESTORES_DEL_DEPARTAMENTO = Set.of(RoleAdmited.COMITE.name(),
+            RoleAdmited.JEFE_DEP.name());
+    /** Únicos roles que asigna o quita un gestor que no es el administrador */
+    private static final Set<String> ROLES_ASIGNABLES_POR_GESTORES = Set.of(RoleAdmited.ESTUDIANTE.name(),
+            RoleAdmited.DOCENTE.name());
 
     private final ManageUserGatewayIntPort userGateway;
     private final ManageAuthGatewayIntPort authGateway;
@@ -78,6 +98,28 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
     }
 
     @Override
+    public FichaUsuario crear(Long gestorId, NuevoUsuario datos) {
+        Gestor gestor = gestor(gestorId);
+        validarCambioDeRoles(gestor, List.of(), datos.roles());
+        if (!gestor.todaLaFacultad() && datos.roles() != null)
+            validarPerfilEnAlcance(gestor, resolverPerfil(datos.perfil(), datos.roles()));
+        return crear(datos);
+    }
+
+    @Override
+    public FichaUsuario actualizar(Long gestorId, Long usuarioId, NuevoUsuario datos) {
+        Gestor gestor = gestor(gestorId);
+        if (!gestor.administrador()) {
+            FichaUsuario actual = consultarFicha(usuarioId);
+            validarModificable(gestor, actual);
+            validarCambioDeRoles(gestor, nombresDeRoles(actual.usuario()), datos.roles());
+            if (!gestor.todaLaFacultad() && datos.roles() != null)
+                validarPerfilEnAlcance(gestor, resolverPerfil(datos.perfil(), datos.roles()));
+        }
+        return actualizar(usuarioId, datos);
+    }
+
+    @Override
     public FichaUsuario actualizar(Long usuarioId, NuevoUsuario datos) {
         Usuario usuario = this.consultar(usuarioId);
         List<Role> rolesEncontrados = buscarRoles(datos.roles());
@@ -114,8 +156,36 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
     }
 
     @Override
+    public FichaUsuario consultarFicha(Long gestorId, Long usuarioId) {
+        Gestor gestor = gestor(gestorId);
+        FichaUsuario ficha = consultarFicha(usuarioId);
+        if (!gestor.enAlcance(ficha))
+            this.exceptionFormatter.returnNoAccess("error.usuario.fuera_de_alcance");
+        return ficha;
+    }
+
+    @Override
     public List<FichaUsuario> listar() {
         return this.userGateway.listar().stream().map(this::ficha).toList();
+    }
+
+    @Override
+    public List<UsuarioGestionado> listarGestionados(Long gestorId) {
+        Gestor gestor = gestor(gestorId);
+        return listar().stream().filter(gestor::enAlcance)
+                .map(ficha -> new UsuarioGestionado(ficha, gestor.administrador() || !esAdministrativo(ficha)))
+                .toList();
+    }
+
+    @Override
+    public FichaUsuario asignarRoles(Long gestorId, Long usuarioId, List<String> roles) {
+        Gestor gestor = gestor(gestorId);
+        if (!gestor.administrador()) {
+            FichaUsuario actual = consultarFicha(usuarioId);
+            validarModificable(gestor, actual);
+            validarCambioDeRoles(gestor, nombresDeRoles(actual.usuario()), roles);
+        }
+        return asignarRoles(usuarioId, roles);
     }
 
     @Override
@@ -145,10 +215,110 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
     public FichaUsuario cambiarEstado(Long administradorId, Long usuarioId, boolean activo) {
         if (!activo && usuarioId != null && usuarioId.equals(administradorId))
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.no_puede_inactivarse");
+        Gestor gestor = gestor(administradorId);
+        if (!gestor.administrador())
+            validarModificable(gestor, consultarFicha(usuarioId));
         Usuario usuario = this.consultar(usuarioId);
         usuario.cambiarEstado(activo);
         this.userGateway.actualizarEstado(usuario);
         return ficha(usuario);
+    }
+
+    // ----- Gestores -----
+
+    /**
+     * Quien gestiona usuarios: el administrador, sin restricciones; Consejo y
+     * Decanatura, toda la facultad; el Comité y el jefe de departamento, los
+     * docentes de su departamento y los estudiantes de sus programas.
+     *
+     * @param departamento departamento del Comité o del jefe; null si gestiona toda la facultad
+     * @param programas    programas de ese departamento
+     */
+    private record Gestor(boolean administrador, Departamento departamento, Set<Long> programas) {
+
+        boolean todaLaFacultad() {
+            return administrador || departamento == null;
+        }
+
+        boolean delDepartamento(Departamento otro) {
+            return todaLaFacultad() || departamento.esMismo(otro);
+        }
+
+        boolean delPrograma(Programa programa) {
+            return todaLaFacultad() || (programa != null && programas.contains(programa.id()));
+        }
+
+        /** ¿Es un docente de su departamento o un estudiante de sus programas? */
+        boolean enAlcance(FichaUsuario ficha) {
+            return todaLaFacultad()
+                    || (ficha.perfilDocente() != null && delDepartamento(ficha.perfilDocente().getDepartamento()))
+                    || (ficha.perfilEstudiante() != null && delPrograma(ficha.perfilEstudiante().getPrograma()));
+        }
+    }
+
+    private Gestor gestor(Long gestorId) {
+        Set<String> roles = nombresDeRoles(this.consultar(gestorId));
+        if (roles.contains(RoleAdmited.ADMINISTRADOR.name()))
+            return new Gestor(true, null, Set.of());
+        if (roles.stream().anyMatch(GESTORES_DE_LA_FACULTAD::contains))
+            return new Gestor(false, null, Set.of());
+        PerfilDocente perfil = roles.stream().anyMatch(GESTORES_DEL_DEPARTAMENTO::contains)
+                ? this.perfilGateway.buscarPerfilDocente(gestorId)
+                : null;
+        if (perfil == null || perfil.getDepartamento() == null) {
+            this.exceptionFormatter.returnNoAccess("error.usuario.sin_permiso_gestion");
+            return null;
+        }
+        Departamento departamento = perfil.getDepartamento();
+        Set<Long> programas = this.catalogoGateway.listarProgramas().stream()
+                .filter(programa -> programa.esDelDepartamento(departamento))
+                .map(Programa::id)
+                .collect(Collectors.toSet());
+        return new Gestor(false, departamento, programas);
+    }
+
+    private static Set<String> nombresDeRoles(Usuario usuario) {
+        return usuario.getRole() == null ? Set.of()
+                : usuario.getRole().stream().map(Role::getTrole).collect(Collectors.toSet());
+    }
+
+    private static boolean esAdministrativo(FichaUsuario ficha) {
+        return nombresDeRoles(ficha.usuario()).stream().anyMatch(ROLES_ADMINISTRATIVOS::contains);
+    }
+
+    /** Un gestor que no es el administrador modifica a los usuarios de su alcance sin roles administrativos. */
+    private void validarModificable(Gestor gestor, FichaUsuario ficha) {
+        if (gestor.administrador())
+            return;
+        if (esAdministrativo(ficha))
+            this.exceptionFormatter.returnNoAccess("error.usuario.usuario_administrativo");
+        if (!gestor.enAlcance(ficha))
+            this.exceptionFormatter.returnNoAccess("error.usuario.fuera_de_alcance");
+    }
+
+    /** Un gestor que no es el administrador solo asigna o quita los roles Estudiante y Docente. */
+    private void validarCambioDeRoles(Gestor gestor, Collection<String> actuales, Collection<String> nuevos) {
+        if (gestor.administrador() || nuevos == null)
+            return;
+        Set<String> cambiados = new HashSet<>(nuevos);
+        cambiados.removeAll(actuales);
+        Set<String> quitados = new HashSet<>(actuales);
+        quitados.removeAll(nuevos);
+        cambiados.addAll(quitados);
+        if (!ROLES_ASIGNABLES_POR_GESTORES.containsAll(cambiados))
+            this.exceptionFormatter.returnNoAccess("error.usuario.rol_no_asignable");
+    }
+
+    /**
+     * El perfil pedido por el Comité o el jefe queda en su alcance: al menos un
+     * perfil, el docente de su departamento y el de estudiante de uno de sus programas.
+     */
+    private void validarPerfilEnAlcance(Gestor gestor, PerfilResuelto perfil) {
+        boolean conPerfil = perfil.departamento() != null || perfil.programa() != null;
+        boolean docente = perfil.departamento() == null || gestor.delDepartamento(perfil.departamento());
+        boolean estudiante = perfil.programa() == null || gestor.delPrograma(perfil.programa());
+        if (!conPerfil || !docente || !estudiante)
+            this.exceptionFormatter.returnNoAccess("error.usuario.fuera_de_alcance");
     }
 
     // ----- Apoyo -----

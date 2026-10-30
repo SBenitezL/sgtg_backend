@@ -75,9 +75,12 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     /** Firma con la que inicia todo archivo PDF */
     private static final byte[] FIRMA_PDF = "%PDF-".getBytes(StandardCharsets.US_ASCII);
-    /** Roles que deciden sobre el trabajo y por eso no evalúan el anteproyecto ni son jurados */
-    private static final Set<RoleAdmited> ROLES_SIN_EVALUACION = Set.of(RoleAdmited.JEFE_DEP, RoleAdmited.COMITE,
-            RoleAdmited.CONSEJO);
+    /**
+     * Roles que deciden sobre el trabajo y por eso no evalúan el anteproyecto ni
+     * son jurados. El jefe de departamento sí puede serlo.
+     */
+    private static final Set<RoleAdmited> ROLES_SIN_EVALUACION = Set.of(RoleAdmited.COMITE, RoleAdmited.CONSEJO,
+            RoleAdmited.DECANATURA);
 
     private final ManageTrabajoGradoGatewayIntPort trabajoGateway;
     private final ManageUserGatewayIntPort userGateway;
@@ -931,9 +934,9 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     /**
      * Evaluador del anteproyecto o jurado de la sustentación: docente del
-     * departamento del director (el que asigna los evaluadores). No lo son el
-     * jefe de departamento ni los miembros del Comité o del Consejo, que deciden
-     * sobre el mismo trabajo.
+     * departamento del director (el que asigna los evaluadores). No lo son los
+     * miembros del Comité, del Consejo ni de Decanatura, que deciden sobre el
+     * mismo trabajo; el jefe de departamento sí.
      *
      * @return null si no se indicó (el dominio rechaza la asignación incompleta)
      */

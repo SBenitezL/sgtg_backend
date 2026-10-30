@@ -183,6 +183,37 @@ class UsuariosIntegracionTest {
     }
 
     @Test
+    void elJefeGestionaLosUsuariosDeSuDepartamentoYSusProgramas() throws Exception {
+        long jefeId = crear(docente("J", List.of("JEFE_DEP", "DOCENTE"), "PLANTA"));
+        String jefe = login(correo("J"));
+        Map<String, Object> datosEstudiante = datos("E", List.of("ESTUDIANTE"));
+        datosEstudiante.put("programaId", programaId);
+        long estudianteId = id(enviar(post(API + "/usuarios"), jefe, datosEstudiante).andExpect(status().isCreated()));
+
+        // Ve al estudiante de su programa con su documento y lo puede modificar; a sí mismo (jefe) solo lo ve
+        String estudiante = "$[?(@.usuario.id == " + estudianteId + ")]";
+        enviar(get(API + "/usuarios/gestion"), jefe, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(estudiante + ".modificable").value(contains(true)))
+                .andExpect(jsonPath(estudiante + ".usuario.numeroDocumento")
+                        .value(contains(datosEstudiante.get("numeroDocumento"))))
+                .andExpect(jsonPath("$[?(@.usuario.id == " + jefeId + ")].modificable").value(contains(false)));
+        enviar(get(API + "/usuarios/" + estudianteId), jefe, null).andExpect(status().isOk());
+
+        // No asigna roles administrativos ni se modifica a sí mismo
+        enviar(put(API + "/usuarios/" + estudianteId + "/roles"), jefe, Map.of("roles", List.of("ESTUDIANTE", "COMITE")))
+                .andExpect(status().isForbidden());
+        enviar(put(API + "/usuarios/" + jefeId + "/estado"), jefe, Map.of("activo", false))
+                .andExpect(status().isBadRequest());
+        enviar(put(API + "/usuarios/" + estudianteId + "/estado"), jefe, Map.of("activo", false))
+                .andExpect(status().isOk());
+
+        // Un docente sin rol administrativo no gestiona usuarios
+        crear(docente("D", List.of("DOCENTE"), "PLANTA"));
+        enviar(get(API + "/usuarios/gestion"), login(correo("D")), null).andExpect(status().isForbidden());
+    }
+
+    @Test
     void elAdministradorEditaDatosRolesYPerfil() throws Exception {
         long docenteId = crear(docente("D", List.of("DOCENTE", "DIRECTOR"), "OCASIONAL"));
         String usuario = API + "/usuarios/" + docenteId;
