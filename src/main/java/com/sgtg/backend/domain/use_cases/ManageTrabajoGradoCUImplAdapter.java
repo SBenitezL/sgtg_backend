@@ -296,7 +296,7 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
                     fecha == null ? hoy() : fecha, usuarioId);
             trabajo.registrarDecisionComite(decision, responsable.getCodigo(), LocalDateTime.now(this.clock));
             return this.trabajoGateway.guardar(trabajo);
-        }), EventoTrabajoGrado.DECISION_COMITE, usuarioId, texto(resultado));
+        }), EventoTrabajoGrado.DECISION_COMITE, usuarioId, textoConceptoComite(resultado));
     }
 
     /**
@@ -827,6 +827,12 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     private TrabajoGrado registrado(TrabajoGrado trabajo, Long directorUsuarioId) {
         return notificar(trabajo, EventoTrabajoGrado.TRABAJO_REGISTRADO, directorUsuarioId, null);
+    }
+
+    /** Concepto del Comité de Programa sobre la propuesta: pertinente o no pertinente */
+    private static String textoConceptoComite(ResultadoConcepto resultado) {
+        return resultado == ResultadoConcepto.APROBADO ? "pertinente"
+                : "no pertinente; el director debe corregirla y radicar una nueva versión";
     }
 
     /** Concepto de un evaluador: si pide correcciones, el anteproyecto no se aprueba y el director radica otra versión */

@@ -109,10 +109,12 @@ class EtapaAnteproyectoTest {
     }
 
     @Test
-    void soloSeRadicaEnLaEtapaDeAnteproyecto() {
+    void soloSeRadicaElAnteproyectoDeUnaPropuestaPertinente() {
+        // Propuesta sin concepto del Comité (o no pertinente): sigue en la etapa de propuesta
         TrabajoInvestigacion enPropuesta = DatosPrueba.investigacion();
-        assertRegla("error.dominio.trabajo_grado.etapa_invalida",
+        assertRegla("error.dominio.anteproyecto.propuesta_no_pertinente",
                 () -> enPropuesta.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", radicacion, calendario));
+        assertEquals(Proceso.PROPUESTA, enPropuesta.getEtapa());
     }
 
     @Test

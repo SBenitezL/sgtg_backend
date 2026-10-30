@@ -276,6 +276,9 @@ public abstract class TrabajoGrado {
      * @param calendario  calendario para calcular el plazo de los evaluadores
      */
     public void radicarAnteproyecto(String ruta, String responsable, LocalDateTime ahora, CalendarioHabil calendario) {
+        // Solo se registra el anteproyecto de una propuesta que el Comité consideró pertinente
+        if (this.etapa == Proceso.PROPUESTA)
+            throw new ReglaNegocioException("error.dominio.anteproyecto.propuesta_no_pertinente");
         validarEtapa(Proceso.ANTEPROYECTO);
         if (ahora == null)
             throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");

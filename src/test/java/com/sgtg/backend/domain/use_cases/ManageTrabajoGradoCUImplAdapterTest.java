@@ -1024,11 +1024,11 @@ class ManageTrabajoGradoCUImplAdapterTest {
 
     @Test
     void siElDominioRechazaLaOperacionSeEliminaElArchivo() {
-        // En propuesta todavía no se puede radicar el anteproyecto
+        // Sin el concepto pertinente del Comité todavía no se puede radicar el anteproyecto
         trabajoGuardado();
         ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
                 () -> casoDeUso.radicarAnteproyecto(7L, 1L, pdf("a.pdf")));
-        assertEquals("error.dominio.trabajo_grado.etapa_invalida", error.getMessage());
+        assertEquals("error.dominio.anteproyecto.propuesta_no_pertinente", error.getMessage());
         verify(archivoGateway).eliminar("7/ANTEPROYECTO/v1/a.pdf");
     }
 
@@ -1120,7 +1120,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
 
         casoDeUso.registrarDecisionComite(7L, 50L, ResultadoConcepto.APROBADO, "Acta 1", pdf("acta.pdf"), null,
                 null);
-        verify(notificador).notificar(trabajo, EventoTrabajoGrado.DECISION_COMITE, 50L, "aprobado");
+        verify(notificador).notificar(trabajo, EventoTrabajoGrado.DECISION_COMITE, 50L, "pertinente");
     }
 
     @Test
