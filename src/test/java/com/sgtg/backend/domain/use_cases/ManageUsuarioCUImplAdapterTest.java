@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -66,10 +67,10 @@ class ManageUsuarioCUImplAdapterTest {
         catalogoGateway = mock(ManageCatalogoGatewayIntPort.class);
         casoDeUso = new ManageUsuarioCUImplAdapter(userGateway, authGateway, authService, perfilGateway,
                 catalogoGateway, new ExceptionFormatterImplAdapter());
-        docente = new Usuario(5L, "D5", TipoDocumentoIdentidad.CC, "1065", "d5@unicauca.edu.co", "hash", "Docente",
+        docente = new Usuario(5L, "D5", TipoDocumentoIdentidad.CC, "1065", "d5@unicauca.edu.co", "Docente",
                 null, "Prueba", null, List.of(new Role(1L, RoleAdmited.DOCENTE)));
         when(userGateway.findById(5L)).thenReturn(docente);
-        when(authService.verificarCredenciales("d5@unicauca.edu.co", "Actual123")).thenReturn(true);
+        when(authService.verificarCredenciales("d5@unicauca.edu.co", "Actual123*")).thenReturn(true);
         // Los roles pedidos existen con su identificador
         when(authGateway.findRolesByTrole(any())).thenAnswer(invocacion -> {
             List<String> nombres = invocacion.getArgument(0);
@@ -82,14 +83,14 @@ class ManageUsuarioCUImplAdapterTest {
     }
 
     private static NuevoUsuario nuevo(List<String> roles, DatosPerfil perfil) {
-        return new NuevoUsuario("D9", TipoDocumentoIdentidad.CC, "1069", "d9@unicauca.edu.co", "Clave1234", "Ana",
+        return new NuevoUsuario("D9", TipoDocumentoIdentidad.CC, "1069", "d9@unicauca.edu.co", "Clave1234*", "Ana",
                 null, "Pérez", null, roles, perfil);
     }
 
     /** El usuario recién guardado, con identificador 9. */
     private void alGuardarQuedaConId9(List<String> roles) {
         when(userGateway.findByEmail("d9@unicauca.edu.co")).thenReturn(new Usuario(9L, "D9",
-                TipoDocumentoIdentidad.CC, "1069", "d9@unicauca.edu.co", "hash", "Ana", null, "Pérez", null,
+                TipoDocumentoIdentidad.CC, "1069", "d9@unicauca.edu.co", "Ana", null, "Pérez", null,
                 roles.stream().map(rol -> new Role(1L, RoleAdmited.valueOf(rol))).toList()));
     }
 
@@ -103,7 +104,7 @@ class ManageUsuarioCUImplAdapterTest {
         FichaUsuario ficha = casoDeUso.crear(nuevo(List.of("DOCENTE", "DIRECTOR"),
                 new DatosPerfil(TipoVinculacion.OCASIONAL, 1L, null)));
 
-        verify(authService).register(any());
+        verify(authService).register(any(), eq("Clave1234*"));
         verify(perfilGateway).guardarPerfilDocente(perfil.capture());
         assertEquals(9L, perfil.getValue().getUsuarioId());
         assertEquals(TipoVinculacion.OCASIONAL, perfil.getValue().getTipoVinculacion());
@@ -150,15 +151,20 @@ class ManageUsuarioCUImplAdapterTest {
         assertThrows(EntityNotFoundException.class, () -> casoDeUso
                 .crear(nuevo(List.of("DIRECTOR"), new DatosPerfil(TipoVinculacion.PLANTA, 99L, null))));
 
-        verify(authService, never()).register(any());
+        verify(authService, never()).register(any(), any());
     }
 
     @Test
-    void laContrasenaDelUsuarioNuevoExigeOchoCaracteres() {
+    void laContrasenaDelUsuarioNuevoCumpleLaPolitica() {
         NuevoUsuario corta = new NuevoUsuario("D9", TipoDocumentoIdentidad.CC, "1069", "d9@unicauca.edu.co",
                 "corta", "Ana", null, "Pérez", null, List.of("DOCENTE"), null);
         assertEquals("error.usuario.password_invalida",
                 assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(corta)).getBusinessRule());
+        NuevoUsuario predecible = new NuevoUsuario("D9", TipoDocumentoIdentidad.CC, "1069", "d9@unicauca.edu.co",
+                "Unicauca2026*", "Ana", null, "Pérez", null, List.of("DOCENTE"), null);
+        assertEquals("error.usuario.password_predecible",
+                assertThrows(BusinessRuleException.class, () -> casoDeUso.crear(predecible)).getBusinessRule());
+        verify(authService, never()).register(any(), any());
     }
 
     // ----- Actualizar y listar -----
@@ -175,16 +181,16 @@ class ManageUsuarioCUImplAdapterTest {
         assertEquals(List.of("DOCENTE", "CODIRECTOR"),
                 ficha.usuario().getRole().stream().map(Role::getTrole).toList());
         verify(userGateway).actualizarDatos(docente);
-        verify(authService, never()).actualizarPassword(anyLong(), anyString());
+        verify(authService, never()).asignarPassword(anyLong(), anyString());
         verify(perfilGateway).guardarPerfilDocente(any());
     }
 
     @Test
     void alActualizarCambiaLaContrasenaSiSeIndica() {
         NuevoUsuario datos = new NuevoUsuario("D5", TipoDocumentoIdentidad.CC, "1065", "d5@unicauca.edu.co",
-                "NuevaClave1", "Docente", null, "Prueba", null, List.of("DOCENTE"), null);
+                "NuevaClave1*", "Docente", null, "Prueba", null, List.of("DOCENTE"), null);
         casoDeUso.actualizar(5L, datos);
-        verify(authService).actualizarPassword(5L, "NuevaClave1");
+        verify(authService).asignarPassword(5L, "NuevaClave1*");
     }
 
     @Test
@@ -217,18 +223,23 @@ class ManageUsuarioCUImplAdapterTest {
     }
 
     @Test
-    void cambiaLaContrasenaConLaActualCorrecta() {
-        casoDeUso.cambiarPassword(5L, "Actual123", "Nueva1234");
-        verify(authService).actualizarPassword(5L, "Nueva1234");
+    void cambiaLaContrasenaConLaActualCorrectaYDevuelveElTokenNuevo() {
+        when(authService.cambiarPassword(5L, "Nueva1234*")).thenReturn("token-nuevo");
+        assertEquals("token-nuevo", casoDeUso.cambiarPassword(5L, "Actual123*", "Nueva1234*"));
     }
 
     @Test
     void reglasDelCambioDeContrasena() {
-        assertEquals("error.usuario.password_actual_incorrecta", errorAlCambiar("Otra1234", "Nueva1234"));
-        assertEquals("error.usuario.password_actual_incorrecta", errorAlCambiar(" ", "Nueva1234"));
-        assertEquals("error.usuario.password_invalida", errorAlCambiar("Actual123", "corta"));
-        assertEquals("error.usuario.password_igual", errorAlCambiar("Actual123", "Actual123"));
-        verify(authService, never()).actualizarPassword(anyLong(), any());
+        when(authService.esPasswordReciente(5L, "Anterior1*")).thenReturn(true);
+        assertEquals("error.usuario.password_actual_incorrecta", errorAlCambiar("Otra1234*", "Nueva1234*"));
+        assertEquals("error.usuario.password_actual_incorrecta", errorAlCambiar(" ", "Nueva1234*"));
+        assertEquals("error.usuario.password_invalida", errorAlCambiar("Actual123*", "corta"));
+        assertEquals("error.usuario.password_invalida", errorAlCambiar("Actual123*", "sinmayuscula1*"));
+        // Con el número de documento del usuario
+        assertEquals("error.usuario.password_predecible", errorAlCambiar("Actual123*", "Clave1065*"));
+        assertEquals("error.usuario.password_igual", errorAlCambiar("Actual123*", "Actual123*"));
+        assertEquals("error.usuario.password_reciente", errorAlCambiar("Actual123*", "Anterior1*"));
+        verify(authService, never()).cambiarPassword(anyLong(), any());
     }
 
     @Test
@@ -254,7 +265,7 @@ class ManageUsuarioCUImplAdapterTest {
     private static final Departamento TELEMATICA = new Departamento(2L, "Telemática");
 
     private static Usuario usuario(long id, RoleAdmited... roles) {
-        return new Usuario(id, "U" + id, TipoDocumentoIdentidad.CC, "10" + id, "u" + id + "@unicauca.edu.co", "hash",
+        return new Usuario(id, "U" + id, TipoDocumentoIdentidad.CC, "10" + id, "u" + id + "@unicauca.edu.co",
                 "Usuario", null, "Prueba", null, java.util.Arrays.stream(roles).map(rol -> new Role(1L, rol)).toList());
     }
 
@@ -340,7 +351,7 @@ class ManageUsuarioCUImplAdapterTest {
         // Docente de otro departamento
         assertEquals("error.usuario.fuera_de_alcance", reglaSinAcceso(() -> casoDeUso.crear(60L,
                 nuevo(List.of("DOCENTE"), new DatosPerfil(TipoVinculacion.PLANTA, 2L, null)))));
-        verify(authService, never()).register(any());
+        verify(authService, never()).register(any(), any());
 
         alGuardarQuedaConId9(List.of("ESTUDIANTE"));
         assertEquals(9L, casoDeUso.crear(60L, nuevo(List.of("ESTUDIANTE"), new DatosPerfil(null, null, 1L)))

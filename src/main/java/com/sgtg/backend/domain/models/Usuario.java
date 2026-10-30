@@ -15,8 +15,6 @@ public class Usuario {
     private String numeroDocumento;
     /** Correo electrónico del usuario, es único y no puede ser nulo */
     private String email;
-    /** Contraseña del usuario, no puede ser nula */
-    private String password;
     /** Primer nombre, obligatorio */
     private String primerNombre;
     /** Segundo nombre, opcional */
@@ -30,27 +28,27 @@ public class Usuario {
     /** Indica si el usuario puede iniciar sesión; un usuario inactivo conserva sus datos */
     private boolean activo;
 
-    /** Longitud mínima de una contraseña nueva */
-    public static final int LONGITUD_MINIMA_PASSWORD = 8;
-
     /** Crea un usuario activo. */
     public Usuario(Long cusuari, String codigo, TipoDocumentoIdentidad tipoDocumento, String numeroDocumento,
-            String email, String password, String primerNombre, String segundoNombre, String primerApellido,
-            String segundoApellido, List<Role> role) {
-        this(cusuari, codigo, tipoDocumento, numeroDocumento, email, password, primerNombre, segundoNombre,
-                primerApellido, segundoApellido, role, true);
+            String email, String primerNombre, String segundoNombre, String primerApellido, String segundoApellido,
+            List<Role> role) {
+        this(cusuari, codigo, tipoDocumento, numeroDocumento, email, primerNombre, segundoNombre, primerApellido,
+                segundoApellido, role, true);
     }
 
+    /**
+     * La contraseña no es parte del usuario: se guarda aparte, en sus
+     * credenciales, y solo la maneja el servicio de autenticación.
+     */
     public Usuario(Long cusuari, String codigo, TipoDocumentoIdentidad tipoDocumento, String numeroDocumento,
-            String email, String password, String primerNombre, String segundoNombre, String primerApellido,
-            String segundoApellido, List<Role> role, boolean activo) {
+            String email, String primerNombre, String segundoNombre, String primerApellido, String segundoApellido,
+            List<Role> role, boolean activo) {
         this.activo = activo;
         this.cusuari = cusuari;
         this.codigo = codigo;
         this.tipoDocumento = tipoDocumento;
         this.numeroDocumento = numeroDocumento;
         this.email = email;
-        this.password = password;
         this.primerNombre = primerNombre;
         this.segundoNombre = CheckString.isBlank(segundoNombre) ? null : segundoNombre;
         this.primerApellido = primerApellido;
@@ -64,13 +62,6 @@ public class Usuario {
 
     public boolean isEqualEmail(Usuario other) {
         return this.email.equals(other.email);
-    }
-
-    public boolean updatePassword(String newPassword) {
-        if (newPassword == null || newPassword.isEmpty())
-            return false;
-        this.password = newPassword;
-        return true;
     }
 
     public boolean updateRole(List<Role> newRole) {
@@ -106,10 +97,6 @@ public class Usuario {
 
     public String getEmail() {
         return email;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public String getPrimerNombre() {
@@ -166,15 +153,6 @@ public class Usuario {
     }
 
     /**
-     * @param password contraseña nueva en texto plano
-     * @return true si cumple la longitud mínima y no tiene espacios al inicio ni al final
-     */
-    public static boolean isPasswordNuevaValida(String password) {
-        return password != null && password.length() >= LONGITUD_MINIMA_PASSWORD
-                && password.equals(password.strip());
-    }
-
-    /**
      * @return true si el número de documento tiene solo dígitos
      */
     public boolean isNumeroDocumentoValido() {
@@ -187,8 +165,6 @@ public class Usuario {
         if (this.tipoDocumento == null || !isNumeroDocumentoValido())
             return false;
         if (CheckString.isBlank(this.email))
-            return false;
-        if (CheckString.isBlank(this.password))
             return false;
         if (CheckString.isBlank(this.primerNombre))
             return false;

@@ -21,6 +21,7 @@ import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
 import com.sgtg.backend.domain.models.Role;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.Usuario;
+import com.sgtg.backend.domain.models.acceso.PoliticaPassword;
 import com.sgtg.backend.domain.models.participantes.Departamento;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
@@ -79,19 +80,18 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
     public FichaUsuario crear(NuevoUsuario datos) {
         List<Role> rolesEncontrados = buscarRoles(datos.roles());
         Usuario usuario = new Usuario(null, datos.codigo(), datos.tipoDocumento(), datos.numeroDocumento(),
-                datos.email(), datos.password(), datos.primerNombre(), datos.segundoNombre(), datos.primerApellido(),
+                datos.email(), datos.primerNombre(), datos.segundoNombre(), datos.primerApellido(),
                 datos.segundoApellido(), rolesEncontrados);
         validarDatos(usuario);
-        if (!Usuario.isPasswordNuevaValida(datos.password()))
-            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_invalida");
+        validarPassword(datos.password(), usuario);
         if (this.authGateway.existsByEmailorCodigo(datos.email(), datos.codigo()))
             this.exceptionFormatter.returnResponseErrorEntityExists("error.usuario.ya_existe");
         if (this.authGateway.existsByDocumento(datos.tipoDocumento(), datos.numeroDocumento()))
             this.exceptionFormatter.returnResponseErrorEntityExists("error.usuario.documento_existente");
         // El perfil se valida antes de guardar para no dejar un usuario sin el perfil pedido
         PerfilResuelto perfil = resolverPerfil(datos.perfil(), datos.roles());
-        // El servicio de autenticación cifra la contraseña antes de guardar
-        this.authServiceGateway.register(usuario);
+        // El servicio de autenticación cifra la contraseña y la guarda en las credenciales
+        this.authServiceGateway.register(usuario, datos.password());
         Usuario creado = this.userGateway.findByEmail(datos.email());
         guardarPerfil(creado.getCusuari(), perfil);
         return ficha(creado);
@@ -128,16 +128,17 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
         usuario.updateRole(rolesEncontrados);
         validarDatos(usuario);
         boolean cambiaPassword = !CheckString.isBlank(datos.password());
-        if (cambiaPassword && !Usuario.isPasswordNuevaValida(datos.password()))
-            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_invalida");
+        if (cambiaPassword)
+            validarPassword(datos.password(), usuario);
         if (this.userGateway.existeEmailOCodigoEnOtro(datos.email(), datos.codigo(), usuarioId))
             this.exceptionFormatter.returnResponseErrorEntityExists("error.usuario.ya_existe");
         if (this.userGateway.existeDocumentoEnOtro(datos.tipoDocumento(), datos.numeroDocumento(), usuarioId))
             this.exceptionFormatter.returnResponseErrorEntityExists("error.usuario.documento_existente");
         PerfilResuelto perfil = resolverPerfil(datos.perfil(), datos.roles());
         this.userGateway.actualizarDatos(usuario);
+        // Una contraseña asignada por un administrador se debe cambiar en el siguiente ingreso
         if (cambiaPassword)
-            this.authServiceGateway.actualizarPassword(usuarioId, datos.password());
+            this.authServiceGateway.asignarPassword(usuarioId, datos.password());
         guardarPerfil(usuarioId, perfil);
         return ficha(usuario);
     }
@@ -198,17 +199,18 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
     }
 
     @Override
-    public void cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva) {
+    public String cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva) {
         Usuario usuario = this.consultar(usuarioId);
         // 400 y no 401: el usuario sigue autenticado aunque se equivoque de contraseña
         if (CheckString.isBlank(passwordActual)
                 || !this.authServiceGateway.verificarCredenciales(usuario.getEmail(), passwordActual))
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_actual_incorrecta");
-        if (!Usuario.isPasswordNuevaValida(passwordNueva))
-            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_invalida");
+        validarPassword(passwordNueva, usuario);
         if (passwordNueva.equals(passwordActual))
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_igual");
-        this.authServiceGateway.actualizarPassword(usuarioId, passwordNueva);
+        if (this.authServiceGateway.esPasswordReciente(usuarioId, passwordNueva))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_reciente");
+        return this.authServiceGateway.cambiarPassword(usuarioId, passwordNueva);
     }
 
     @Override
@@ -328,6 +330,18 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.numero_documento_invalido");
         if (!usuario.isValidRegister())
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.datos_incompletos");
+    }
+
+    /** Valida una contraseña nueva contra la política, con los datos del usuario al que se asigna. */
+    private void validarPassword(String password, Usuario usuario) {
+        switch (PoliticaPassword.revisar(password, usuario.getEmail(), usuario.getNumeroDocumento())) {
+            case INVALIDA -> this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_invalida");
+            case PREDECIBLE ->
+                this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_predecible");
+            case VALIDA -> {
+                // Cumple la política
+            }
+        }
     }
 
     /**

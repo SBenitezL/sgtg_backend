@@ -3,7 +3,6 @@ package com.sgtg.backend.infraestructure.output.auth;
 import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -30,14 +29,23 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Emite y valida los tokens de sesión. Cada token lleva un identificador de
- * sesión único (jti), que queda en la auditoría y permite cerrar esa sesión
- * antes de que el token venza.
+ * Emite y valida los tokens de sesión. Cada token lleva:
+ * <ul>
+ * <li>un identificador de sesión único (jti), que queda en la auditoría y
+ * permite cerrar esa sesión antes de que el token venza;</li>
+ * <li>la versión de las credenciales del usuario ({@value #CLAIM_VERSION}): al
+ * cambiar la contraseña la versión aumenta y los tokens anteriores dejan de
+ * servir;</li>
+ * <li>{@value #CLAIM_CAMBIO_PASSWORD} cuando el usuario debe cambiar la contraseña
+ * que le asignó un administrador, para que el front lo lleve a cambiarla.</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
 public class JwtService {
     private static final ZoneId ZONA = ZoneId.of("America/Bogota");
+    static final String CLAIM_VERSION = "ver";
+    static final String CLAIM_CAMBIO_PASSWORD = "cambioPassword";
 
     private final SesionCerradaRepository sesionCerradaRepository;
 
@@ -58,16 +66,23 @@ public class JwtService {
         }
     }
 
-    public String getToken(UserDetails user) {
-        Map<String, Collection<?>> extraClaims = new HashMap<>();
+    /**
+     * @param versionCredencial   versión actual de las credenciales del usuario
+     * @param debeCambiarPassword true si debe cambiar la contraseña antes de usar el sistema
+     */
+    public String getToken(UserDetails user, int versionCredencial, boolean debeCambiarPassword) {
+        Map<String, Object> extraClaims = new HashMap<>();
         List<String> roles = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         extraClaims.put("roles", roles);
+        extraClaims.put(CLAIM_VERSION, versionCredencial);
+        if (debeCambiarPassword)
+            extraClaims.put(CLAIM_CAMBIO_PASSWORD, true);
         return getToken(extraClaims, user);
     }
 
-    private String getToken(Map<String, Collection<?>> extraClaims, UserDetails user) {
+    private String getToken(Map<String, Object> extraClaims, UserDetails user) {
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setId(UUID.randomUUID().toString())
@@ -93,6 +108,16 @@ public class JwtService {
      */
     public String getSesion(String token) {
         return getClaims(token).getId();
+    }
+
+    /**
+     * Versión de las credenciales con la que se emitió el token; 0 en los tokens
+     * emitidos antes de que existiera. Lanza una {@link JwtException} si el token
+     * es inválido o expiró.
+     */
+    public int getVersionCredencial(String token) {
+        Integer version = getClaims(token).get(CLAIM_VERSION, Integer.class);
+        return version == null ? 0 : version;
     }
 
     /**

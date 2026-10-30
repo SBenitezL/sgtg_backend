@@ -37,7 +37,8 @@ class JwtServiceTest {
     }
 
     private static String token(JwtService servicio) {
-        return servicio.getToken(new User("d1@unicauca.edu.co", "x", List.of(new SimpleGrantedAuthority("DOCENTE"))));
+        return servicio.getToken(new User("d1@unicauca.edu.co", "x", List.of(new SimpleGrantedAuthority("DOCENTE"))),
+                3, false);
     }
 
     @Test
@@ -72,6 +73,12 @@ class JwtServiceTest {
         assertEquals(servicio.getSesion(token), cerrada.getValue().getSesion());
         // El token dura un día
         assertTrue(cerrada.getValue().getExpira().isAfter(LocalDateTime.now().plusHours(23)));
+    }
+
+    @Test
+    void elTokenLlevaLaVersionDeLasCredenciales() {
+        JwtService servicio = conClave(CLAVE);
+        assertEquals(3, servicio.getVersionCredencial(token(servicio)));
     }
 
     @Test

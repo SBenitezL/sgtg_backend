@@ -43,21 +43,41 @@ public interface ManageAuthServiceGatewayIntPort {
     int depurarSesionesCerradas();
 
     /**
-     * Cifra y guarda una nueva contraseña para el usuario.
+     * @param usuarioId identificador del usuario
+     * @param password  contraseña en texto plano
+     * @return true si es la contraseña actual del usuario o una de las últimas
+     *         que tuvo ({@link com.sgtg.backend.domain.models.acceso.PoliticaPassword#CONTRASENAS_RECORDADAS})
+     */
+    boolean esPasswordReciente(Long usuarioId, String password);
+
+    /**
+     * El usuario cambia su propia contraseña: se cifra y se guarda, y los tokens
+     * emitidos antes (sus demás sesiones) dejan de servir.
+     *
+     * @param usuarioId identificador del usuario
+     * @param password  contraseña nueva en texto plano
+     * @return token nuevo, para que siga en la sesión desde la que la cambió
+     */
+    String cambiarPassword(Long usuarioId, String password);
+
+    /**
+     * Un administrador asigna una contraseña al usuario: se cifra y se guarda,
+     * los tokens emitidos antes dejan de servir y el usuario debe cambiarla en
+     * su siguiente ingreso.
      *
      * @param usuarioId identificador del usuario
      * @param password  contraseña nueva en texto plano
      */
-    void actualizarPassword(Long usuarioId, String password);
+    void asignarPassword(Long usuarioId, String password);
 
     /**
-     * Realiza el registro de un nuevo usuario en el sistema, devuelve true si el
-     * usuario se registró correctamente, de lo contrario, false o una excepción.
+     * Registra un usuario nuevo con sus credenciales. Como la contraseña la
+     * asigna un administrador, el usuario debe cambiarla en su primer ingreso.
      *
-     * @param registerRequest Objeto que contiene la información del usuario a
-     *                        registrar.
+     * @param registerRequest datos del usuario
+     * @param password        contraseña inicial en texto plano
      * @return true si el registro fue exitoso, de lo contrario, false o una
      *         excepción.
      */
-    boolean register(Usuario registerRequest);
+    boolean register(Usuario registerRequest, String password);
 }

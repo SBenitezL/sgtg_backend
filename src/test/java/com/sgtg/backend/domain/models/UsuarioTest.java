@@ -19,7 +19,7 @@ import com.sgtg.backend.domain.models.comun.NombrePersona;
 class UsuarioTest {
 
     private static Usuario usuario(TipoDocumentoIdentidad tipo, String numero, String segundoNombre) {
-        return new Usuario(null, "E001", tipo, numero, "e001@unicauca.edu.co", "clave", "Ana", segundoNombre, "Pérez",
+        return new Usuario(null, "E001", tipo, numero, "e001@unicauca.edu.co", "Ana", segundoNombre, "Pérez",
                 " ", List.of(new Role(null, RoleAdmited.ESTUDIANTE)));
     }
 
@@ -42,7 +42,7 @@ class UsuarioTest {
     void tipoDeDocumentoYPrimerNombreSonObligatorios() {
         assertFalse(usuario(null, "1061234567", null).isValidRegister());
         Usuario sinPrimerNombre = new Usuario(null, "E001", TipoDocumentoIdentidad.CC, "1061234567",
-                "e001@unicauca.edu.co", "clave", " ", null, "Pérez", null,
+                "e001@unicauca.edu.co", " ", null, "Pérez", null,
                 List.of(new Role(null, RoleAdmited.ESTUDIANTE)));
         assertFalse(sinPrimerNombre.isValidRegister());
     }
@@ -76,18 +76,5 @@ class UsuarioTest {
         assertTrue(usuario.isActivo());
         usuario.cambiarEstado(false);
         assertFalse(usuario.isActivo());
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = { "", "corta12", " Clave123", "Clave123 " })
-    void laContrasenaNuevaExigeOchoCaracteresSinEspaciosAlBorde(String password) {
-        assertFalse(Usuario.isPasswordNuevaValida(password));
-    }
-
-    @Test
-    void contrasenaNuevaValida() {
-        assertTrue(Usuario.isPasswordNuevaValida("Clave123"));
-        assertTrue(Usuario.isPasswordNuevaValida("una clave larga"));
-        assertFalse(Usuario.isPasswordNuevaValida(null));
     }
 }

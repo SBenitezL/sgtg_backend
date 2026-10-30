@@ -28,8 +28,7 @@ class ParticipantesTest {
 
     private static Usuario usuario(Long id, String codigo, RoleAdmited... roles) {
         List<Role> listaRoles = Arrays.stream(roles).map(rol -> new Role(null, rol)).toList();
-        return new Usuario(id, codigo, TipoDocumentoIdentidad.CC, "10" + id, codigo.toLowerCase() + "@unicauca.edu.co",
-                "secreto", "Nombre", "Segundo", "Apellido", null, listaRoles);
+        return new Usuario(id, codigo, TipoDocumentoIdentidad.CC, "10" + id, codigo.toLowerCase() + "@unicauca.edu.co", "Nombre", "Segundo", "Apellido", null, listaRoles);
     }
 
     private Director director(Long id, TipoVinculacion vinculacion, Departamento departamento) {

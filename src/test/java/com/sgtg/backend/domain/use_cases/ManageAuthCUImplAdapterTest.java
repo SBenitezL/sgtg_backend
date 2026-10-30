@@ -73,7 +73,7 @@ class ManageAuthCUImplAdapterTest {
     }
 
     private static Usuario usuario(boolean activo) {
-        return new Usuario(1L, "D1", TipoDocumentoIdentidad.CC, "1061", EMAIL, "hash", "Docente", null, "Prueba",
+        return new Usuario(1L, "D1", TipoDocumentoIdentidad.CC, "1061", EMAIL, "Docente", null, "Prueba",
                 null, List.of(new Role(null, RoleAdmited.DOCENTE)), activo);
     }
 

@@ -26,7 +26,6 @@ public abstract class MapperUsuarioAuth {
                 userEntity.getTipoDocumento(),
                 userEntity.getNumeroDocumento(),
                 userEntity.getEmail(),
-                userEntity.getPassword(),
                 userEntity.getPrimerNombre(),
                 userEntity.getSegundoNombre(),
                 userEntity.getPrimerApellido(),
@@ -50,7 +49,6 @@ public abstract class MapperUsuarioAuth {
                 .tipoDocumento(usuario.getTipoDocumento())
                 .numeroDocumento(usuario.getNumeroDocumento())
                 .email(usuario.getEmail())
-                .password(usuario.getPassword())
                 .primerNombre(usuario.getPrimerNombre())
                 .segundoNombre(usuario.getSegundoNombre())
                 .primerApellido(usuario.getPrimerApellido())

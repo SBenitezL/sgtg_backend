@@ -29,9 +29,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Esta clase representa la entidad de usuario en la base de datos. Contiene los
- * campos id, email y password, con las anotaciones necesarias para mapearlos a
- * una tabla en la base de datos.
+ * Datos de un usuario en la base de datos. La contraseña no está aquí: se guarda
+ * aparte, en {@link CredencialEntity}.
  */
 @Entity
 @Table(name = "users", uniqueConstraints = @UniqueConstraint(name = "uk_users_documento", columnNames = {
@@ -57,9 +56,6 @@ public class UserEntity implements UserDetails {
     /** Correo electrónico del usuario, es único y no puede ser nulo */
     @Column(unique = true, nullable = false)
     private String email;
-    /** Contraseña del usuario, no puede ser nula */
-    @Column(nullable = false)
-    private String password;
     /** Primer nombre del usuario */
     @Column(nullable = false)
     private String primerNombre;
@@ -90,6 +86,12 @@ public class UserEntity implements UserDetails {
     @Override
     public String getUsername() {
         return email;
+    }
+
+    /** La contraseña está en las credenciales; el usuario autenticado nunca la lleva. */
+    @Override
+    public String getPassword() {
+        return null;
     }
 
     /** Un usuario inactivo no puede autenticarse (ni con contraseña ni con token). */

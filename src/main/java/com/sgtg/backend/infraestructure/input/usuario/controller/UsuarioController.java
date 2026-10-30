@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
+import com.sgtg.backend.infraestructure.input.auth.dto.output.AuthDTOResponse;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.ActualizarUsuarioDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.AsignarRolesDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.CambiarEstadoDTORequest;
@@ -106,12 +107,16 @@ public class UsuarioController {
                 .desde(manageUsuario.asignarRoles(usuario.getCusuari(), usuarioId, request.roles())));
     }
 
-    /** Cambia la contraseña del usuario autenticado; exige la contraseña actual. */
+    /**
+     * Cambia la contraseña del usuario autenticado; exige la contraseña actual.
+     * Las demás sesiones del usuario se cierran y se devuelve un token nuevo para
+     * seguir en esta.
+     */
     @PutMapping("/me/password")
-    public ResponseEntity<Void> cambiarPassword(@AuthenticationPrincipal UserEntity usuario,
+    public ResponseEntity<AuthDTOResponse> cambiarPassword(@AuthenticationPrincipal UserEntity usuario,
             @Valid @RequestBody CambiarPasswordDTORequest request) {
-        manageUsuario.cambiarPassword(usuario.getCusuari(), request.passwordActual(), request.passwordNueva());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new AuthDTOResponse(
+                manageUsuario.cambiarPassword(usuario.getCusuari(), request.passwordActual(), request.passwordNueva())));
     }
 
     /** Activa o inactiva un usuario. Un usuario inactivo no puede iniciar sesión. */

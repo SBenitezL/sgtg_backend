@@ -8,10 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -55,23 +51,20 @@ public class ApplicationConfig {
 
     private final UserRepository userRepository;
 
+    /**
+     * BCrypt con costo 12 (el de Spring por defecto es 10). Los hashes guardados
+     * con un costo menor se rehacen en el siguiente inicio de sesión exitoso.
+     */
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public PasswordEncoder passwordEncoder(@Value("${sgtg.seguridad.bcrypt-costo:12}") int costo) {
+        return new BCryptPasswordEncoder(costo);
     }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
+    /**
+     * El inicio de sesión no pasa por Spring Security (lo hace el caso de uso de
+     * autenticación); este servicio solo evita que Spring cree un usuario en
+     * memoria por defecto.
+     */
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByEmail(username)

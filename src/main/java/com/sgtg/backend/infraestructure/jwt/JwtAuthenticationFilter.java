@@ -1,12 +1,14 @@
 package com.sgtg.backend.infraestructure.jwt;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.sgtg.backend.infraestructure.input.auditoria.AuditoriaFilter;
 import com.sgtg.backend.infraestructure.output.auth.JwtService;
+import com.sgtg.backend.infraestructure.output.percistence.entities.CredencialEntity;
+import com.sgtg.backend.infraestructure.output.percistence.entities.UserEntity;
+import com.sgtg.backend.infraestructure.output.percistence.repositories.CredencialRepository;
+import com.sgtg.backend.infraestructure.output.percistence.repositories.UserRepository;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -32,8 +38,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    /**
+     * Permiso adicional del usuario que debe cambiar la contraseña que le asignó
+     * un administrador: con él solo puede consultar sus datos, cambiarla y cerrar
+     * sesión (ver SecurityConfig).
+     */
+    public static final String CAMBIO_PASSWORD_PENDIENTE = "CAMBIO_PASSWORD_PENDIENTE";
+
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
+    private final CredencialRepository credencialRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -53,12 +67,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // si alguien intenta usar un token que ya no debería servir
             if (sesion != null)
                 request.setAttribute(AuditoriaFilter.ATRIBUTO_SESION, sesion);
-            UserDetails user = userDetailsService.loadUserByUsername(email);
-            // Un usuario inactivado o una sesión cerrada dejan de poder usar el token
-            if (!user.isEnabled() || !jwtService.isTokenValid(token, user) || jwtService.isSesionCerrada(sesion))
+            UserEntity user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+            CredencialEntity credencial = credencialRepository.findById(user.getCusuari()).orElse(null);
+            // Un usuario inactivado, una sesión cerrada o un token emitido antes del último cambio de
+            // contraseña dejan de servir
+            if (!user.isEnabled() || credencial == null || !jwtService.isTokenValid(token, user)
+                    || jwtService.isSesionCerrada(sesion)
+                    || jwtService.getVersionCredencial(token) != credencial.getVersion())
                 return;
+            List<GrantedAuthority> permisos = new ArrayList<>(user.getAuthorities());
+            if (credencial.isDebeCambiar())
+                permisos.add(new SimpleGrantedAuthority(CAMBIO_PASSWORD_PENDIENTE));
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null,
-                    user.getAuthorities());
+                    permisos);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {

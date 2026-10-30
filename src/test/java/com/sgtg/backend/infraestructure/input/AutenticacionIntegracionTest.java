@@ -171,21 +171,28 @@ class AutenticacionIntegracionTest {
     void elUsuarioCambiaSuContrasena() throws Exception {
         crearDocente();
         String token = login(correo(), CLAVE);
+        String otroEquipo = login(correo(), CLAVE);
         String cambio = API + "/usuarios/me/password";
 
         // La actual incorrecta responde 400 (no 401): la sesión sigue vigente
-        enviar(put(cambio), token, Map.of("passwordActual", "Incorrecta1", "passwordNueva", "NuevaClave1"))
+        enviar(put(cambio), token, Map.of("passwordActual", "Incorrecta1*", "passwordNueva", "NuevaClave1*"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("La contraseña actual es incorrecta."));
         enviar(put(cambio), token, Map.of("passwordActual", CLAVE, "passwordNueva", "corta"))
                 .andExpect(status().isBadRequest());
-        enviar(put(cambio), token, Map.of("passwordActual", CLAVE, "passwordNueva", "NuevaClave1"))
-                .andExpect(status().isNoContent());
+        String nuevo = JsonPath.read(enviar(put(cambio), token,
+                Map.of("passwordActual", CLAVE, "passwordNueva", "NuevaClave1*"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(), "$.token");
 
         intentarLogin(correo(), CLAVE).andExpect(status().isUnauthorized());
-        login(correo(), "NuevaClave1");
+        login(correo(), "NuevaClave1*");
+        // Los tokens de antes del cambio dejan de servir, en este equipo y en los demás; el nuevo sí sirve
+        enviar(get(API + "/usuarios/me"), token, null).andExpect(status().isUnauthorized());
+        enviar(get(API + "/usuarios/me"), otroEquipo, null).andExpect(status().isUnauthorized());
+        enviar(get(API + "/usuarios/me"), nuevo, null).andExpect(status().isOk());
         // Sin token no se puede cambiar
-        enviar(put(cambio), null, Map.of("passwordActual", "NuevaClave1", "passwordNueva", "OtraClave12"))
+        enviar(put(cambio), null, Map.of("passwordActual", "NuevaClave1*", "passwordNueva", "OtraClave12*"))
                 .andExpect(status().isUnauthorized());
     }
 

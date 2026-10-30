@@ -29,7 +29,8 @@ public interface ManageUsuarioCUIntPort {
 
     /**
      * Actualiza los datos, los roles y el perfil académico de un usuario. Una
-     * contraseña vacía conserva la actual. Lo hace el administrador.
+     * contraseña vacía conserva la actual; una nueva cierra las sesiones del
+     * usuario y debe cambiarla en su siguiente ingreso. Lo hace el administrador.
      *
      * @param usuarioId usuario a actualizar
      * @param datos     nuevos datos
@@ -105,14 +106,17 @@ public interface ManageUsuarioCUIntPort {
 
     /**
      * Cambia la contraseña del usuario autenticado. Exige la contraseña actual;
-     * la nueva debe tener al menos {@link Usuario#LONGITUD_MINIMA_PASSWORD}
-     * caracteres y ser distinta de la actual.
+     * la nueva debe cumplir la
+     * {@link com.sgtg.backend.domain.models.acceso.PoliticaPassword política} y
+     * no repetir ninguna de las últimas. Las demás sesiones del usuario se
+     * cierran.
      *
      * @param usuarioId      usuario autenticado
      * @param passwordActual contraseña actual
      * @param passwordNueva  contraseña nueva
+     * @return token nuevo para seguir en la sesión actual
      */
-    public void cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva);
+    public String cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva);
 
     /**
      * Activa o inactiva un usuario. Un usuario inactivo no puede iniciar sesión

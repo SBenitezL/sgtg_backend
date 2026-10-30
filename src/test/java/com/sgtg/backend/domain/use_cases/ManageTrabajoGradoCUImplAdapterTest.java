@@ -88,8 +88,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
     private ManageTrabajoGradoCUImplAdapter casoDeUso;
 
     private static Usuario usuario(long id, RoleAdmited... roles) {
-        return new Usuario(id, "U" + id, TipoDocumentoIdentidad.CC, "10" + id, "u" + id + "@unicauca.edu.co",
-                "clave", "Nombre", null, "Apellido", null,
+        return new Usuario(id, "U" + id, TipoDocumentoIdentidad.CC, "10" + id, "u" + id + "@unicauca.edu.co", "Nombre", null, "Apellido", null,
                 List.of(roles).stream().map(rol -> new Role(null, rol)).toList());
     }
 
