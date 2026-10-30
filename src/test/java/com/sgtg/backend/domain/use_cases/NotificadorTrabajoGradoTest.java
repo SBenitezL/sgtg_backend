@@ -47,6 +47,8 @@ import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosEjecucion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
+import com.sgtg.backend.domain.models.trabajo_grado.InformeMensual;
+import com.sgtg.backend.domain.models.trabajo_grado.ReunionSeguimiento;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
@@ -261,13 +263,50 @@ class NotificadorTrabajoGradoTest {
         assertEquals(Set.of(21L), usuarios(guardadas()));
     }
 
-    @Test
-    void elTrabajoEnCursoSeAvisaTreintaDiasAntesDelFin() {
-        TrabajoGrado enCurso = TrabajoGrado.reconstruir(new DatosTrabajoGrado(8L, Modalidad.TRABAJO_DE_INVESTIGACION,
+    /** En curso del 1-mar al 1-dic-2026 (9 reuniones), con los informes y las reuniones dados. */
+    private TrabajoGrado enCurso(int informes, List<ReunionSeguimiento> reuniones) {
+        List<InformeMensual> radicados = java.util.stream.IntStream.rangeClosed(1, informes)
+                .mapToObj(numero -> new InformeMensual(numero, "informes/" + numero + ".pdf",
+                        LocalDate.of(2026, 3, 1).plusMonths(numero), null, null, List.of()))
+                .toList();
+        return TrabajoGrado.reconstruir(new DatosTrabajoGrado(8L, Modalidad.TRABAJO_DE_INVESTIGACION,
                 "Vigente", List.of("Objetivo"), trabajo().getEstudiantes(), trabajo().getDirector(), null, null,
                 null, Proceso.EN_CURSO, null, null,
-                new DatosEjecucion(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 1), LocalDate.of(2026, 6, 1)),
+                new DatosEjecucion(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 1), LocalDate.of(2026, 6, 1),
+                        List.of(), radicados, null, List.of(), reuniones),
                 List.of(), null));
+    }
+
+    @Test
+    void laReunionAgendadaSeRecuerdaElDiaAnterior() {
+        LocalDateTime reunion = LocalDate.of(2026, 4, 1).atTime(10, 0);
+        TrabajoGrado agendada = enCurso(9, List.of(new ReunionSeguimiento(1, reunion, "Sala 2", "D1", false, null)));
+
+        assertEquals(0, notificador.avisarPlazos(agendada, LocalDate.of(2026, 3, 30)));
+        assertEquals(2, notificador.avisarPlazos(agendada, LocalDate.of(2026, 3, 31)));
+        assertEquals(Set.of(10L, 1L), usuarios(guardadas()));
+        assertEquals(EventoTrabajoGrado.REUNION_PROXIMA, guardadas().get(0).evento());
+        assertEquals("Recuerde la reunión de seguimiento 1, el 01/04/2026 a las 10:00 (Sala 2) del trabajo \"Vigente\".",
+                guardadas().get(0).mensaje());
+    }
+
+    @Test
+    void siPasoLaUltimaReunionSinSuInformeSeAvisaElInformePendiente() {
+        // Pasó la reunión del 1-may (la segunda): solo se avisa esa, no la de abril
+        assertEquals(2, notificador.avisarPlazos(enCurso(0, List.of()), LocalDate.of(2026, 5, 2)));
+        assertEquals("REUNION_SIN_INFORME:8:2", guardadas().get(0).clave());
+        assertEquals(EventoTrabajoGrado.REUNION_SIN_INFORME, guardadas().get(0).evento());
+    }
+
+    @Test
+    void conElInformeDeLaUltimaReunionNoSeAvisa() {
+        assertEquals(0, notificador.avisarPlazos(enCurso(2, List.of()), LocalDate.of(2026, 5, 2)));
+    }
+
+    @Test
+    void elTrabajoEnCursoSeAvisaTreintaDiasAntesDelFin() {
+        // Con todos sus informes: solo el aviso del fin del plazo
+        TrabajoGrado enCurso = enCurso(9, List.of());
 
         assertEquals(0, notificador.avisarPlazos(enCurso, LocalDate.of(2026, 10, 31)));
         assertEquals(2, notificador.avisarPlazos(enCurso, LocalDate.of(2026, 11, 1)));

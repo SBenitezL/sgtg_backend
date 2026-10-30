@@ -516,6 +516,33 @@ public abstract class TrabajoGrado {
     }
 
     /**
+     * Agenda (o reprograma) la reunión de seguimiento de un mes del plazo, para
+     * hoy o una fecha futura, mientras el trabajo está en curso o en prórroga.
+     *
+     * @param numero      mes del plazo (ver {@link Ejecucion#reuniones})
+     * @param lugar       salón o enlace de la reunión
+     * @param responsable código del director
+     */
+    public void agendarReunion(int numero, LocalDateTime fechaHora, String lugar, String responsable, LocalDate hoy) {
+        if (this.etapa != Proceso.EN_CURSO && this.etapa != Proceso.PRORROGA)
+            throw new ReglaNegocioException("error.dominio.trabajo_grado.etapa_invalida");
+        this.ejecucion.agendarReunion(numero, fechaHora, lugar, responsable, hoy);
+    }
+
+    /**
+     * Registra que se realizó una reunión de seguimiento agendada. Se puede
+     * registrar después del plazo (ej. en la sustentación), mientras el trabajo
+     * no se haya cerrado.
+     */
+    public void registrarReunionRealizada(int numero, String observaciones, LocalDateTime ahora) {
+        if (this.ejecucion == null || estaCerrado())
+            throw new ReglaNegocioException("error.dominio.trabajo_grado.etapa_invalida");
+        if (ahora == null)
+            throw new ReglaNegocioException("error.dominio.trabajo_grado.fecha_obligatoria");
+        this.ejecucion.registrarReunionRealizada(numero, observaciones, ahora);
+    }
+
+    /**
      * Registra la revisión de un informe mensual por el director, el codirector
      * o el asesor. Es una formalidad: no cambia la etapa ni el flujo del trabajo.
      *

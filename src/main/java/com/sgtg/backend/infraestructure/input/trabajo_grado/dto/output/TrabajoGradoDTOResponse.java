@@ -14,6 +14,9 @@ import com.sgtg.backend.domain.models.participantes.Estudiante;
 import com.sgtg.backend.domain.models.participantes.Evaluador;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Anteproyecto;
+import com.sgtg.backend.domain.models.trabajo_grado.ReunionSeguimiento;
+import com.sgtg.backend.domain.models.trabajo_grado.ReunionDelPlazo;
+import com.sgtg.backend.domain.models.trabajo_grado.EstadoReunion;
 import com.sgtg.backend.domain.models.trabajo_grado.Calificacion;
 import com.sgtg.backend.domain.models.trabajo_grado.CalificacionJurado;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioEtapa;
@@ -194,7 +197,20 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     public record EjecucionDTO(LocalDate fechaNotificacion, LocalDate fechaFin, LocalDate fechaMinimaSustentacion,
             LocalDate fechaLimiteCambioObjetivos, LocalDate fechaLimiteSolicitudProrroga,
             List<CambioObjetivosDTO> cambiosObjetivos, List<InformeMensualDTO> informesMensuales,
-            ProrrogaDTO prorroga, List<SuspensionDTO> suspensiones) {
+            ProrrogaDTO prorroga, List<SuspensionDTO> suspensiones, List<ReunionDTO> reuniones) {
+    }
+
+    /**
+     * Reunión de seguimiento de un mes del plazo, con su estado en la fecha de la consulta.
+     *
+     * @param fechaSugerida fecha que le corresponde; null mientras el trabajo está suspendido
+     * @param fechaHora     fecha y hora agendadas, null si no se ha agendado
+     * @param lugar         salón o enlace, null si no se ha agendado
+     * @param conInforme    true si ya se radicó el informe mensual del mismo número
+     * @param estado        PENDIENTE, AGENDADA, REALIZADA, VENCIDA o EN_SUSPENSION
+     */
+    public record ReunionDTO(int numero, LocalDate fechaSugerida, LocalDateTime fechaHora, String lugar,
+            boolean realizada, String observaciones, boolean conInforme, EstadoReunion estado) {
     }
 
     /**
@@ -293,7 +309,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                                 .mapToObj(i -> decision(decisiones.get(i),
                                         propuesta.fechaLimiteDecision(i, plazos.calendario()).orElse(null)))
                                 .toList()),
-                anteproyecto(trabajo, plazos), ejecucion(trabajo.getEjecucion()),
+                anteproyecto(trabajo, plazos), ejecucion(trabajo.getEjecucion(), plazos.hoy()),
                 sustentacion(trabajo.getSustentacion(), plazos),
                 trabajo.getCancelaciones().stream().map(TrabajoGradoDTOResponse::cancelacion).toList(),
                 trabajo.getHistorial().stream().map(TrabajoGradoDTOResponse::cambio).toList());
@@ -375,7 +391,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 opcionesPlazo);
     }
 
-    private static EjecucionDTO ejecucion(Ejecucion e) {
+    private static EjecucionDTO ejecucion(Ejecucion e, LocalDate hoy) {
         if (e == null)
             return null;
         return new EjecucionDTO(e.getFechaNotificacion(), e.getFechaFin(), e.getFechaMinimaSustentacion(),
@@ -389,7 +405,15 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                                         .toList()))
                         .toList(),
                 prorroga(e.getProrroga()),
-                e.getSuspensiones().stream().map(TrabajoGradoDTOResponse::suspension).toList());
+                e.getSuspensiones().stream().map(TrabajoGradoDTOResponse::suspension).toList(),
+                e.reuniones(hoy).stream().map(TrabajoGradoDTOResponse::reunion).toList());
+    }
+
+    private static ReunionDTO reunion(ReunionDelPlazo r) {
+        ReunionSeguimiento agendada = r.agendada();
+        return new ReunionDTO(r.numero(), r.fechaSugerida(), agendada == null ? null : agendada.fechaHora(),
+                agendada == null ? null : agendada.lugar(), agendada != null && agendada.realizada(),
+                agendada == null ? null : agendada.observaciones(), r.conInforme(), r.estado());
     }
 
     private static CancelacionDTO cancelacion(Cancelacion c) {

@@ -25,7 +25,9 @@ import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioEtapa;
 import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
+import com.sgtg.backend.domain.models.trabajo_grado.EstadoReunion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
+import com.sgtg.backend.domain.models.trabajo_grado.ReunionDelPlazo;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 
 /**
@@ -39,6 +41,10 @@ public class NotificadorTrabajoGrado {
     public static final int DIAS_AVISO_EVALUACION = 3;
     /** Días de anticipación del aviso de fin del plazo de ejecución */
     public static final int DIAS_AVISO_EJECUCION = 30;
+    /** Días antes de una reunión de seguimiento agendada en que se recuerda (el día anterior y el mismo día) */
+    public static final int DIAS_AVISO_REUNION = 1;
+    private static final java.time.format.DateTimeFormatter FORMATO_REUNION = java.time.format.DateTimeFormatter
+            .ofPattern("dd/MM/yyyy 'a las' HH:mm");
 
     private static final System.Logger LOG = System.getLogger(NotificadorTrabajoGrado.class.getName());
     /** Hechos de una sesión de sustentación: la notificación guarda el número de la sesión */
@@ -130,7 +136,8 @@ public class NotificadorTrabajoGrado {
                     EventoTrabajoGrado.PLAZO_EVALUACION_VENCIDO);
             case EN_CURSO, PRORROGA -> trabajo.getEjecucion() == null ? 0
                     : avisar(trabajo, trabajo.getEjecucion().getFechaFin(), hoy, DIAS_AVISO_EJECUCION,
-                            EventoTrabajoGrado.PLAZO_TRABAJO_POR_VENCER, null);
+                            EventoTrabajoGrado.PLAZO_TRABAJO_POR_VENCER, null)
+                            + avisarReuniones(trabajo, hoy);
             default -> 0;
         });
         return creados == null ? 0 : creados;
@@ -145,8 +152,41 @@ public class NotificadorTrabajoGrado {
         if (evento == null)
             return 0;
         String clave = evento.name() + ":" + trabajo.getId() + ":" + limite;
+        return crearAvisos(trabajo, evento, clave, String.valueOf(dias));
+    }
+
+    /**
+     * Avisos de las reuniones de seguimiento: el recordatorio de la reunión
+     * agendada (el día anterior y el mismo día) y, si ya pasó la fecha de la
+     * última reunión sin que se radicara su informe mensual, el informe
+     * pendiente. Solo se avisa la última, para no acumular avisos de meses anteriores.
+     */
+    private int avisarReuniones(TrabajoGrado trabajo, LocalDate hoy) {
+        List<ReunionDelPlazo> reuniones = trabajo.getEjecucion().reuniones(hoy);
+        int creados = 0;
+        for (ReunionDelPlazo reunion : reuniones) {
+            if (reunion.estado() != EstadoReunion.AGENDADA
+                    || ChronoUnit.DAYS.between(hoy, reunion.fecha()) > DIAS_AVISO_REUNION)
+                continue;
+            String detalle = reunion.numero() + ", el " + reunion.agendada().fechaHora().format(FORMATO_REUNION) + " ("
+                    + reunion.agendada().lugar() + ")";
+            creados += crearAvisos(trabajo, EventoTrabajoGrado.REUNION_PROXIMA, EventoTrabajoGrado.REUNION_PROXIMA.name()
+                    + ":" + trabajo.getId() + ":" + reunion.numero() + ":" + reunion.agendada().fechaHora(), detalle);
+        }
+        ReunionDelPlazo ultimaPasada = reuniones.stream()
+                .filter(reunion -> reunion.fecha() != null && reunion.fecha().isBefore(hoy))
+                .reduce((anterior, siguiente) -> siguiente).orElse(null);
+        if (ultimaPasada != null && !ultimaPasada.conInforme())
+            creados += crearAvisos(trabajo, EventoTrabajoGrado.REUNION_SIN_INFORME,
+                    EventoTrabajoGrado.REUNION_SIN_INFORME.name() + ":" + trabajo.getId() + ":" + ultimaPasada.numero(),
+                    String.valueOf(ultimaPasada.numero()));
+        return creados;
+    }
+
+    /** Crea el aviso para cada destinatario que aún no lo tiene (la clave evita repetirlo cada día). */
+    private int crearAvisos(TrabajoGrado trabajo, EventoTrabajoGrado evento, String clave, String detalle) {
         LocalDateTime ahora = LocalDateTime.now(this.clock);
-        String mensaje = evento.mensaje(trabajo.getTitulo(), String.valueOf(dias));
+        String mensaje = evento.mensaje(trabajo.getTitulo(), detalle);
         List<Notificacion> nuevas = destinatarios(trabajo, evento).stream()
                 .filter(usuario -> !this.notificacionGateway.existeClave(usuario, clave))
                 .map(usuario -> Notificacion.nueva(usuario, evento.getTipo(), evento.getTitulo(), mensaje,

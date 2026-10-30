@@ -6,6 +6,9 @@ import com.sgtg.backend.domain.models.notificacion.EventoTrabajoGrado;
 import com.sgtg.backend.domain.models.notificacion.TipoNotificacion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -52,7 +55,13 @@ public class NotificacionEntity {
     @Enumerated(EnumType.STRING)
     private Proceso etapa;
 
+    /**
+     * Texto y no enum de MySQL: así un evento nuevo se guarda sin modificar la
+     * columna (`ddl-auto=update` no cambia los valores de un enum existente).
+     */
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(length = 60)
     private EventoTrabajoGrado evento;
 
     private String clave;

@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
@@ -51,6 +52,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.EstadoSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
 import com.sgtg.backend.domain.models.trabajo_grado.MotivoCierre;
+import com.sgtg.backend.domain.models.trabajo_grado.EstadoReunion;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
@@ -601,6 +603,26 @@ class ManageTrabajoGradoCUImplAdapterTest {
     private void trabajoEnCurso() {
         trabajoEnAprobacionConsejo();
         casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-100.pdf"), null, 9);
+    }
+
+    @Test
+    void elDirectorAgendaLaReunionDeSeguimientoYLaRegistraComoRealizada() {
+        trabajoEnCurso();
+        LocalDateTime reunion = LocalDate.of(2026, 4, 2).atTime(10, 0);
+        assertThrows(NoAccessException.class, () -> casoDeUso.agendarReunion(7L, 10L, 1, reunion, "Sala 2"));
+
+        TrabajoGrado trabajo = casoDeUso.agendarReunion(7L, 1L, 1, reunion, "Sala 2");
+        assertEquals(EstadoReunion.AGENDADA, trabajo.getEjecucion().reuniones(LocalDate.of(2026, 3, 2)).get(0).estado());
+        verify(notificador).notificar(any(), eq(EventoTrabajoGrado.REUNION_AGENDADA), eq(1L),
+                eq("1, el 02/04/2026 a las 10:00 (Sala 2)"));
+
+        // Se registra como realizada desde el día de la reunión
+        ReglaNegocioException antes = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.registrarReunionRealizada(7L, 1L, 1, null));
+        assertEquals("error.dominio.reunion.aun_no_ocurre", antes.getMessage());
+        TrabajoGrado realizada = casoDeUsoEn(LocalDate.of(2026, 4, 2)).registrarReunionRealizada(7L, 1L, 1, "Avance");
+        assertEquals(EstadoReunion.REALIZADA,
+                realizada.getEjecucion().reuniones(LocalDate.of(2026, 4, 2)).get(0).estado());
     }
 
     @Test

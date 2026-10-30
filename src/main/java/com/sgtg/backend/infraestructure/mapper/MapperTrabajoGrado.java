@@ -26,6 +26,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.Documento;
 import com.sgtg.backend.domain.models.trabajo_grado.InformeMensual;
 import com.sgtg.backend.domain.models.trabajo_grado.RevisionInforme;
+import com.sgtg.backend.domain.models.trabajo_grado.ReunionSeguimiento;
 import com.sgtg.backend.domain.models.trabajo_grado.PracticaProfesional;
 import com.sgtg.backend.domain.models.trabajo_grado.Prorroga;
 import com.sgtg.backend.domain.models.trabajo_grado.RegistroJurado;
@@ -54,6 +55,7 @@ import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grad
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.EvaluadorTrabajoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.InformeMensualEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.RevisionInformeEmbeddable;
+import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.ReunionSeguimientoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.ProrrogaEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.RegistroJuradoEmbeddable;
 import com.sgtg.backend.infraestructure.output.percistence.entities.trabajo_grado.SesionSustentacionEmbeddable;
@@ -119,6 +121,8 @@ public abstract class MapperTrabajoGrado {
                             r.revisorUsuarioId(), r.revisor(), r.observaciones(), r.rutaArchivo(), r.fecha()))));
             entity.setProrroga(toEmbeddable(ejecucion.getProrroga()));
             ejecucion.getSuspensiones().forEach(s -> entity.getEjecucionSuspensiones().add(toEmbeddable(s)));
+            ejecucion.getReuniones().forEach(r -> entity.getEjecucionReuniones().add(new ReunionSeguimientoEmbeddable(
+                    r.numero(), r.fechaHora(), r.lugar(), r.agendadaPor(), r.realizada(), r.observaciones())));
         }
 
         if (trabajo.getSustentacion() != null)
@@ -304,7 +308,11 @@ public abstract class MapperTrabajoGrado {
                 entity.getEjecucionInformesMensuales().stream()
                         .map(i -> toDomain(i, entity.getEjecucionInformesRevisiones())).toList(),
                 toDomain(entity.getProrroga()),
-                entity.getEjecucionSuspensiones().stream().map(MapperTrabajoGrado::toDomain).toList());
+                entity.getEjecucionSuspensiones().stream().map(MapperTrabajoGrado::toDomain).toList(),
+                entity.getEjecucionReuniones().stream()
+                        .map(r -> new ReunionSeguimiento(r.getNumero(), r.getFechaHora(), r.getLugar(),
+                                r.getAgendadaPor(), r.isRealizada(), r.getObservaciones()))
+                        .toList());
     }
 
     private static Suspension toDomain(SuspensionEmbeddable s) {

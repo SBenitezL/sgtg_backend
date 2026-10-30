@@ -211,6 +211,26 @@ public interface ManageTrabajoGradoCUIntPort {
             ArchivoAdjunto documento);
 
     /**
+     * Agenda (o reprograma) la reunión de seguimiento de un mes del plazo. Solo
+     * el director, con el trabajo en curso o en prórroga; notifica a los
+     * estudiantes y a la dirección.
+     *
+     * @param numero    mes del plazo (ver el calendario de reuniones de la ejecución)
+     * @param fechaHora fecha y hora, hoy o en adelante
+     * @param lugar     salón o enlace
+     */
+    public TrabajoGrado agendarReunion(Long trabajoId, Long usuarioId, int numero, LocalDateTime fechaHora,
+            String lugar);
+
+    /**
+     * Registra que se realizó una reunión de seguimiento agendada. Solo el
+     * director, desde el día para el que se agendó.
+     *
+     * @param observaciones observaciones opcionales de la reunión
+     */
+    public TrabajoGrado registrarReunionRealizada(Long trabajoId, Long usuarioId, int numero, String observaciones);
+
+    /**
      * Registra la revisión de un informe mensual por el director, el codirector
      * o el asesor del trabajo. Es una formalidad: no cambia el estado del trabajo.
      *

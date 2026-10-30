@@ -31,6 +31,7 @@ import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.services.CalendarioHabil;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ActualizarPropuestaDTORequest;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AgendarReunionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AnulacionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionAnteproyectoDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.RevisionPazYSalvoDTORequest;
@@ -307,6 +308,24 @@ public class TrabajoGradoController {
      * observaciones opcionales (parte {@code datos}). Lo radica un estudiante del
      * trabajo; en práctica profesional también el director.
      */
+    /** Agenda (o reprograma) la reunión de seguimiento del mes {@code numero} del plazo. Solo el director. */
+    @PutMapping("/{trabajoId}/reuniones/{numero}")
+    public ResponseEntity<TrabajoGradoDTOResponse> agendarReunion(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long trabajoId, @PathVariable int numero,
+            @Valid @RequestBody AgendarReunionDTORequest request) {
+        return ResponseEntity.ok(vista(manageTrabajoGrado.agendarReunion(trabajoId, usuario.getCusuari(), numero,
+                request.fechaHora(), request.lugar())));
+    }
+
+    /** Registra que se realizó la reunión de seguimiento agendada, con observaciones opcionales. Solo el director. */
+    @PutMapping("/{trabajoId}/reuniones/{numero}/realizada")
+    public ResponseEntity<TrabajoGradoDTOResponse> registrarReunionRealizada(
+            @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId, @PathVariable int numero,
+            @Valid @RequestBody(required = false) ObservacionesOpcionalesDTORequest request) {
+        return ResponseEntity.ok(vista(manageTrabajoGrado.registrarReunionRealizada(trabajoId, usuario.getCusuari(),
+                numero, request == null ? null : request.observaciones())));
+    }
+
     @PostMapping(value = "/{trabajoId}/informes-mensuales", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> registrarInformeMensual(
             @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,

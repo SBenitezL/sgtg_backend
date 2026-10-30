@@ -1,7 +1,10 @@
 package com.sgtg.backend.domain.models.trabajo_grado;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,21 +53,26 @@ public class Ejecucion {
     private Prorroga prorroga;
     /** Solicitudes de suspensión, en orden */
     private final List<Suspension> suspensiones;
+    /** Reuniones de seguimiento agendadas por el director, por número de mes */
+    private final List<ReunionSeguimiento> reuniones;
 
     private Ejecucion(Periodo periodo, LocalDate fechaMinimaSustentacion, List<CambioObjetivos> cambiosObjetivos,
-            List<InformeMensual> informesMensuales, Prorroga prorroga, List<Suspension> suspensiones) {
+            List<InformeMensual> informesMensuales, Prorroga prorroga, List<Suspension> suspensiones,
+            List<ReunionSeguimiento> reuniones) {
         this.periodo = periodo;
         this.fechaMinimaSustentacion = fechaMinimaSustentacion;
         this.cambiosObjetivos = new ArrayList<>(cambiosObjetivos);
         this.informesMensuales = new ArrayList<>(informesMensuales);
         this.prorroga = prorroga;
         this.suspensiones = new ArrayList<>(suspensiones);
+        this.reuniones = new ArrayList<>(reuniones);
     }
 
     /** Reconstruye la ejecución con su estado persistido. */
     Ejecucion(DatosEjecucion datos) {
         this(new Periodo(datos.fechaNotificacion(), datos.fechaFin()), datos.fechaMinimaSustentacion(),
-                datos.cambiosObjetivos(), datos.informesMensuales(), datos.prorroga(), datos.suspensiones());
+                datos.cambiosObjetivos(), datos.informesMensuales(), datos.prorroga(), datos.suspensiones(),
+                datos.reuniones());
     }
 
     /**
@@ -84,7 +92,7 @@ public class Ejecucion {
             throw new ReglaNegocioException("error.dominio.ejecucion.plazo_invalido");
         return new Ejecucion(Periodo.desde(fechaNotificacion, meses),
                 fechaNotificacion.plusMonths(modalidad.getMesesMinimosEjecucion()), List.of(), List.of(), null,
-                List.of());
+                List.of(), List.of());
     }
 
     /**
@@ -394,12 +402,97 @@ public class Ejecucion {
         return this.periodo.diasRestantes(hoy);
     }
 
+    // ----- Reuniones de seguimiento -----
+
+    /**
+     * Calendario de reuniones de seguimiento del plazo: una por cada mes, desde
+     * la notificación hasta el fin del plazo (con la prórroga, que suma sus
+     * meses). La del mes k se sugiere k meses después de la notificación; las que
+     * caen después del inicio de una suspensión se corren los días que duró, como
+     * el fin del plazo, y mientras dure la suspensión su fecha aún no se conoce.
+     * Cada reunión se asocia al informe mensual del mismo número.
+     *
+     * @param hoy fecha de la consulta, para el estado de cada reunión
+     * @return las reuniones del plazo, de la primera a la última
+     */
+    public List<ReunionDelPlazo> reuniones(LocalDate hoy) {
+        List<ReunionDelPlazo> calendario = new ArrayList<>();
+        LocalDate finSinSuspensiones = getFechaFin().minusDays(diasSuspendidos(LocalDate.MAX));
+        for (int numero = 1; !getFechaNotificacion().plusMonths(numero).isAfter(finSinSuspensiones); numero++) {
+            LocalDate base = getFechaNotificacion().plusMonths(numero);
+            LocalDate sugerida = enSuspensionActiva(base) ? null : base.plusDays(diasSuspendidos(base));
+            ReunionSeguimiento agendada = reunion(numero).orElse(null);
+            boolean conInforme = this.informesMensuales.size() >= numero;
+            calendario.add(new ReunionDelPlazo(numero, sugerida, agendada, conInforme,
+                    estadoReunion(sugerida, agendada, hoy)));
+        }
+        return calendario;
+    }
+
+    private static EstadoReunion estadoReunion(LocalDate sugerida, ReunionSeguimiento agendada, LocalDate hoy) {
+        if (agendada != null && agendada.realizada())
+            return EstadoReunion.REALIZADA;
+        LocalDate fecha = agendada != null ? agendada.fechaHora().toLocalDate() : sugerida;
+        if (fecha == null)
+            return EstadoReunion.EN_SUSPENSION;
+        if (hoy != null && fecha.isBefore(hoy))
+            return EstadoReunion.VENCIDA;
+        return agendada != null ? EstadoReunion.AGENDADA : EstadoReunion.PENDIENTE;
+    }
+
+    /** Días que duraron las suspensiones reanudadas que iniciaron antes de la fecha. */
+    private long diasSuspendidos(LocalDate antesDe) {
+        return this.suspensiones.stream()
+                .filter(s -> s.fueAprobada() && s.fechaReanudacion() != null && s.fechaInicio().isBefore(antesDe))
+                .mapToLong(s -> ChronoUnit.DAYS.between(s.fechaInicio(), s.fechaReanudacion()))
+                .sum();
+    }
+
+    /** ¿La fecha cae después del inicio de la suspensión que sigue activa? */
+    private boolean enSuspensionActiva(LocalDate fecha) {
+        return suspensionActiva().map(s -> s.fechaInicio().isBefore(fecha)).orElse(false);
+    }
+
+    private Optional<ReunionSeguimiento> reunion(int numero) {
+        return this.reuniones.stream().filter(r -> r.numero() == numero).findFirst();
+    }
+
+    /**
+     * Agenda (o reprograma) la reunión de un mes del plazo, para hoy o una fecha
+     * futura. Una reunión ya realizada no se reprograma.
+     */
+    void agendarReunion(int numero, LocalDateTime fechaHora, String lugar, String responsable, LocalDate hoy) {
+        if (hoy == null || fechaHora == null)
+            throw new ReglaNegocioException("error.dominio.reunion.datos_incompletos");
+        ReunionDelPlazo delPlazo = reuniones(hoy).stream().filter(r -> r.numero() == numero).findFirst()
+                .orElseThrow(() -> new ReglaNegocioException("error.dominio.reunion.fuera_del_plazo"));
+        if (delPlazo.estado() == EstadoReunion.REALIZADA)
+            throw new ReglaNegocioException("error.dominio.reunion.ya_realizada");
+        if (fechaHora.toLocalDate().isBefore(hoy))
+            throw new ReglaNegocioException("error.dominio.reunion.fecha_pasada");
+        ReunionSeguimiento agendada = ReunionSeguimiento.agendar(numero, fechaHora, lugar, responsable);
+        this.reuniones.removeIf(r -> r.numero() == numero);
+        this.reuniones.add(agendada);
+        this.reuniones.sort(Comparator.comparingInt(ReunionSeguimiento::numero));
+    }
+
+    /** Registra que se realizó una reunión agendada, desde el día para el que se agendó. */
+    void registrarReunionRealizada(int numero, String observaciones, LocalDateTime ahora) {
+        ReunionSeguimiento agendada = reunion(numero)
+                .orElseThrow(() -> new ReglaNegocioException("error.dominio.reunion.no_agendada"));
+        if (agendada.realizada())
+            throw new ReglaNegocioException("error.dominio.reunion.ya_realizada");
+        if (agendada.fechaHora().toLocalDate().isAfter(ahora.toLocalDate()))
+            throw new ReglaNegocioException("error.dominio.reunion.aun_no_ocurre");
+        this.reuniones.set(this.reuniones.indexOf(agendada), agendada.comoRealizada(observaciones));
+    }
+
     /**
      * @return estado persistible de la ejecución
      */
     public DatosEjecucion datos() {
         return new DatosEjecucion(getFechaNotificacion(), getFechaFin(), this.fechaMinimaSustentacion,
-                this.cambiosObjetivos, this.informesMensuales, this.prorroga, this.suspensiones);
+                this.cambiosObjetivos, this.informesMensuales, this.prorroga, this.suspensiones, this.reuniones);
     }
 
     public Periodo getPeriodo() {
@@ -432,5 +525,10 @@ public class Ejecucion {
 
     public List<Suspension> getSuspensiones() {
         return Collections.unmodifiableList(suspensiones);
+    }
+
+    /** @return reuniones de seguimiento agendadas, por número de mes (el calendario completo: {@link #reuniones}) */
+    public List<ReunionSeguimiento> getReuniones() {
+        return Collections.unmodifiableList(reuniones);
     }
 }

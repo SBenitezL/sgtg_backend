@@ -167,6 +167,12 @@ public class TrabajoGradoEntity {
     @OrderColumn(name = "orden")
     private List<InformeMensualEmbeddable> ejecucionInformesMensuales = new ArrayList<>();
 
+    /** Reuniones de seguimiento agendadas por el director, por número de mes */
+    @ElementCollection
+    @CollectionTable(name = "ejecucion_reuniones", joinColumns = @JoinColumn(name = "trabajo_id"))
+    @OrderColumn(name = "orden")
+    private List<ReunionSeguimientoEmbeddable> ejecucionReuniones = new ArrayList<>();
+
     /** Revisiones de los informes mensuales (director, codirector o asesor), con el consecutivo del informe */
     @ElementCollection
     @CollectionTable(name = "ejecucion_informes_revisiones", joinColumns = @JoinColumn(name = "trabajo_id"))

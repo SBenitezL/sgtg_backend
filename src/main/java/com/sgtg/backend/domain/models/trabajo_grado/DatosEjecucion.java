@@ -16,10 +16,11 @@ import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
  * @param informesMensuales       informes mensuales radicados (solo práctica profesional), en orden
  * @param prorroga                prórroga solicitada, null si no se ha solicitado
  * @param suspensiones            solicitudes de suspensión, en orden
+ * @param reuniones               reuniones de seguimiento agendadas, por número de mes
  */
 public record DatosEjecucion(LocalDate fechaNotificacion, LocalDate fechaFin, LocalDate fechaMinimaSustentacion,
         List<CambioObjetivos> cambiosObjetivos, List<InformeMensual> informesMensuales, Prorroga prorroga,
-        List<Suspension> suspensiones) {
+        List<Suspension> suspensiones, List<ReunionSeguimiento> reuniones) {
 
     public DatosEjecucion {
         if (fechaNotificacion == null || fechaFin == null || fechaMinimaSustentacion == null)
@@ -27,6 +28,15 @@ public record DatosEjecucion(LocalDate fechaNotificacion, LocalDate fechaFin, Lo
         cambiosObjetivos = cambiosObjetivos == null ? List.of() : List.copyOf(cambiosObjetivos);
         informesMensuales = informesMensuales == null ? List.of() : List.copyOf(informesMensuales);
         suspensiones = suspensiones == null ? List.of() : List.copyOf(suspensiones);
+        reuniones = reuniones == null ? List.of() : List.copyOf(reuniones);
+    }
+
+    /** Ejecución sin reuniones de seguimiento agendadas. */
+    public DatosEjecucion(LocalDate fechaNotificacion, LocalDate fechaFin, LocalDate fechaMinimaSustentacion,
+            List<CambioObjetivos> cambiosObjetivos, List<InformeMensual> informesMensuales, Prorroga prorroga,
+            List<Suspension> suspensiones) {
+        this(fechaNotificacion, fechaFin, fechaMinimaSustentacion, cambiosObjetivos, informesMensuales, prorroga,
+                suspensiones, List.of());
     }
 
     /** Ejecución sin cambios de objetivos, informes, prórroga ni suspensiones. */

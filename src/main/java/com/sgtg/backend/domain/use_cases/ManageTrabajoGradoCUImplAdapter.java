@@ -485,6 +485,22 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
+    public TrabajoGrado agendarReunion(Long trabajoId, Long usuarioId, int numero, LocalDateTime fechaHora,
+            String lugar) {
+        TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        trabajo.agendarReunion(numero, fechaHora, lugar, trabajo.getDirector().getCodigo(), hoy());
+        String detalle = numero + ", el " + fechaHora.format(FORMATO_FECHA_HORA) + " (" + lugar.trim() + ")";
+        return notificar(this.trabajoGateway.guardar(trabajo), EventoTrabajoGrado.REUNION_AGENDADA, usuarioId, detalle);
+    }
+
+    @Override
+    public TrabajoGrado registrarReunionRealizada(Long trabajoId, Long usuarioId, int numero, String observaciones) {
+        TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
+        trabajo.registrarReunionRealizada(numero, observaciones, LocalDateTime.now(this.clock));
+        return this.trabajoGateway.guardar(trabajo);
+    }
+
+    @Override
     public TrabajoGrado solicitarProrroga(Long trabajoId, Long usuarioId, int meses, ArchivoAdjunto solicitud) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();

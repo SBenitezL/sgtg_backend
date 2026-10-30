@@ -199,11 +199,23 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
                 "resoluciones/res-100.pdf", "Aprobado en sesión ordinaria", LUNES.plusDays(4)), "CF01",
                 LUNES.plusDays(4).atTime(9, 0), trabajo.getModalidad().getMesesMaximosEjecucion());
+        // Dos reuniones de seguimiento agendadas; la primera, realizada
+        LocalDate notificacion = LUNES.plusDays(4);
+        trabajo.agendarReunion(1, notificacion.plusMonths(1).atTime(10, 0), "Sala 2", "D1", notificacion);
+        trabajo.agendarReunion(2, notificacion.plusMonths(2).atTime(15, 30), "https://meet.google.com/x", "D1",
+                notificacion);
+        trabajo.registrarReunionRealizada(1, "Avance del mes", notificacion.plusMonths(1).atTime(12, 0));
         gateway.guardar(trabajo);
 
         TrabajoGrado leido = gateway.buscarPorId(trabajo.getId());
 
         assertEquals(Proceso.EN_CURSO, leido.getEtapa());
+        List<com.sgtg.backend.domain.models.trabajo_grado.ReunionSeguimiento> reuniones = leido.getEjecucion()
+                .getReuniones();
+        assertEquals(List.of(1, 2), reuniones.stream().map(reunion -> reunion.numero()).toList());
+        assertTrue(reuniones.get(0).realizada());
+        assertEquals("Avance del mes", reuniones.get(0).observaciones());
+        assertEquals("https://meet.google.com/x", reuniones.get(1).lugar());
         // El formato C con el que el jefe remitió la versión aprobada
         assertEquals(List.of(RUTA_FORMATO_C),
                 leido.getAnteproyecto().getRemisiones().stream().map(Documento::ruta).toList());
