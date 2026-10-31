@@ -19,6 +19,10 @@ import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
 import com.sgtg.backend.application.output.ManageIntentosAccesoGatewayIntPort;
 import com.sgtg.backend.domain.use_cases.ManageAuthCUImplAdapter;
+import com.sgtg.backend.domain.use_cases.ManageSeguridadCUImplAdapter;
+import com.sgtg.backend.application.input.seguridad.ManageSeguridadCUIntPort;
+import com.sgtg.backend.application.output.ManageAlertaGatewayIntPort;
+import com.sgtg.backend.application.output.ManageAuditoriaGatewayIntPort;
 import com.sgtg.backend.domain.use_cases.ManageUsuarioCUImplAdapter;
 import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
@@ -78,6 +82,13 @@ public class ApplicationConfig {
         // Con el reloj real: el bloqueo por intentos no usa el reloj ajustable de desarrollo
         return new ManageAuthCUImplAdapter(authServiceGateway, persistenceAuthService, intentosGateway,
                 exceptionFormatter, Clock.system(ZoneId.of("America/Bogota")));
+    }
+
+    @Bean
+    public ManageSeguridadCUIntPort manageSeguridadCUIntPort(ManageAuditoriaGatewayIntPort auditoria,
+            ManageArchivoGatewayIntPort archivos, ManageAlertaGatewayIntPort alertas) {
+        // Con el reloj real, como la auditoría
+        return new ManageSeguridadCUImplAdapter(auditoria, archivos, alertas, Clock.system(ZoneId.of("America/Bogota")));
     }
 
     @Bean

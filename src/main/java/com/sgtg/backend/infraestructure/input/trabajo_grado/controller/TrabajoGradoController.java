@@ -30,6 +30,7 @@ import com.sgtg.backend.application.input.trabajo_grado.ManageTrabajoGradoCUIntP
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.services.CalendarioHabil;
+import com.sgtg.backend.infraestructure.input.auditoria.DetalleAuditoria;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ActualizarPropuestaDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AgendarReunionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AnulacionDTORequest;
@@ -82,6 +83,12 @@ public class TrabajoGradoController {
      * reloj del servidor (días hábiles restantes, conceptos a tiempo, opciones
      * de plazo del Consejo).
      */
+    /** Vista de un trabajo recién creado; su identificador queda en la auditoría. */
+    private TrabajoGradoDTOResponse creado(TrabajoGrado trabajo) {
+        DetalleAuditoria.agregar("Trabajo de grado creado: " + trabajo.getId());
+        return vista(trabajo);
+    }
+
     private TrabajoGradoDTOResponse vista(TrabajoGrado trabajo) {
         return TrabajoGradoDTOResponse.desde(trabajo,
                 new TrabajoGradoDTOResponse.Plazos(LocalDate.now(clock), calendario));
@@ -92,7 +99,7 @@ public class TrabajoGradoController {
     @PreAuthorize("hasAnyAuthority('DOCENTE', 'DIRECTOR')")
     public ResponseEntity<TrabajoGradoDTOResponse> crearInvestigacion(@AuthenticationPrincipal UserEntity usuario,
             @Valid @RequestBody CrearTrabajoInvestigacionDTORequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(vista(manageTrabajoGrado.crear(usuario.getCusuari(), request.toNuevoTrabajo())));
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado(manageTrabajoGrado.crear(usuario.getCusuari(), request.toNuevoTrabajo())));
     }
 
     /** Crea una práctica profesional con la carta de aceptación; el docente autenticado queda como director. */
@@ -102,7 +109,7 @@ public class TrabajoGradoController {
             @AuthenticationPrincipal UserEntity usuario,
             @Valid @RequestPart("datos") CrearPracticaProfesionalDTORequest request,
             @RequestPart(value = "archivo", required = false) MultipartFile cartaAceptacion) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(vista(
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado(
                 manageTrabajoGrado.crear(usuario.getCusuari(), request.toNuevoTrabajo(adjunto(cartaAceptacion)))));
     }
 

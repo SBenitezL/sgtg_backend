@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
+import com.sgtg.backend.infraestructure.input.auditoria.DetalleAuditoria;
 import com.sgtg.backend.infraestructure.input.auth.dto.output.AuthDTOResponse;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.ActualizarUsuarioDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.AsignarRolesDTORequest;
@@ -51,8 +52,11 @@ public class UsuarioController {
     @PreAuthorize(GESTORES)
     public ResponseEntity<UsuarioDTOResponse> crear(@AuthenticationPrincipal UserEntity usuario,
             @Valid @RequestBody CrearUsuarioDTORequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                UsuarioDTOResponse.desde(manageUsuario.crear(usuario.getCusuari(), request.toNuevoUsuario())));
+        UsuarioDTOResponse creado = UsuarioDTOResponse
+                .desde(manageUsuario.crear(usuario.getCusuari(), request.toNuevoUsuario()));
+        DetalleAuditoria.agregar("Usuario creado: " + creado.id() + " (" + creado.email() + ", roles "
+                + String.join(", ", creado.roles()) + ")");
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     /** Usuarios que gestiona el usuario autenticado, con su documento y si los puede modificar. */

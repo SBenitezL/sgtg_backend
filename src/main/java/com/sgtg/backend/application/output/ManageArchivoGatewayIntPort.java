@@ -1,5 +1,7 @@
 package com.sgtg.backend.application.output;
 
+import java.util.List;
+
 import com.sgtg.backend.application.input.trabajo_grado.ArchivoAdjunto;
 
 /**
@@ -56,4 +58,12 @@ public interface ManageArchivoGatewayIntPort {
      * @param ruta ruta relativa del archivo
      */
     public void eliminar(String ruta);
+
+    /**
+     * Revisa que cada archivo guardado exista y coincida con la huella SHA-256
+     * que se le calculó al guardarlo.
+     *
+     * @return los archivos alterados o que faltan, con lo que se encontró
+     */
+    public List<String> verificarHuellas();
 }

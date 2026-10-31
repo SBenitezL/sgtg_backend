@@ -1,5 +1,6 @@
 package com.sgtg.backend.infraestructure.input;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -24,6 +25,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -53,6 +55,14 @@ class FlujoPropuestaIntegracionTest {
 
     @Autowired
     private ObjectMapper json;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    /** Detalle del último registro de la auditoría */
+    private String detalleAuditado() {
+        return jdbc.queryForObject("SELECT detalle FROM auditoria ORDER BY id DESC LIMIT 1", String.class);
+    }
 
     private String admin;
     private long departamentoId;
@@ -240,6 +250,8 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.etapa").value("PROPUESTA"))
                 .andExpect(jsonPath("$.director.usuarioId").value(docenteId))
                 .andExpect(jsonPath("$.director.tipoVinculacion").value("PLANTA")), "$.id");
+        // La auditoría guarda qué trabajo se creó
+        assertTrue(detalleAuditado().contains("Trabajo de grado creado: " + trabajoId));
 
         // Solo se aceptan documentos PDF
         subir(API + "/trabajos-grado/" + trabajoId + "/propuesta", docente, null, new MockMultipartFile("archivo",
@@ -257,6 +269,10 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.propuesta.versiones[0].ruta").value(trabajoId + "/TI-A/v1/Formato A - v1.pdf"))
                 // Los días hábiles que le quedan al Comité los calcula el backend con su calendario
                 .andExpect(jsonPath("$.propuesta.diasHabilesRestantesConcepto").value(10));
+        // La auditoría guarda el archivo con su huella y lo que cambió en el trabajo
+        assertTrue(detalleAuditado().contains("Archivo guardado: " + trabajoId + "/TI-A/v1/Formato A - v1.pdf (SHA-256 "
+                + "5ebec4c47b5e04b49c995e8c4b523dfa7c413381c119c101c377d57b92040493)"));
+        assertTrue(detalleAuditado().contains("trabajo " + trabajoId + " · propuesta: versiones: 0 → 1"));
 
         // El comité no la aprueba: sigue en propuesta y se radica una nueva versión. Sin el
         // documento de respuesta no se registra la decisión
@@ -296,6 +312,10 @@ class FlujoPropuestaIntegracionTest {
                 .andExpect(jsonPath("$.propuesta.versiones[1].estado").value("APROBADO"))
                 .andExpect(jsonPath("$.historial[0].destino").value("ANTEPROYECTO"))
                 .andExpect(jsonPath("$.historial[0].responsable").value("C" + sufijo));
+        String aprobacion = detalleAuditado();
+        assertTrue(aprobacion.contains("trabajo " + trabajoId + " · etapa: PROPUESTA → ANTEPROYECTO"));
+        assertTrue(aprobacion.contains("propuesta: decisiones: COMITE_PROGRAMA NO_APROBADO"));
+        assertTrue(aprobacion.contains("COMITE_PROGRAMA APROBADO"));
 
         // El director ganó el rol DIRECTOR al crear el trabajo
         enviar(get(API + "/usuarios/me"), docente, null)
@@ -320,6 +340,8 @@ class FlujoPropuestaIntegracionTest {
                     .andExpect(content().contentType(MediaType.APPLICATION_PDF))
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("Formato")))
                     .andExpect(content().bytes("%PDF-1.4 prueba".getBytes(StandardCharsets.US_ASCII)));
+        // La descarga queda con la huella del archivo entregado
+        assertTrue(detalleAuditado().contains("Archivo leído: " + ruta + " (SHA-256 5ebec4c47b5e04b49c995e8c4b523dfa7c413381c119c101c377d57b92040493)"));
         // Un usuario sin relación con el trabajo no tiene acceso
         crearUsuario("X", "DOCENTE");
         enviar(get(archivos).param("ruta", ruta), login(correo("X"), CLAVE), null)

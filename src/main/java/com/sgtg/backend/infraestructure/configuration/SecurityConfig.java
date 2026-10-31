@@ -5,6 +5,7 @@ import java.time.ZoneId;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sgtg.backend.application.output.ManageAuditoriaGatewayIntPort;
+import com.sgtg.backend.application.output.ManageInstantaneaGatewayIntPort;
 import com.sgtg.backend.infraestructure.input.auditoria.AuditoriaFilter;
 import com.sgtg.backend.infraestructure.jwt.JwtAuthenticationFilter;
 import com.sgtg.backend.infraestructure.output.exception.structure.Error;
@@ -52,6 +53,7 @@ public class SecurityConfig {
 
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
         private final ManageAuditoriaGatewayIntPort auditoria;
+        private final ManageInstantaneaGatewayIntPort instantaneas;
         private final ObjectMapper json;
         private final MessageSource mensajes;
 
@@ -77,7 +79,7 @@ public class SecurityConfig {
                                                 .accessDeniedHandler(sinPermiso()))
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                                 // Con el reloj real: la auditoría no usa el reloj ajustable de desarrollo
-                                .addFilterAfter(new AuditoriaFilter(auditoria, json,
+                                .addFilterAfter(new AuditoriaFilter(auditoria, instantaneas, json,
                                                 Clock.system(ZoneId.of("America/Bogota"))), JwtAuthenticationFilter.class);
                 return http.build();
         }
