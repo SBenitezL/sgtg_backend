@@ -6,4 +6,4 @@ target
 *.swp
 .vscode
 .idea
-.env
+.env*

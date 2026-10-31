@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgtg.backend.application.input.auth.TokensSesion;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
 import com.sgtg.backend.domain.models.Usuario;
 import com.sgtg.backend.domain.models.acceso.PoliticaPassword;
@@ -21,6 +22,7 @@ import com.sgtg.backend.infraestructure.output.percistence.repositories.Credenci
 import com.sgtg.backend.infraestructure.output.percistence.repositories.HistorialPasswordRepository;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.UserRepository;
 
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -40,6 +42,7 @@ public class AuthService implements ManageAuthServiceGatewayIntPort {
     private final HistorialPasswordRepository historialRepository;
     // Servicio para generar tokens JWT
     private final JwtService jwtService;
+    private final SesionService sesionService;
     // Codificador de contraseñas para asegurar el almacenamiento de las mismas
     private final PasswordEncoder passwordEncoder;
 
@@ -81,20 +84,49 @@ public class AuthService implements ManageAuthServiceGatewayIntPort {
     }
 
     @Override
-    public String generarToken(String email) {
+    @Transactional
+    public TokensSesion iniciarSesion(String email) {
         UserEntity user = userRepository.findByEmail(email).orElseThrow();
         CredencialEntity credencial = credencialRepository.findById(user.getCusuari()).orElseThrow();
-        return jwtService.getToken(user, credencial.getVersion(), credencial.isDebeCambiar());
+        SesionService.Abierta abierta = sesionService.iniciar(user.getCusuari(), credencial.getVersion());
+        return tokens(abierta, user, credencial);
     }
 
     @Override
-    public void cerrarSesion(String token) {
-        jwtService.cerrarSesion(token);
+    public TokensSesion renovarSesion(String tokenRenovacion) {
+        return sesionService.renovar(tokenRenovacion)
+                .map(renovada -> tokens(renovada.abierta(), renovada.usuario(), renovada.credencial()))
+                .orElse(null);
+    }
+
+    private TokensSesion tokens(SesionService.Abierta abierta, UserEntity user, CredencialEntity credencial) {
+        String sesion = abierta.sesion().getId();
+        return new TokensSesion(jwtService.getToken(user, credencial.getVersion(), credencial.isDebeCambiar(), sesion),
+                abierta.tokenRenovacion(), abierta.sesion().expira(), sesion);
     }
 
     @Override
-    public int depurarSesionesCerradas() {
-        return jwtService.depurarSesionesCerradas();
+    public void cerrarSesion(String tokenAcceso, String tokenRenovacion) {
+        String sesion = null;
+        try {
+            sesion = tokenAcceso == null ? null : jwtService.getSesion(tokenAcceso);
+        } catch (JwtException | IllegalArgumentException e) {
+            // Token de acceso vencido o inválido: se cierra con el de renovación
+        }
+        if (sesion != null)
+            sesionService.revocar(sesion);
+        else
+            sesionService.revocarConToken(tokenRenovacion);
+    }
+
+    @Override
+    public void cerrarSesionesDe(Long usuarioId) {
+        sesionService.revocarDeUsuario(usuarioId, null);
+    }
+
+    @Override
+    public int depurarSesiones() {
+        return sesionService.depurar();
     }
 
     @Override
@@ -109,15 +141,20 @@ public class AuthService implements ManageAuthServiceGatewayIntPort {
 
     @Override
     @Transactional
-    public String cambiarPassword(Long usuarioId, String password) {
-        guardarPassword(usuarioId, password, false);
-        return generarToken(userRepository.findById(usuarioId).orElseThrow().getEmail());
+    public String cambiarPassword(Long usuarioId, String password, String sesion) {
+        CredencialEntity credencial = guardarPassword(usuarioId, password, false);
+        // Las demás sesiones se cierran; la actual sigue con la versión nueva
+        sesionService.revocarDeUsuario(usuarioId, sesion);
+        sesionService.actualizarVersion(sesion, credencial.getVersion());
+        UserEntity user = userRepository.findById(usuarioId).orElseThrow();
+        return jwtService.getToken(user, credencial.getVersion(), credencial.isDebeCambiar(), sesion);
     }
 
     @Override
     @Transactional
     public void asignarPassword(Long usuarioId, String password) {
         guardarPassword(usuarioId, password, cambioObligatorio);
+        sesionService.revocarDeUsuario(usuarioId, null);
     }
 
     /**
@@ -125,7 +162,7 @@ public class AuthService implements ManageAuthServiceGatewayIntPort {
      * de las necesarias) y aumenta la versión de las credenciales para que los
      * tokens emitidos antes dejen de servir.
      */
-    private void guardarPassword(Long usuarioId, String password, boolean debeCambiar) {
+    private CredencialEntity guardarPassword(Long usuarioId, String password, boolean debeCambiar) {
         CredencialEntity credencial = credencialRepository.findById(usuarioId).orElseThrow();
         LocalDateTime ahora = LocalDateTime.now(ZONA);
         historialRepository.save(new HistorialPasswordEntity(usuarioId, credencial.getPasswordHash(), ahora));
@@ -138,7 +175,7 @@ public class AuthService implements ManageAuthServiceGatewayIntPort {
         credencial.setFechaCambio(ahora);
         credencial.setDebeCambiar(debeCambiar);
         credencial.setVersion(credencial.getVersion() + 1);
-        credencialRepository.save(credencial);
+        return credencialRepository.save(credencial);
     }
 
     @Override

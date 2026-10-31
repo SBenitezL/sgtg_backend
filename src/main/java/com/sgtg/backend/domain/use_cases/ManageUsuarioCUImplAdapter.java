@@ -199,7 +199,7 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
     }
 
     @Override
-    public String cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva) {
+    public String cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva, String sesion) {
         Usuario usuario = this.consultar(usuarioId);
         // 400 y no 401: el usuario sigue autenticado aunque se equivoque de contraseña
         if (CheckString.isBlank(passwordActual)
@@ -210,7 +210,7 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_igual");
         if (this.authServiceGateway.esPasswordReciente(usuarioId, passwordNueva))
             this.exceptionFormatter.returnResponseBusinessRuleViolated("error.usuario.password_reciente");
-        return this.authServiceGateway.cambiarPassword(usuarioId, passwordNueva);
+        return this.authServiceGateway.cambiarPassword(usuarioId, passwordNueva, sesion);
     }
 
     @Override
@@ -223,6 +223,9 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
         Usuario usuario = this.consultar(usuarioId);
         usuario.cambiarEstado(activo);
         this.userGateway.actualizarEstado(usuario);
+        // Un usuario inactivo no puede seguir en sus sesiones abiertas
+        if (!activo)
+            this.authServiceGateway.cerrarSesionesDe(usuarioId);
         return ficha(usuario);
     }
 

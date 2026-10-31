@@ -1,8 +1,7 @@
 package com.sgtg.backend.infraestructure.output.auth;
 
 import java.security.Key;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -14,25 +13,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.sgtg.backend.infraestructure.output.percistence.entities.SesionCerradaEntity;
-import com.sgtg.backend.infraestructure.output.percistence.repositories.SesionCerradaRepository;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 
 /**
- * Emite y valida los tokens de sesión. Cada token lleva:
+ * Emite y valida los tokens de acceso. Duran poco ({@code sgtg.sesion.minutos-token},
+ * 15 minutos por defecto): la sesión se mantiene renovándolos con el token de
+ * renovación (ver {@link SesionService}). Cada token lleva:
  * <ul>
- * <li>un identificador de sesión único (jti), que queda en la auditoría y
- * permite cerrar esa sesión antes de que el token venza;</li>
+ * <li>la sesión a la que pertenece ({@value #CLAIM_SESION}), la misma en todos
+ * los tokens de un inicio de sesión: queda en la auditoría y, si la sesión se
+ * cierra, sus tokens dejan de servir;</li>
  * <li>la versión de las credenciales del usuario ({@value #CLAIM_VERSION}): al
  * cambiar la contraseña la versión aumenta y los tokens anteriores dejan de
  * servir;</li>
@@ -41,16 +37,16 @@ import lombok.RequiredArgsConstructor;
  * </ul>
  */
 @Service
-@RequiredArgsConstructor
 public class JwtService {
-    private static final ZoneId ZONA = ZoneId.of("America/Bogota");
+    static final String CLAIM_SESION = "sid";
     static final String CLAIM_VERSION = "ver";
     static final String CLAIM_CAMBIO_PASSWORD = "cambioPassword";
 
-    private final SesionCerradaRepository sesionCerradaRepository;
-
     @Value("${jwt.secret}")
     private String SECRET_KEY;
+
+    @Value("${sgtg.sesion.minutos-token:15}")
+    private long minutosToken = 15;
 
     /**
      * Una clave vacía o débil falla al arrancar con un mensaje claro, en lugar
@@ -69,26 +65,25 @@ public class JwtService {
     /**
      * @param versionCredencial   versión actual de las credenciales del usuario
      * @param debeCambiarPassword true si debe cambiar la contraseña antes de usar el sistema
+     * @param sesion              sesión a la que pertenece el token
      */
-    public String getToken(UserDetails user, int versionCredencial, boolean debeCambiarPassword) {
+    public String getToken(UserDetails user, int versionCredencial, boolean debeCambiarPassword, String sesion) {
         Map<String, Object> extraClaims = new HashMap<>();
         List<String> roles = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         extraClaims.put("roles", roles);
+        extraClaims.put(CLAIM_SESION, sesion);
         extraClaims.put(CLAIM_VERSION, versionCredencial);
         if (debeCambiarPassword)
             extraClaims.put(CLAIM_CAMBIO_PASSWORD, true);
-        return getToken(extraClaims, user);
-    }
-
-    private String getToken(Map<String, Object> extraClaims, UserDetails user) {
+        long ahora = System.currentTimeMillis();
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setId(UUID.randomUUID().toString())
                 .setSubject(user.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
+                .setIssuedAt(new Date(ahora))
+                .setExpiration(new Date(ahora + Duration.ofMinutes(minutosToken).toMillis()))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -102,18 +97,18 @@ public class JwtService {
     }
 
     /**
-     * Identificador de la sesión del token (jti); null en los tokens emitidos
-     * antes de que existiera. Lanza una {@link JwtException} si el token es
-     * inválido o expiró.
+     * Sesión a la que pertenece el token; null en los tokens emitidos antes de
+     * que existieran las sesiones (ya no se aceptan). Lanza una
+     * {@link io.jsonwebtoken.JwtException} si el token es inválido o expiró.
      */
     public String getSesion(String token) {
-        return getClaims(token).getId();
+        return getClaims(token).get(CLAIM_SESION, String.class);
     }
 
     /**
-     * Versión de las credenciales con la que se emitió el token; 0 en los tokens
-     * emitidos antes de que existiera. Lanza una {@link JwtException} si el token
-     * es inválido o expiró.
+     * Versión de las credenciales con la que se emitió el token; 0 si no la
+     * trae. Lanza una {@link io.jsonwebtoken.JwtException} si el token es
+     * inválido o expiró.
      */
     public int getVersionCredencial(String token) {
         Integer version = getClaims(token).get(CLAIM_VERSION, Integer.class);
@@ -126,37 +121,6 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails user) {
         Claims claims = getClaims(token);
         return user.getUsername().equals(claims.getSubject()) && claims.getExpiration().after(new Date());
-    }
-
-    /** @return true si la sesión fue cerrada por su usuario */
-    public boolean isSesionCerrada(String sesion) {
-        return sesion != null && sesionCerradaRepository.existsById(sesion);
-    }
-
-    /**
-     * Cierra la sesión del token: deja de ser aceptado aunque no haya vencido.
-     * Un token inválido, vencido o sin identificador de sesión no se registra.
-     */
-    public void cerrarSesion(String token) {
-        try {
-            Claims claims = getClaims(token);
-            if (claims.getId() != null)
-                sesionCerradaRepository.save(new SesionCerradaEntity(claims.getId(),
-                        LocalDateTime.ofInstant(claims.getExpiration().toInstant(), ZONA)));
-        } catch (JwtException | IllegalArgumentException e) {
-            // Ya no sirve: no hay nada que cerrar
-        }
-    }
-
-    /**
-     * Borra las sesiones cerradas cuyos tokens ya vencieron (no hace falta
-     * recordarlas). Usa la hora real, como el vencimiento de los tokens.
-     *
-     * @return cantidad de sesiones borradas
-     */
-    @Transactional
-    public int depurarSesionesCerradas() {
-        return sesionCerradaRepository.depurar(LocalDateTime.now(ZONA));
     }
 
     private Claims getClaims(String token) {

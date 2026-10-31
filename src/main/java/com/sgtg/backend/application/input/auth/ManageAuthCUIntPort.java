@@ -13,22 +13,28 @@ public interface ManageAuthCUIntPort {
      * @param email    correo electrónico del usuario, es obligatorio y debe cumplir
      *                 con formato de correo electrónico
      * @param password contraseña del usuario, es obligatoria
-     * @return token de autenticación si el inicio de sesión es exitoso, o null si
-     *         falla
+     * @return los tokens de la sesión nueva
      */
-    public String login(String email, String password);
+    public TokensSesion login(String email, String password);
 
     /**
-     * Cierra la sesión del token: deja de ser aceptado aunque no haya vencido.
-     * Un token inválido o vencido se ignora.
+     * Renueva la sesión con su token de renovación. Si no sirve (sesión cerrada,
+     * vencida o reutilizada) responde no autenticado.
      *
-     * @param token token de la sesión
+     * @return token de acceso nuevo y el de renovación que reemplaza al presentado
      */
-    public void logout(String token);
+    public TokensSesion renovar(String tokenRenovacion);
+
+    /**
+     * Cierra la sesión del token de acceso o, si ese ya venció, la del token de
+     * renovación: sus tokens dejan de ser aceptados. Los tokens inválidos se
+     * ignoran.
+     */
+    public void logout(String tokenAcceso, String tokenRenovacion);
 
     /**
      * Borra los registros de acceso que ya no sirven: intentos fallidos
-     * antiguos y sesiones cerradas cuyos tokens vencieron.
+     * antiguos y sesiones que ya no pueden usarse.
      *
      * @return cantidad de registros borrados
      */

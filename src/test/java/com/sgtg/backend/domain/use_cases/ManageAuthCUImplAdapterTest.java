@@ -21,6 +21,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sgtg.backend.application.input.auth.TokensSesion;
 import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
 import com.sgtg.backend.application.output.ManageIntentosAccesoGatewayIntPort;
@@ -77,6 +78,9 @@ class ManageAuthCUImplAdapterTest {
                 null, List.of(new Role(null, RoleAdmited.DOCENTE)), activo);
     }
 
+    private static final TokensSesion TOKENS = new TokensSesion("acceso", "renovacion",
+            LocalDateTime.of(2026, 10, 31, 20, 0), "sesion");
+
     private ManageAuthCUImplAdapter casoDeUsoEn(Instant momento) {
         return new ManageAuthCUImplAdapter(authService, persistencia, intentos, new ExceptionFormatterImplAdapter(),
                 Clock.fixed(momento, ZoneId.of("America/Bogota")));
@@ -88,7 +92,7 @@ class ManageAuthCUImplAdapterTest {
         persistencia = mock(ManageAuthGatewayIntPort.class);
         intentos = new IntentosEnMemoria();
         casoDeUso = casoDeUsoEn(AHORA);
-        when(authService.generarToken(EMAIL)).thenReturn("token");
+        when(authService.iniciarSesion(EMAIL)).thenReturn(TOKENS);
     }
 
     private String mensajeDelLogin(ManageAuthCUImplAdapter caso, String email, String password) {
@@ -104,10 +108,10 @@ class ManageAuthCUImplAdapterTest {
         // El quinto fallo bloquea; con otra forma de escribir el correo sigue bloqueado
         assertEquals("error.auth.acceso_bloqueado", mensajeDelLogin(casoDeUso, EMAIL, "otra"));
         assertEquals("error.auth.acceso_bloqueado", mensajeDelLogin(casoDeUso, " D1@Unicauca.edu.co ", "Clave123*"));
-        verify(authService, never()).generarToken(any());
+        verify(authService, never()).iniciarSesion(any());
 
         // Pasado el bloqueo vuelve a entrar
-        assertEquals("token", casoDeUsoEn(AHORA.plus(Duration.ofMinutes(15))).login(EMAIL, "Clave123*"));
+        assertEquals(TOKENS, casoDeUsoEn(AHORA.plus(Duration.ofMinutes(15))).login(EMAIL, "Clave123*"));
     }
 
     @Test
@@ -131,12 +135,29 @@ class ManageAuthCUImplAdapterTest {
     }
 
     @Test
-    void cerrarSesionCierraLaDelToken() {
-        casoDeUso.logout("token");
-        verify(authService).cerrarSesion("token");
+    void cerrarSesionCierraLaDelTokenDeAccesoODeRenovacion() {
+        casoDeUso.logout("acceso", "renovacion");
+        verify(authService).cerrarSesion("acceso", "renovacion");
+        casoDeUso.logout(null, "renovacion");
+        verify(authService).cerrarSesion(null, "renovacion");
 
-        casoDeUso.logout(null);
-        verify(authService, never()).cerrarSesion(null);
+        casoDeUso.logout(null, " ");
+        verify(authService, never()).cerrarSesion(null, " ");
+    }
+
+    @Test
+    void renuevaLaSesionConElTokenDeRenovacion() {
+        when(authService.renovarSesion("renovacion")).thenReturn(TOKENS);
+        assertEquals(TOKENS, casoDeUso.renovar("renovacion"));
+    }
+
+    @Test
+    void unTokenDeRenovacionQueNoSirveRespondeQueLaSesionTermino() {
+        assertEquals("error.auth.sesion_vencida",
+                assertThrows(BadCredentialException.class, () -> casoDeUso.renovar("vencido")).getMessage());
+        assertEquals("error.auth.sesion_vencida",
+                assertThrows(BadCredentialException.class, () -> casoDeUso.renovar(null)).getMessage());
+        verify(authService, never()).renovarSesion(null);
     }
 
     @Test
@@ -144,7 +165,7 @@ class ManageAuthCUImplAdapterTest {
         when(authService.verificarCredenciales(EMAIL, "Clave123*")).thenReturn(true);
         when(persistencia.findByEmail(EMAIL)).thenReturn(usuario(true));
 
-        assertEquals("token", casoDeUso.login(EMAIL, "Clave123*"));
+        assertEquals(TOKENS, casoDeUso.login(EMAIL, "Clave123*"));
     }
 
     @Test
@@ -157,7 +178,7 @@ class ManageAuthCUImplAdapterTest {
 
         assertEquals("error.auth.invalid_credentials", inexistente.getMessage());
         assertEquals(inexistente.getMessage(), incorrecta.getMessage());
-        verify(authService, never()).generarToken(any());
+        verify(authService, never()).iniciarSesion(any());
     }
 
     @Test
@@ -175,7 +196,7 @@ class ManageAuthCUImplAdapterTest {
         BadCredentialException error = assertThrows(BadCredentialException.class,
                 () -> casoDeUso.login(EMAIL, "Clave123*"));
         assertEquals("error.auth.usuario_inactivo", error.getMessage());
-        verify(authService, never()).generarToken(any());
+        verify(authService, never()).iniciarSesion(any());
     }
 
     @Test

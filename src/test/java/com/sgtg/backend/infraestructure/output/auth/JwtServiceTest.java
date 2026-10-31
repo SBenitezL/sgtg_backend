@@ -3,42 +3,38 @@ package com.sgtg.backend.infraestructure.output.auth;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
-import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.sgtg.backend.infraestructure.output.percistence.entities.SesionCerradaEntity;
-import com.sgtg.backend.infraestructure.output.percistence.repositories.SesionCerradaRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-/** La clave de los tokens se valida al arrancar; cada token es una sesión que se puede cerrar. */
+/** La clave de los tokens se valida al arrancar; cada token es de una sesión y dura poco. */
 class JwtServiceTest {
 
     private static final String CLAVE = "5kMpK8pN2vQ9rX3sT6uW1yZ4aB7cD0eF3gH6iJ9lM2n5pOqRsT";
 
-    private final SesionCerradaRepository sesiones = mock(SesionCerradaRepository.class);
-
     private JwtService conClave(String clave) {
-        JwtService servicio = new JwtService(sesiones);
+        JwtService servicio = new JwtService();
         ReflectionTestUtils.setField(servicio, "SECRET_KEY", clave);
         return servicio;
     }
 
-    private static String token(JwtService servicio) {
+    private static String token(JwtService servicio, String sesion) {
         return servicio.getToken(new User("d1@unicauca.edu.co", "x", List.of(new SimpleGrantedAuthority("DOCENTE"))),
-                3, false);
+                3, false, sesion);
+    }
+
+    private static JsonNode contenido(String token) throws Exception {
+        return new ObjectMapper().readTree(Base64.getUrlDecoder().decode(token.split("\\.")[1]));
     }
 
     @Test
@@ -54,36 +50,27 @@ class JwtServiceTest {
     }
 
     @Test
-    void cadaTokenTieneSuPropiaSesion() {
+    void losTokensDeUnaSesionLlevanSuIdentificadorYCadaUnoEsDistinto() throws Exception {
         JwtService servicio = conClave(CLAVE);
-        String sesion = servicio.getSesion(token(servicio));
-        assertNotNull(sesion);
-        assertNotEquals(sesion, servicio.getSesion(token(servicio)));
+        String primero = token(servicio, "sesion-1");
+        String segundo = token(servicio, "sesion-1");
+
+        assertEquals("sesion-1", servicio.getSesion(primero));
+        assertEquals("sesion-1", servicio.getSesion(segundo));
+        assertNotEquals(contenido(primero).get("jti").asText(), contenido(segundo).get("jti").asText());
     }
 
     @Test
-    void cerrarLaSesionLaGuardaHastaQueVenceElToken() {
-        JwtService servicio = conClave(CLAVE);
-        String token = token(servicio);
-
-        servicio.cerrarSesion(token);
-
-        ArgumentCaptor<SesionCerradaEntity> cerrada = ArgumentCaptor.forClass(SesionCerradaEntity.class);
-        verify(sesiones).save(cerrada.capture());
-        assertEquals(servicio.getSesion(token), cerrada.getValue().getSesion());
-        // El token dura un día
-        assertTrue(cerrada.getValue().getExpira().isAfter(LocalDateTime.now().plusHours(23)));
+    void elTokenDuraQuinceMinutos() throws Exception {
+        JsonNode token = contenido(token(conClave(CLAVE), "sesion-1"));
+        assertEquals(15 * 60, token.get("exp").asLong() - token.get("iat").asLong());
     }
 
     @Test
     void elTokenLlevaLaVersionDeLasCredenciales() {
         JwtService servicio = conClave(CLAVE);
-        assertEquals(3, servicio.getVersionCredencial(token(servicio)));
-    }
-
-    @Test
-    void unTokenInvalidoNoSeRegistraAlCerrarSesion() {
-        conClave(CLAVE).cerrarSesion("no-es-un-token");
-        verify(sesiones, never()).save(any());
+        assertEquals(3, servicio.getVersionCredencial(token(servicio, "sesion-1")));
+        assertTrue(servicio.isTokenValid(token(servicio, "sesion-1"),
+                new User("d1@unicauca.edu.co", "x", List.of())));
     }
 }

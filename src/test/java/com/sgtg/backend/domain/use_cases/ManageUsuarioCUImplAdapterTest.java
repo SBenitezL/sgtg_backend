@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -218,14 +219,14 @@ class ManageUsuarioCUImplAdapterTest {
     // ----- Contraseña y estado -----
 
     private String errorAlCambiar(String actual, String nueva) {
-        return assertThrows(BusinessRuleException.class, () -> casoDeUso.cambiarPassword(5L, actual, nueva))
+        return assertThrows(BusinessRuleException.class, () -> casoDeUso.cambiarPassword(5L, actual, nueva, "sesion"))
                 .getBusinessRule();
     }
 
     @Test
     void cambiaLaContrasenaConLaActualCorrectaYDevuelveElTokenNuevo() {
-        when(authService.cambiarPassword(5L, "Nueva1234*")).thenReturn("token-nuevo");
-        assertEquals("token-nuevo", casoDeUso.cambiarPassword(5L, "Actual123*", "Nueva1234*"));
+        when(authService.cambiarPassword(5L, "Nueva1234*", "sesion")).thenReturn("token-nuevo");
+        assertEquals("token-nuevo", casoDeUso.cambiarPassword(5L, "Actual123*", "Nueva1234*", "sesion"));
     }
 
     @Test
@@ -239,7 +240,7 @@ class ManageUsuarioCUImplAdapterTest {
         assertEquals("error.usuario.password_predecible", errorAlCambiar("Actual123*", "Clave1065*"));
         assertEquals("error.usuario.password_igual", errorAlCambiar("Actual123*", "Actual123*"));
         assertEquals("error.usuario.password_reciente", errorAlCambiar("Actual123*", "Anterior1*"));
-        verify(authService, never()).cambiarPassword(anyLong(), any());
+        verify(authService, never()).cambiarPassword(anyLong(), any(), any());
     }
 
     @Test
@@ -248,8 +249,11 @@ class ManageUsuarioCUImplAdapterTest {
         FichaUsuario inactivo = casoDeUso.cambiarEstado(1L, 5L, false);
         assertFalse(inactivo.usuario().isActivo());
         verify(userGateway).actualizarEstado(docente);
+        // Sus sesiones abiertas se cierran
+        verify(authService).cerrarSesionesDe(5L);
 
         assertTrue(casoDeUso.cambiarEstado(1L, 5L, true).usuario().isActivo());
+        verify(authService, times(1)).cerrarSesionesDe(5L);
     }
 
     @Test

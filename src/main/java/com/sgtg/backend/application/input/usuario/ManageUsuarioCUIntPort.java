@@ -114,9 +114,10 @@ public interface ManageUsuarioCUIntPort {
      * @param usuarioId      usuario autenticado
      * @param passwordActual contraseña actual
      * @param passwordNueva  contraseña nueva
-     * @return token nuevo para seguir en la sesión actual
+     * @param sesion         sesión desde la que la cambia, que sigue abierta
+     * @return token de acceso nuevo para seguir en esa sesión
      */
-    public String cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva);
+    public String cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva, String sesion);
 
     /**
      * Activa o inactiva un usuario. Un usuario inactivo no puede iniciar sesión

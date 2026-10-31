@@ -1,5 +1,6 @@
 package com.sgtg.backend.application.output;
 
+import com.sgtg.backend.application.input.auth.TokensSesion;
 import com.sgtg.backend.domain.models.Usuario;
 
 /*
@@ -20,27 +21,38 @@ public interface ManageAuthServiceGatewayIntPort {
     boolean verificarCredenciales(String email, String password);
 
     /**
-     * Genera el token de autenticación (JWT) del usuario con sus roles.
+     * Abre una sesión nueva para el usuario: su token de acceso (corto, con sus
+     * roles) y el de renovación.
      *
      * @param email Correo electrónico del usuario, debe existir.
-     * @return Token de autenticación.
      */
-    String generarToken(String email);
+    TokensSesion iniciarSesion(String email);
 
     /**
-     * Cierra la sesión del token: deja de ser aceptado aunque no haya vencido.
-     * Un token inválido o vencido se ignora.
+     * Renueva la sesión del token de renovación: un token de acceso nuevo y otro
+     * de renovación (el presentado deja de servir). Si el token ya se había
+     * usado, la sesión se cierra y se avisa a los administradores.
      *
-     * @param token token de la sesión
+     * @return null si el token no sirve (sesión cerrada, vencida o reutilizada,
+     *         usuario inactivo o contraseña cambiada)
      */
-    void cerrarSesion(String token);
+    TokensSesion renovarSesion(String tokenRenovacion);
 
     /**
-     * Olvida las sesiones cerradas cuyos tokens ya vencieron.
+     * Cierra la sesión del token de acceso o, si ese ya venció, la del token de
+     * renovación. Los tokens inválidos se ignoran.
+     */
+    void cerrarSesion(String tokenAcceso, String tokenRenovacion);
+
+    /** Cierra todas las sesiones abiertas del usuario (ej. al inactivarlo). */
+    void cerrarSesionesDe(Long usuarioId);
+
+    /**
+     * Olvida las sesiones que ya no pueden usarse.
      *
      * @return cantidad de sesiones borradas
      */
-    int depurarSesionesCerradas();
+    int depurarSesiones();
 
     /**
      * @param usuarioId identificador del usuario
@@ -51,19 +63,20 @@ public interface ManageAuthServiceGatewayIntPort {
     boolean esPasswordReciente(Long usuarioId, String password);
 
     /**
-     * El usuario cambia su propia contraseña: se cifra y se guarda, y los tokens
-     * emitidos antes (sus demás sesiones) dejan de servir.
+     * El usuario cambia su propia contraseña: se cifra y se guarda, y sus demás
+     * sesiones se cierran.
      *
      * @param usuarioId identificador del usuario
      * @param password  contraseña nueva en texto plano
-     * @return token nuevo, para que siga en la sesión desde la que la cambió
+     * @param sesion    sesión desde la que la cambió, que sigue abierta
+     * @return token de acceso nuevo para esa sesión
      */
-    String cambiarPassword(Long usuarioId, String password);
+    String cambiarPassword(Long usuarioId, String password, String sesion);
 
     /**
      * Un administrador asigna una contraseña al usuario: se cifra y se guarda,
-     * los tokens emitidos antes dejan de servir y el usuario debe cambiarla en
-     * su siguiente ingreso.
+     * las sesiones del usuario se cierran y debe cambiarla en su siguiente
+     * ingreso.
      *
      * @param usuarioId identificador del usuario
      * @param password  contraseña nueva en texto plano

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 
 import com.sgtg.backend.application.input.auth.ManageAuthCUIntPort;
+import com.sgtg.backend.application.input.auth.TokensSesion;
 import com.sgtg.backend.application.output.ExceptionFormatterIntPort;
 import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
@@ -42,7 +43,7 @@ public class ManageAuthCUImplAdapter implements ManageAuthCUIntPort {
      * lleva por correo exista o no la cuenta, así que tampoco revela cuáles existen.
      */
     @Override
-    public String login(String email, String password) {
+    public TokensSesion login(String email, String password) {
         if (CheckString.isBlank(email) || CheckString.isBlank(password))
             this.exceptionFormatter.returnResponseBadCredentials("error.auth.invalid_credentials");
         LocalDateTime ahora = LocalDateTime.now(reloj);
@@ -61,20 +62,29 @@ public class ManageAuthCUImplAdapter implements ManageAuthCUIntPort {
         Usuario user = persistenceAuthService.findByEmail(email);
         if (!user.isActivo())
             this.exceptionFormatter.returnResponseBadCredentials("error.auth.usuario_inactivo");
-        return this.authServiceGateway.generarToken(user.getEmail());
+        return this.authServiceGateway.iniciarSesion(user.getEmail());
     }
 
     @Override
-    public void logout(String token) {
-        if (!CheckString.isBlank(token))
-            this.authServiceGateway.cerrarSesion(token);
+    public TokensSesion renovar(String tokenRenovacion) {
+        TokensSesion tokens = CheckString.isBlank(tokenRenovacion) ? null
+                : this.authServiceGateway.renovarSesion(tokenRenovacion);
+        if (tokens == null)
+            this.exceptionFormatter.returnResponseBadCredentials("error.auth.sesion_vencida");
+        return tokens;
+    }
+
+    @Override
+    public void logout(String tokenAcceso, String tokenRenovacion) {
+        if (!CheckString.isBlank(tokenAcceso) || !CheckString.isBlank(tokenRenovacion))
+            this.authServiceGateway.cerrarSesion(tokenAcceso, tokenRenovacion);
     }
 
     /** Los intentos fallidos de hace más de un día ya no cuentan para ningún bloqueo. */
     @Override
     public int depurarRegistrosDeAcceso() {
         return intentosGateway.depurar(LocalDateTime.now(reloj).minusDays(1))
-                + this.authServiceGateway.depurarSesionesCerradas();
+                + this.authServiceGateway.depurarSesiones();
     }
 
 }

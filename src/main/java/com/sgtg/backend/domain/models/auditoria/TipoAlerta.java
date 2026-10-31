@@ -10,6 +10,8 @@ public enum TipoAlerta {
     ACCESOS_DENEGADOS("Accesos denegados repetidos"),
     /** Se usó el token de una sesión ya cerrada o anterior a un cambio de contraseña (posible token robado). */
     SESION_CERRADA_USADA("Uso de una sesión cerrada"),
+    /** Se presentó un token de renovación ya usado: alguien más lo copió; la sesión se cierra. */
+    TOKEN_RENOVACION_REUTILIZADO("Reutilización de un token de renovación"),
     /** La cadena de la auditoría no coincide: se modificaron o borraron registros fuera de la aplicación. */
     AUDITORIA_ALTERADA("La auditoría fue alterada"),
     /** Un archivo guardado ya no coincide con su huella SHA-256 o desapareció. */

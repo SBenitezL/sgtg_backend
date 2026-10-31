@@ -16,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.sgtg.backend.infraestructure.input.auditoria.AuditoriaFilter;
 import com.sgtg.backend.infraestructure.output.auth.JwtService;
+import com.sgtg.backend.infraestructure.output.auth.SesionService;
 import com.sgtg.backend.infraestructure.output.percistence.entities.CredencialEntity;
 import com.sgtg.backend.infraestructure.output.percistence.entities.UserEntity;
 import com.sgtg.backend.infraestructure.output.percistence.repositories.CredencialRepository;
@@ -46,6 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public static final String CAMBIO_PASSWORD_PENDIENTE = "CAMBIO_PASSWORD_PENDIENTE";
 
     private final JwtService jwtService;
+    private final SesionService sesionService;
     private final UserRepository userRepository;
     private final CredencialRepository credencialRepository;
 
@@ -70,10 +72,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserEntity user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
             CredencialEntity credencial = credencialRepository.findById(user.getCusuari()).orElse(null);
-            // Un usuario inactivado, una sesión cerrada o un token emitido antes del último cambio de
-            // contraseña dejan de servir
+            // Un usuario inactivado, una sesión cerrada o vencida (o un token sin sesión, de antes de que
+            // existieran) o un token emitido antes del último cambio de contraseña dejan de servir
             if (!user.isEnabled() || credencial == null || !jwtService.isTokenValid(token, user)
-                    || jwtService.isSesionCerrada(sesion)
+                    || !sesionService.estaActiva(sesion)
                     || jwtService.getVersionCredencial(token) != credencial.getVersion())
                 return;
             List<GrantedAuthority> permisos = new ArrayList<>(user.getAuthorities());

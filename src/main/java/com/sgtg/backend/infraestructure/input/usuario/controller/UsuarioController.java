@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
+import com.sgtg.backend.infraestructure.input.auditoria.AuditoriaFilter;
 import com.sgtg.backend.infraestructure.input.auditoria.DetalleAuditoria;
 import com.sgtg.backend.infraestructure.input.auth.dto.output.AuthDTOResponse;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.ActualizarUsuarioDTORequest;
@@ -27,6 +28,7 @@ import com.sgtg.backend.infraestructure.input.usuario.dto.output.UsuarioDTORespo
 import com.sgtg.backend.infraestructure.input.usuario.dto.output.UsuarioGestionadoDTOResponse;
 import com.sgtg.backend.infraestructure.output.percistence.entities.UserEntity;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -118,9 +120,11 @@ public class UsuarioController {
      */
     @PutMapping("/me/password")
     public ResponseEntity<AuthDTOResponse> cambiarPassword(@AuthenticationPrincipal UserEntity usuario,
-            @Valid @RequestBody CambiarPasswordDTORequest request) {
-        return ResponseEntity.ok(new AuthDTOResponse(
-                manageUsuario.cambiarPassword(usuario.getCusuari(), request.passwordActual(), request.passwordNueva())));
+            @Valid @RequestBody CambiarPasswordDTORequest request, HttpServletRequest peticion) {
+        // La sesión del token con que se pidió (la pone el filtro JWT)
+        String sesion = (String) peticion.getAttribute(AuditoriaFilter.ATRIBUTO_SESION);
+        return ResponseEntity.ok(new AuthDTOResponse(manageUsuario.cambiarPassword(usuario.getCusuari(),
+                request.passwordActual(), request.passwordNueva(), sesion)));
     }
 
     /** Activa o inactiva un usuario. Un usuario inactivo no puede iniciar sesión. */
