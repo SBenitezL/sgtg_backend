@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sgtg.backend.application.input.usuario.CambioComite;
 import com.sgtg.backend.application.input.usuario.ManageUsuarioCUIntPort;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.infraestructure.input.auditoria.AuditoriaFilter;
@@ -21,6 +22,7 @@ import com.sgtg.backend.infraestructure.input.auditoria.DetalleAuditoria;
 import com.sgtg.backend.infraestructure.input.auth.dto.output.AuthDTOResponse;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.ActualizarUsuarioDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.AsignarRolesDTORequest;
+import com.sgtg.backend.infraestructure.input.usuario.dto.input.CambiarComiteDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.CambiarEstadoDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.CambiarPasswordDTORequest;
 import com.sgtg.backend.infraestructure.input.usuario.dto.input.CrearUsuarioDTORequest;
@@ -125,6 +127,21 @@ public class UsuarioController {
         String sesion = (String) peticion.getAttribute(AuditoriaFilter.ATRIBUTO_SESION);
         return ResponseEntity.ok(new AuthDTOResponse(manageUsuario.cambiarPassword(usuario.getCusuari(),
                 request.passwordActual(), request.passwordNueva(), sesion)));
+    }
+
+    /**
+     * Cambia el Comité de un departamento: el docente indicado lo recibe y quien
+     * lo tenía lo pierde. Lo usa el Comité para cederlo y el jefe, el Consejo,
+     * Decanatura o el administrador para nombrarlo.
+     */
+    @PutMapping("/comite")
+    @PreAuthorize(GESTORES)
+    public ResponseEntity<UsuarioDTOResponse> cambiarComite(@AuthenticationPrincipal UserEntity usuario,
+            @Valid @RequestBody CambiarComiteDTORequest request) {
+        CambioComite cambio = manageUsuario.cambiarComite(usuario.getCusuari(), request.usuarioId());
+        DetalleAuditoria.agregar("Comité del " + cambio.departamento().nombre() + ": usuario(s) " + cambio.anteriores()
+                + " → usuario " + cambio.comite().usuario().getCusuari());
+        return ResponseEntity.ok(UsuarioDTOResponse.desde(cambio.comite()));
     }
 
     /** Activa o inactiva un usuario. Un usuario inactivo no puede iniciar sesión. */

@@ -15,12 +15,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.sgtg.backend.application.input.usuario.CambioComite;
 import com.sgtg.backend.application.input.usuario.DatosPerfil;
 import com.sgtg.backend.application.input.usuario.FichaUsuario;
 import com.sgtg.backend.application.input.usuario.NuevoUsuario;
@@ -29,16 +33,21 @@ import com.sgtg.backend.application.output.ManageAuthGatewayIntPort;
 import com.sgtg.backend.application.output.ManageAuthServiceGatewayIntPort;
 import com.sgtg.backend.application.output.ManageCatalogoGatewayIntPort;
 import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
+import com.sgtg.backend.application.output.ManageNotificacionGatewayIntPort;
+import com.sgtg.backend.application.output.ManageTrabajoGradoGatewayIntPort;
 import com.sgtg.backend.application.output.ManageUserGatewayIntPort;
 import com.sgtg.backend.domain.models.Role;
 import com.sgtg.backend.domain.models.Role.RoleAdmited;
 import com.sgtg.backend.domain.models.TipoDocumentoIdentidad;
 import com.sgtg.backend.domain.models.Usuario;
 import com.sgtg.backend.domain.models.participantes.Departamento;
+import com.sgtg.backend.domain.models.participantes.Director;
+import com.sgtg.backend.domain.models.participantes.Estudiante;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
 import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
+import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.infraestructure.output.exception.own.BusinessRuleException;
 import com.sgtg.backend.infraestructure.output.exception.own.EntityExistsException;
 import com.sgtg.backend.infraestructure.output.exception.own.EntityNotFoundException;
@@ -56,6 +65,8 @@ class ManageUsuarioCUImplAdapterTest {
     private ManageAuthServiceGatewayIntPort authService;
     private ManagePerfilGatewayIntPort perfilGateway;
     private ManageCatalogoGatewayIntPort catalogoGateway;
+    private ManageTrabajoGradoGatewayIntPort trabajoGateway;
+    private ManageNotificacionGatewayIntPort notificacionGateway;
     private ManageUsuarioCUImplAdapter casoDeUso;
     private Usuario docente;
 
@@ -66,8 +77,11 @@ class ManageUsuarioCUImplAdapterTest {
         authService = mock(ManageAuthServiceGatewayIntPort.class);
         perfilGateway = mock(ManagePerfilGatewayIntPort.class);
         catalogoGateway = mock(ManageCatalogoGatewayIntPort.class);
+        trabajoGateway = mock(ManageTrabajoGradoGatewayIntPort.class);
+        notificacionGateway = mock(ManageNotificacionGatewayIntPort.class);
         casoDeUso = new ManageUsuarioCUImplAdapter(userGateway, authGateway, authService, perfilGateway,
-                catalogoGateway, new ExceptionFormatterImplAdapter());
+                catalogoGateway, trabajoGateway, notificacionGateway, new ExceptionFormatterImplAdapter(),
+                Clock.fixed(Instant.parse("2026-11-01T15:00:00Z"), ZoneId.of("America/Bogota")));
         docente = new Usuario(5L, "D5", TipoDocumentoIdentidad.CC, "1065", "d5@unicauca.edu.co", "Docente",
                 null, "Prueba", null, List.of(new Role(1L, RoleAdmited.DOCENTE)));
         when(userGateway.findById(5L)).thenReturn(docente);
@@ -365,5 +379,115 @@ class ManageUsuarioCUImplAdapterTest {
     @Test
     void unUsuarioSinRolAdministrativoNoGestionaUsuarios() {
         assertEquals("error.usuario.sin_permiso_gestion", reglaSinAcceso(() -> casoDeUso.listarGestionados(5L)));
+    }
+
+    // ----- Director, asesor y Comité -----
+
+    private static java.util.Set<String> roles(Usuario usuario) {
+        return usuario.getRole().stream().map(Role::getTrole).collect(java.util.stream.Collectors.toSet());
+    }
+
+    /** Trabajo en curso (o cerrado) con el docente 5 en el puesto indicado y estudiantes de Ingeniería de Sistemas */
+    private TrabajoGrado trabajoCon(String puesto, boolean cerrado) {
+        TrabajoGrado trabajo = mock(TrabajoGrado.class);
+        Director participante = mock(Director.class);
+        when(participante.getUsuarioId()).thenReturn(5L);
+        when(trabajo.estaCerrado()).thenReturn(cerrado);
+        if ("DIRECTOR".equals(puesto))
+            when(trabajo.getDirector()).thenReturn(participante);
+        if ("CODIRECTOR".equals(puesto))
+            when(trabajo.getCodirector()).thenReturn(participante);
+        Estudiante estudiante = mock(Estudiante.class);
+        when(estudiante.getPrograma()).thenReturn(ING_SISTEMAS);
+        when(trabajo.getEstudiantes()).thenReturn(List.of(estudiante));
+        when(catalogoGateway.buscarPrograma(1L)).thenReturn(new Programa(1L, "Ingeniería de Sistemas", SISTEMAS));
+        return trabajo;
+    }
+
+    @Test
+    void unGestorTambienAsignaLosRolesDirectorYAsesor() {
+        prepararFacultad();
+
+        casoDeUso.asignarRoles(60L, 5L, List.of("DOCENTE", "DIRECTOR", "ASESOR"));
+
+        assertEquals(java.util.Set.of("DOCENTE", "DIRECTOR", "ASESOR"), roles(docente));
+        assertEquals("error.usuario.rol_no_asignable",
+                reglaSinAcceso(() -> casoDeUso.asignarRoles(60L, 5L, List.of("DOCENTE", "CODIRECTOR"))));
+    }
+
+    @Test
+    void noSeQuitaElRolDeDirectorAQuienDirigeUnTrabajoEnCurso() {
+        docente.updateRole(List.of(new Role(1L, RoleAdmited.DOCENTE), new Role(1L, RoleAdmited.DIRECTOR)));
+        TrabajoGrado enCurso = trabajoCon("DIRECTOR", false);
+        when(trabajoGateway.listarPorParticipante(5L)).thenReturn(List.of(enCurso));
+
+        BusinessRuleException error = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.asignarRoles(5L, List.of("DOCENTE")));
+        assertEquals("error.usuario.rol_de_trabajo_en_uso", error.getBusinessRule());
+
+        // Si el trabajo ya se cerró, sí se puede quitar
+        TrabajoGrado cerrado = trabajoCon("DIRECTOR", true);
+        when(trabajoGateway.listarPorParticipante(5L)).thenReturn(List.of(cerrado));
+        casoDeUso.asignarRoles(5L, List.of("DOCENTE"));
+        assertEquals(java.util.Set.of("DOCENTE"), roles(docente));
+    }
+
+    @Test
+    void unDepartamentoTieneUnSoloComite() {
+        prepararFacultad();
+
+        BusinessRuleException error = assertThrows(BusinessRuleException.class,
+                () -> casoDeUso.asignarRoles(5L, List.of("DOCENTE", "COMITE")));
+        assertEquals("error.usuario.comite_existente", error.getBusinessRule());
+    }
+
+    @Test
+    void elComiteCedeSuRolAUnDocenteDeSuDepartamento() {
+        prepararFacultad();
+        Usuario comite = userGateway.findById(50L);
+
+        CambioComite cambio = casoDeUso.cambiarComite(50L, 5L);
+
+        assertEquals(5L, cambio.comite().usuario().getCusuari());
+        assertEquals(List.of(50L), cambio.anteriores());
+        assertEquals(SISTEMAS, cambio.departamento());
+        assertEquals(java.util.Set.of("DOCENTE", "COMITE"), roles(docente));
+        // Quien lo cede sigue como docente y se le cierran las sesiones
+        assertEquals(java.util.Set.of("DOCENTE"), roles(comite));
+        verify(authService).cerrarSesionesDe(50L);
+        verify(notificacionGateway).guardarTodas(org.mockito.ArgumentMatchers.argThat(avisos -> avisos.size() == 2));
+    }
+
+    @Test
+    void elComiteNoPasaAOtroDepartamentoNiAQuienCodirigeUnTrabajoDelPrograma() {
+        prepararFacultad();
+        Usuario docenteTelematica = usuario(13L, RoleAdmited.DOCENTE);
+        when(userGateway.findById(13L)).thenReturn(docenteTelematica);
+        when(perfilGateway.buscarPerfilDocente(13L)).thenReturn(new PerfilDocente(13L, TipoVinculacion.PLANTA, TELEMATICA));
+
+        // El jefe de Sistemas no lo pasa a un docente de Telemática
+        assertEquals("error.usuario.comite_otro_departamento", reglaSinAcceso(() -> casoDeUso.cambiarComite(60L, 13L)));
+        // El Consejo sí cambia el de cualquier departamento
+        assertEquals(13L, casoDeUso.cambiarComite(70L, 13L).comite().usuario().getCusuari());
+
+        // Quien codirige un trabajo en curso de Sistemas no puede ser su Comité (Art. 11)
+        TrabajoGrado codirigido = trabajoCon("CODIRECTOR", false);
+        when(trabajoGateway.listarPorParticipante(5L)).thenReturn(List.of(codirigido));
+        BusinessRuleException error = assertThrows(BusinessRuleException.class, () -> casoDeUso.cambiarComite(60L, 5L));
+        assertEquals("error.usuario.comite_codirector", error.getBusinessRule());
+    }
+
+    @Test
+    void unGestorDelDepartamentoCreaYGestionaAsesoresExternosSinPerfil() {
+        prepararFacultad();
+        when(userGateway.findByEmail("d9@unicauca.edu.co")).thenReturn(usuario(9L, RoleAdmited.ASESOR));
+
+        casoDeUso.crear(60L, nuevo(List.of("ASESOR"), null));
+
+        verify(authService).register(any(), any());
+        Usuario asesor = usuario(14L, RoleAdmited.ASESOR);
+        when(userGateway.listar()).thenReturn(List.of(docente, asesor));
+        assertEquals(List.of(5L, 14L), casoDeUso.listarGestionados(60L).stream()
+                .map(gestionado -> gestionado.ficha().usuario().getCusuari()).toList());
     }
 }

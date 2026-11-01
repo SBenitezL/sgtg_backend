@@ -265,4 +265,55 @@ class UsuariosIntegracionTest {
                 .andExpect(jsonPath("$.director.tipoVinculacion").value("OCASIONAL"))
                 .andExpect(jsonPath("$.codirector.usuarioId").value(codirectorId));
     }
+
+    @Test
+    void elComiteDelDepartamentoSeCambiaCediendoloYNuncaPasaAOtroDepartamento() throws Exception {
+        crear(docente("CA", List.of("DOCENTE", "COMITE"), "PLANTA"));
+        long nuevoId = crear(docente("CB", List.of("DOCENTE"), "PLANTA"));
+        // Un solo Comité por departamento: el segundo no se crea
+        enviar(post(API + "/usuarios"), admin, docente("CC", List.of("DOCENTE", "COMITE"), "PLANTA"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.startsWith("El departamento ya tiene Comité")));
+        // Docente de otro departamento
+        long otroDepartamento = departamentoId;
+        departamentoId = id(enviar(post(API + "/catalogos/departamentos"), admin, Map.of("nombre", "Otro " + sufijo)));
+        long ajenoId = crear(docente("CD", List.of("DOCENTE"), "PLANTA"));
+        departamentoId = otroDepartamento;
+
+        String comite = login(correo("CA"));
+        enviar(put(API + "/usuarios/comite"), comite, Map.of("usuarioId", ajenoId))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.endsWith("Solo puedes cambiar el Comité de tu propio departamento.")));
+        enviar(put(API + "/usuarios/comite"), comite, Map.of("usuarioId", nuevoId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(nuevoId))
+                .andExpect(jsonPath("$.roles", org.hamcrest.Matchers.hasItem("COMITE")));
+
+        // Quien lo cedió: su sesión se cerró y sigue como docente
+        enviar(get(API + "/usuarios/me"), comite, null).andExpect(status().isUnauthorized());
+        enviar(get(API + "/usuarios/me"), login(correo("CA")), null)
+                .andExpect(jsonPath("$.roles", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("COMITE"))))
+                .andExpect(jsonPath("$.roles", org.hamcrest.Matchers.hasItem("DOCENTE")));
+        // El nuevo Comité recibe el aviso
+        enviar(get(API + "/notificaciones"), login(correo("CB")), null)
+                .andExpect(jsonPath("$[*].titulo", org.hamcrest.Matchers.hasItem("Ahora eres el Comité de programa")));
+        // Un docente sin rol de gestión no puede cambiarlo
+        enviar(put(API + "/usuarios/comite"), login(correo("CA")), Map.of("usuarioId", nuevoId))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void elJefeAsignaDirectorYAsesorYCreaAsesoresExternos() throws Exception {
+        crear(docente("JF", List.of("DOCENTE", "JEFE_DEP"), "PLANTA"));
+        long docenteId = crear(docente("DD", List.of("DOCENTE"), "OCASIONAL"));
+        String jefe = login(correo("JF"));
+
+        enviar(put(API + "/usuarios/" + docenteId + "/roles"), jefe, Map.of("roles", List.of("DOCENTE", "DIRECTOR")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roles", org.hamcrest.Matchers.hasItem("DIRECTOR")));
+        // Un asesor de una empresa: solo el rol Asesor y sin perfil académico
+        enviar(post(API + "/usuarios"), jefe, datos("AE", List.of("ASESOR")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.roles", contains("ASESOR")));
+    }
 }

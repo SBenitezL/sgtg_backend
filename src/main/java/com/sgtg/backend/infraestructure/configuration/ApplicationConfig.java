@@ -95,9 +95,10 @@ public class ApplicationConfig {
     public ManageUsuarioCUIntPort manageUsuarioCUIntPort(ManageUserGatewayIntPort userGateway,
             ManageAuthGatewayIntPort authGateway, ManageAuthServiceGatewayIntPort authServiceGateway,
             ManagePerfilGatewayIntPort perfilGateway, ManageCatalogoGatewayIntPort catalogoGateway,
-            ExceptionFormatterIntPort exceptionFormatter) {
+            ManageTrabajoGradoGatewayIntPort trabajoGateway, ManageNotificacionGatewayIntPort notificacionGateway,
+            ExceptionFormatterIntPort exceptionFormatter, Clock clock) {
         return new ManageUsuarioCUImplAdapter(userGateway, authGateway, authServiceGateway, perfilGateway,
-                catalogoGateway, exceptionFormatter);
+                catalogoGateway, trabajoGateway, notificacionGateway, exceptionFormatter, clock);
     }
 
     /**

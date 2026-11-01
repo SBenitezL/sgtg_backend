@@ -20,8 +20,9 @@ public interface ManageUsuarioCUIntPort {
     /**
      * Crea un usuario a nombre de un gestor. El administrador crea cualquiera;
      * Comité, jefe de departamento, Consejo y Decanatura solo con los roles
-     * Estudiante y Docente, y el Comité y el jefe solo con un perfil de su
-     * departamento (docente) o de uno de sus programas (estudiante).
+     * Estudiante, Docente, Director y Asesor, y el Comité y el jefe solo con un
+     * perfil de su departamento (docente) o de uno de sus programas (estudiante),
+     * salvo los asesores externos (solo el rol Asesor), que no llevan perfil.
      *
      * @param gestorId usuario autenticado que crea
      */
@@ -41,8 +42,8 @@ public interface ManageUsuarioCUIntPort {
     /**
      * Actualiza un usuario a nombre de un gestor: si no es el administrador, el
      * usuario debe estar en su alcance y no tener roles administrativos, solo se
-     * asignan o quitan los roles Estudiante y Docente y el perfil sigue en su
-     * alcance.
+     * asignan o quitan los roles Estudiante, Docente, Director y Asesor y el
+     * perfil sigue en su alcance.
      *
      * @param gestorId usuario autenticado que actualiza
      */
@@ -103,6 +104,19 @@ public interface ManageUsuarioCUIntPort {
      * @param gestorId usuario autenticado que asigna
      */
     public FichaUsuario asignarRoles(Long gestorId, Long usuarioId, List<String> roles);
+
+    /**
+     * Cambia el Comité del departamento del docente indicado: él recibe el rol y
+     * quien lo tenía lo pierde (sigue como docente, se le cierran las sesiones y
+     * se le avisa). Cada departamento tiene un solo Comité. Lo hace el Comité
+     * (cediéndolo) o el jefe de su departamento; el Consejo, Decanatura y el
+     * administrador, en cualquier departamento. El docente debe estar activo y no
+     * codirigir un trabajo en curso de ese departamento (Art. 11).
+     *
+     * @param gestorId      usuario autenticado que hace el cambio
+     * @param nuevoComiteId docente que queda como Comité
+     */
+    public CambioComite cambiarComite(Long gestorId, Long nuevoComiteId);
 
     /**
      * Cambia la contraseña del usuario autenticado. Exige la contraseña actual;
