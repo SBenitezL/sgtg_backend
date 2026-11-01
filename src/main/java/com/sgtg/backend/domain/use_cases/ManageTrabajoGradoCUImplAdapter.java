@@ -753,7 +753,8 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
             }
         }
         // Avisos de plazos por vencer (después de los cierres, para no avisar a un trabajo cerrado)
-        for (Proceso etapa : List.of(Proceso.PROPUESTA, Proceso.EVALUACION, Proceso.EN_CURSO, Proceso.PRORROGA))
+        for (Proceso etapa : List.of(Proceso.PROPUESTA, Proceso.ANTEPROYECTO, Proceso.EVALUACION, Proceso.EN_CURSO,
+                Proceso.PRORROGA, Proceso.SUSTENTACION, Proceso.APLAZADO))
             this.trabajoGateway.listarPorEtapa(etapa)
                     .forEach(trabajo -> this.notificador.avisarPlazos(trabajo, ahora.toLocalDate()));
         return actualizados;

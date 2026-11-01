@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -47,10 +48,12 @@ import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.participantes.TipoVinculacion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosEjecucion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
+import com.sgtg.backend.domain.models.trabajo_grado.EstadoSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.InformeMensual;
 import com.sgtg.backend.domain.models.trabajo_grado.ReunionSeguimiento;
 import com.sgtg.backend.domain.models.trabajo_grado.Modalidad;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
+import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoInvestigacion;
 import com.sgtg.backend.domain.services.CalendarioHabil;
@@ -100,6 +103,18 @@ class NotificadorTrabajoGradoTest {
         ArgumentCaptor<List<Notificacion>> captor = ArgumentCaptor.forClass(List.class);
         verify(notificacionGateway).guardarTodas(captor.capture());
         return captor.getValue();
+    }
+
+    /** Todas las notificaciones guardadas, en una o varias llamadas. */
+    @SuppressWarnings("unchecked")
+    private List<Notificacion> todas() {
+        ArgumentCaptor<List<Notificacion>> captor = ArgumentCaptor.forClass(List.class);
+        verify(notificacionGateway, atLeastOnce()).guardarTodas(captor.capture());
+        return captor.getAllValues().stream().flatMap(List::stream).toList();
+    }
+
+    private static Set<EventoTrabajoGrado> eventos(List<Notificacion> notificaciones) {
+        return notificaciones.stream().map(Notificacion::evento).collect(Collectors.toSet());
     }
 
     private static Set<Long> usuarios(List<Notificacion> notificaciones) {
@@ -236,13 +251,63 @@ class NotificadorTrabajoGradoTest {
     }
 
     @Test
-    void vencidoElConceptoSeAvisaAlComite() {
+    void vencidoElConceptoSeAvisaAlComiteYAlTrabajo() {
         TrabajoInvestigacion trabajo = trabajo();
         trabajo.radicarPropuesta("1/PROPUESTA/v1/p.pdf", LUNES, calendario);
         LocalDate limite = trabajo.getPropuesta().getFechaLimiteConcepto();
 
-        assertEquals(1, notificador.avisarPlazos(trabajo, limite.plusDays(1)));
+        assertEquals(4, notificador.avisarPlazos(trabajo, limite.plusDays(1)));
         assertEquals("Plazo de concepto vencido", guardadas().get(0).titulo());
+        assertEquals(Set.of(50L, 10L, 1L, 2L), usuarios(guardadas()));
+    }
+
+    /** Anteproyecto devuelto con correcciones: uno de los evaluadores las pidió. */
+    private TrabajoInvestigacion conCorrecciones() {
+        TrabajoInvestigacion trabajo = trabajo();
+        trabajo.radicarPropuesta("1/PROPUESTA/v1/p.pdf", LUNES, calendario);
+        trabajo.registrarDecisionComite(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, "Acta 1",
+                "actas/acta-1.pdf", null, LUNES.plusDays(3)), "C001", LUNES.plusDays(3).atTime(10, 0));
+        trabajo.radicarAnteproyecto("1/ANTEPROYECTO/v1/a.pdf", "D1", LUNES.plusDays(4).atTime(10, 0), calendario);
+        trabajo.asignarEvaluadores(evaluador(20L), evaluador(21L), "J001", LUNES.plusDays(5).atTime(10, 0),
+                calendario);
+        trabajo.registrarConceptoEvaluador(new Concepto(evaluador(20L), ResultadoConcepto.APROBADO, null,
+                LUNES.plusDays(6)), "1/EVALUACION/v1/f.pdf", LUNES.plusDays(6).atTime(10, 0), calendario);
+        trabajo.registrarConceptoEvaluador(new Concepto(evaluador(21L), ResultadoConcepto.CON_CORRECCIONES,
+                "Ajustar la metodología", LUNES.plusDays(6)), "1/EVALUACION/v1/g.pdf", LUNES.plusDays(6).atTime(11, 0),
+                calendario);
+        return trabajo;
+    }
+
+    @Test
+    void lasCorreccionesDelAnteproyectoSeAvisanAntesYAlVencer() {
+        TrabajoInvestigacion trabajo = conCorrecciones();
+        assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
+        LocalDate limite = trabajo.getAnteproyecto().getFechaLimiteCorrecciones();
+
+        assertEquals(0, notificador.avisarPlazos(trabajo, limite.minusDays(4)));
+        assertEquals(3, notificador.avisarPlazos(trabajo, limite.minusDays(3)));
+        assertEquals(Set.of(10L, 1L, 2L), usuarios(guardadas()));
+        assertEquals(EventoTrabajoGrado.PLAZO_CORRECCIONES_POR_VENCER, guardadas().get(0).evento());
+
+        assertEquals(3, notificador.avisarPlazos(trabajo, limite.plusDays(1)));
+        assertEquals(Set.of(EventoTrabajoGrado.PLAZO_CORRECCIONES_POR_VENCER,
+                EventoTrabajoGrado.PLAZO_CORRECCIONES_VENCIDO), eventos(todas()));
+    }
+
+    @Test
+    void vencidaLaEvaluacionTambienSeAvisaAlJefeYAlTrabajo() {
+        TrabajoInvestigacion trabajo = trabajo();
+        trabajo.radicarPropuesta("1/PROPUESTA/v1/p.pdf", LUNES, calendario);
+        trabajo.registrarDecisionComite(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, "Acta 1",
+                "actas/acta-1.pdf", null, LUNES.plusDays(3)), "C001", LUNES.plusDays(3).atTime(10, 0));
+        trabajo.radicarAnteproyecto("1/ANTEPROYECTO/v1/a.pdf", "D1", LUNES.plusDays(4).atTime(10, 0), calendario);
+        trabajo.asignarEvaluadores(evaluador(20L), evaluador(21L), "J001", LUNES.plusDays(5).atTime(10, 0),
+                calendario);
+        LocalDate limite = trabajo.getAnteproyecto().getFechaLimiteEvaluacion();
+
+        notificador.avisarPlazos(trabajo, limite.plusDays(1));
+
+        assertEquals(Set.of(20L, 21L, 60L, 10L, 1L, 2L), usuarios(guardadas()));
     }
 
     @Test
@@ -276,6 +341,19 @@ class NotificadorTrabajoGradoTest {
                 List.of(), null));
     }
 
+    /** Las primeras reuniones del plazo, realizadas en su fecha. */
+    private static List<ReunionSeguimiento> realizadas(int cantidad) {
+        return java.util.stream.IntStream.rangeClosed(1, cantidad)
+                .mapToObj(numero -> new ReunionSeguimiento(numero, LocalDate.of(2026, 3, 1).plusMonths(numero)
+                        .atTime(10, 0), "Sala 2", "D1", true, null))
+                .toList();
+    }
+
+    /** Al día con las reuniones y los informes: solo quedan los avisos de los plazos. */
+    private TrabajoGrado alDia() {
+        return enCurso(9, realizadas(9));
+    }
+
     @Test
     void laReunionAgendadaSeRecuerdaElDiaAnterior() {
         LocalDateTime reunion = LocalDate.of(2026, 4, 1).atTime(10, 0);
@@ -290,26 +368,159 @@ class NotificadorTrabajoGradoTest {
     }
 
     @Test
-    void siPasoLaUltimaReunionSinSuInformeSeAvisaElInformePendiente() {
-        // Pasó la reunión del 1-may (la segunda): solo se avisa esa, no la de abril
+    void laReunionSinAgendarSeAvisaTresDiasAntesDeSuFecha() {
+        TrabajoGrado sinAgendar = enCurso(0, List.of());
+
+        assertEquals(0, notificador.avisarPlazos(sinAgendar, LocalDate.of(2026, 3, 28)));
+        assertEquals(2, notificador.avisarPlazos(sinAgendar, LocalDate.of(2026, 3, 29)));
+        assertEquals("REUNION_POR_VENCER:8:1:2026-04-01", guardadas().get(0).clave());
+        assertEquals("La reunión de seguimiento 1, que corresponde al 01/04/2026, del trabajo \"Vigente\" aún no se "
+                + "ha agendado.", guardadas().get(0).mensaje());
+    }
+
+    @Test
+    void siPasoLaUltimaReunionSinRealizarseSeAvisaUnaSolaVezVencida() {
+        // Pasó la reunión del 1-may (la segunda): solo se avisa esa, no la de abril, y un solo aviso con su informe
         assertEquals(2, notificador.avisarPlazos(enCurso(0, List.of()), LocalDate.of(2026, 5, 2)));
+        Notificacion aviso = guardadas().get(0);
+        assertEquals("REUNION_VENCIDA:8:2", aviso.clave());
+        assertEquals("Venció el plazo de una reunión de seguimiento del trabajo \"Vigente\": la reunión 2 no se "
+                + "registró como realizada y aún no se ha radicado su informe mensual.", aviso.mensaje());
+    }
+
+    @Test
+    void laReunionVencidaHaceMasDeUnaSemanaYaNoSeAvisa() {
+        assertEquals(0, notificador.avisarPlazos(enCurso(0, List.of()), LocalDate.of(2026, 5, 9)));
+    }
+
+    @Test
+    void siSeRealizoLaUltimaReunionSinSuInformeSeAvisaElInformePendiente() {
+        assertEquals(2, notificador.avisarPlazos(enCurso(1, realizadas(2)), LocalDate.of(2026, 5, 2)));
         assertEquals("REUNION_SIN_INFORME:8:2", guardadas().get(0).clave());
         assertEquals(EventoTrabajoGrado.REUNION_SIN_INFORME, guardadas().get(0).evento());
     }
 
     @Test
-    void conElInformeDeLaUltimaReunionNoSeAvisa() {
-        assertEquals(0, notificador.avisarPlazos(enCurso(2, List.of()), LocalDate.of(2026, 5, 2)));
+    void conLaUltimaReunionRealizadaYSuInformeNoSeAvisa() {
+        assertEquals(0, notificador.avisarPlazos(enCurso(2, realizadas(2)), LocalDate.of(2026, 5, 2)));
     }
 
     @Test
-    void elTrabajoEnCursoSeAvisaTreintaDiasAntesDelFin() {
-        // Con todos sus informes: solo el aviso del fin del plazo
-        TrabajoGrado enCurso = enCurso(9, List.of());
+    void seAvisaUnaVezQueYaSePuedeSolicitarLaSustentacion() {
+        assertEquals(0, notificador.avisarPlazos(alDia(), LocalDate.of(2026, 5, 31)));
+        assertEquals(2, notificador.avisarPlazos(alDia(), LocalDate.of(2026, 6, 1)));
+        assertEquals("Desde el 01/06/2026 el director puede solicitar la sustentación del trabajo \"Vigente\".",
+                guardadas().get(0).mensaje());
+    }
+
+    @Test
+    void laOportunidadDeSustentarAbiertaHaceMasDeUnaSemanaNoSeAvisa() {
+        assertEquals(0, notificador.avisarPlazos(alDia(), LocalDate.of(2026, 6, 9)));
+    }
+
+    @Test
+    void elFinDelPlazoParaCambiarElTituloSeAvisaQuinceDiasAntesYAlVencer() {
+        // Seis meses desde la notificación: hasta el 1-sep
+        assertEquals(0, notificador.avisarPlazos(alDia(), LocalDate.of(2026, 8, 16)));
+        assertEquals(2, notificador.avisarPlazos(alDia(), LocalDate.of(2026, 8, 17)));
+        assertEquals("El cambio de título u objetivos del trabajo \"Vigente\" se puede solicitar hasta el 01/09/2026.",
+                guardadas().get(0).mensaje());
+
+        assertEquals(2, notificador.avisarPlazos(alDia(), LocalDate.of(2026, 9, 2)));
+        assertEquals(Set.of(EventoTrabajoGrado.PLAZO_CAMBIO_OBJETIVOS_POR_VENCER,
+                EventoTrabajoGrado.PLAZO_CAMBIO_OBJETIVOS_VENCIDO), eventos(todas()));
+    }
+
+    @Test
+    void elFinDelPlazoParaPedirProrrogaSeAvisaUnaSemanaAntesYAlVencer() {
+        // 15 días antes del fin del plazo: hasta el 16-nov
+        notificador.avisarPlazos(alDia(), LocalDate.of(2026, 11, 9));
+        assertTrue(eventos(todas()).contains(EventoTrabajoGrado.PLAZO_PRORROGA_POR_VENCER));
+        assertTrue(todas().stream().anyMatch(aviso -> aviso.mensaje().equals("La prórroga del trabajo \"Vigente\" se "
+                + "puede solicitar hasta el 16/11/2026, 15 días antes del fin del plazo de ejecución.")));
+
+        notificador.avisarPlazos(alDia(), LocalDate.of(2026, 11, 17));
+        assertTrue(eventos(todas()).contains(EventoTrabajoGrado.PLAZO_PRORROGA_VENCIDO));
+    }
+
+    @Test
+    void conLaProrrogaYaSolicitadaNoSeAvisaSuPlazo() {
+        TrabajoGrado conProrroga = TrabajoGrado.reconstruir(new DatosTrabajoGrado(8L,
+                Modalidad.TRABAJO_DE_INVESTIGACION, "Vigente", List.of("Objetivo"), trabajo().getEstudiantes(),
+                trabajo().getDirector(), null, null, null, Proceso.EN_CURSO, null, null,
+                new DatosEjecucion(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 1), LocalDate.of(2026, 6, 1),
+                        List.of(), alDia().getEjecucion().getInformesMensuales(),
+                        new com.sgtg.backend.domain.models.trabajo_grado.Prorroga(3, "solicitudes/prorroga.pdf",
+                                LocalDate.of(2026, 10, 1), null),
+                        List.of(), realizadas(9)),
+                List.of(), null));
+
+        // Solo el aviso del fin del plazo de ejecución
+        assertEquals(2, notificador.avisarPlazos(conProrroga, LocalDate.of(2026, 11, 9)));
+        assertEquals(Set.of(EventoTrabajoGrado.PLAZO_TRABAJO_POR_VENCER), eventos(guardadas()));
+    }
+
+    @Test
+    void elFinDelPlazoDeEjecucionSeAvisaATreintaDiasYUltimoASiete() {
+        TrabajoGrado enCurso = alDia();
 
         assertEquals(0, notificador.avisarPlazos(enCurso, LocalDate.of(2026, 10, 31)));
         assertEquals(2, notificador.avisarPlazos(enCurso, LocalDate.of(2026, 11, 1)));
         assertEquals(Set.of(10L, 1L), usuarios(guardadas()));
         assertEquals("PLAZO_TRABAJO_POR_VENCER:8:2026-12-01", guardadas().get(0).clave());
+
+        // Ya enviados el primero y los de la prórroga, no hay otro hasta el último aviso
+        when(notificacionGateway.existeClave(any(), eq("PLAZO_TRABAJO_POR_VENCER:8:2026-12-01"))).thenReturn(true);
+        when(notificacionGateway.existeClave(any(), eq("PLAZO_PRORROGA_VENCIDO:8:2026-11-16"))).thenReturn(true);
+        assertEquals(0, notificador.avisarPlazos(enCurso, LocalDate.of(2026, 11, 23)));
+
+        assertEquals(2, notificador.avisarPlazos(enCurso, LocalDate.of(2026, 11, 24)));
+        Notificacion ultimo = todas().get(todas().size() - 1);
+        assertEquals(EventoTrabajoGrado.PLAZO_TRABAJO_ULTIMO_AVISO, ultimo.evento());
+        assertEquals(TipoNotificacion.ERROR, ultimo.tipo());
+        assertEquals("El plazo de ejecución del trabajo \"Vigente\" termina el 01/12/2026. Si para entonces no se ha "
+                + "solicitado la sustentación, el trabajo quedará no aprobado.", ultimo.mensaje());
+    }
+
+    // ----- Sustentación -----
+
+    /** Trabajo en la etapa dada con la sustentación en el estado y con las fechas límite dadas. */
+    private TrabajoGrado enSustentacion(Proceso etapa, EstadoSustentacion estado, LocalDate ajustes,
+            LocalDate segundaSesion) {
+        Sustentacion sustentacion = mock(Sustentacion.class);
+        when(sustentacion.getEstado()).thenReturn(estado);
+        when(sustentacion.getFechaLimiteAjustes()).thenReturn(ajustes);
+        when(sustentacion.getFechaLimiteSegundaSesion()).thenReturn(segundaSesion);
+        TrabajoGrado trabajo = mock(TrabajoGrado.class);
+        when(trabajo.getId()).thenReturn(9L);
+        when(trabajo.getTitulo()).thenReturn("Sustentado");
+        when(trabajo.getEtapa()).thenReturn(etapa);
+        when(trabajo.getSustentacion()).thenReturn(sustentacion);
+        when(trabajo.getEstudiantes()).thenReturn(trabajo().getEstudiantes());
+        when(trabajo.getDirector()).thenReturn(trabajo().getDirector());
+        return trabajo;
+    }
+
+    @Test
+    void losAjustesDeLaSustentacionSeAvisanTresDiasAntes() {
+        TrabajoGrado trabajo = enSustentacion(Proceso.SUSTENTACION, EstadoSustentacion.EN_AJUSTES,
+                LocalDate.of(2026, 7, 10), null);
+
+        assertEquals(0, notificador.avisarPlazos(trabajo, LocalDate.of(2026, 7, 6)));
+        assertEquals(2, notificador.avisarPlazos(trabajo, LocalDate.of(2026, 7, 7)));
+        assertEquals(EventoTrabajoGrado.PLAZO_AJUSTES_POR_VENCER, guardadas().get(0).evento());
+        assertTrue(guardadas().get(0).mensaje().startsWith("Faltan 3 días"));
+    }
+
+    @Test
+    void laSegundaSesionSeAvisaUnaSemanaAntesTambienAlConsejo() {
+        TrabajoGrado trabajo = enSustentacion(Proceso.APLAZADO, EstadoSustentacion.APLAZADA, null,
+                LocalDate.of(2026, 9, 30));
+
+        assertEquals(0, notificador.avisarPlazos(trabajo, LocalDate.of(2026, 9, 22)));
+        assertEquals(3, notificador.avisarPlazos(trabajo, LocalDate.of(2026, 9, 23)));
+        assertEquals(Set.of(70L, 10L, 1L), usuarios(guardadas()));
+        assertEquals("La segunda sesión de sustentación del trabajo \"Sustentado\" debe ser a más tardar el "
+                + "30/09/2026. Si no se programa, el trabajo quedará no aprobado.", guardadas().get(0).mensaje());
     }
 }

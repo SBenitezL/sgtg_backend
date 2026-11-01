@@ -23,11 +23,14 @@ import com.sgtg.backend.domain.models.participantes.Participante;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.Programa;
 import com.sgtg.backend.domain.models.trabajo_grado.CambioEtapa;
+import com.sgtg.backend.domain.models.trabajo_grado.CambioObjetivos;
 import com.sgtg.backend.domain.models.trabajo_grado.ConceptoEvaluacion;
+import com.sgtg.backend.domain.models.trabajo_grado.Ejecucion;
 import com.sgtg.backend.domain.models.trabajo_grado.Estado;
 import com.sgtg.backend.domain.models.trabajo_grado.EstadoReunion;
 import com.sgtg.backend.domain.models.trabajo_grado.Proceso;
 import com.sgtg.backend.domain.models.trabajo_grado.ReunionDelPlazo;
+import com.sgtg.backend.domain.models.trabajo_grado.Sustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
 
 /**
@@ -37,14 +40,32 @@ import com.sgtg.backend.domain.models.trabajo_grado.TrabajoGrado;
  */
 public class NotificadorTrabajoGrado {
 
-    /** Días de anticipación de los avisos de la propuesta y el anteproyecto */
+    /**
+     * Días de anticipación de los avisos de la propuesta, el anteproyecto (evaluación y correcciones) y los
+     * ajustes de la sustentación
+     */
     public static final int DIAS_AVISO_EVALUACION = 3;
-    /** Días de anticipación del aviso de fin del plazo de ejecución */
+    /** Días de anticipación del primer aviso de fin del plazo de ejecución */
     public static final int DIAS_AVISO_EJECUCION = 30;
+    /** Días de anticipación del último aviso de fin del plazo de ejecución (si no se entrega, no aprobado) */
+    public static final int DIAS_ULTIMO_AVISO_EJECUCION = 7;
+    /** Días de anticipación del aviso del fin del plazo para cambiar el título u objetivos */
+    public static final int DIAS_AVISO_CAMBIO_OBJETIVOS = 15;
+    /** Días de anticipación del aviso del fin del plazo para solicitar la prórroga y para la segunda sesión */
+    public static final int DIAS_AVISO_SOLICITUD = 7;
     /** Días antes de una reunión de seguimiento agendada en que se recuerda (el día anterior y el mismo día) */
     public static final int DIAS_AVISO_REUNION = 1;
+    /** Días antes de la fecha de una reunión de seguimiento sin agendar en que se avisa */
+    public static final int DIAS_AVISO_REUNION_SIN_AGENDAR = 3;
+    /**
+     * Días tras una fecha en que aún se envía su aviso (oportunidad que se abrió o que se cerró, reunión
+     * vencida): pasados, el aviso ya no sirve y no se envía (ej. a los trabajos que ya existían al activarlo)
+     */
+    public static final int DIAS_VIGENCIA_AVISO = 7;
     private static final java.time.format.DateTimeFormatter FORMATO_REUNION = java.time.format.DateTimeFormatter
             .ofPattern("dd/MM/yyyy 'a las' HH:mm");
+    private static final java.time.format.DateTimeFormatter FORMATO_FECHA = java.time.format.DateTimeFormatter
+            .ofPattern("dd/MM/yyyy");
 
     private static final System.Logger LOG = System.getLogger(NotificadorTrabajoGrado.class.getName());
     /** Hechos de una sesión de sustentación: la notificación guarda el número de la sesión */
@@ -119,7 +140,8 @@ public class NotificadorTrabajoGrado {
 
     /**
      * Crea los avisos de plazos por vencer o vencidos del trabajo. Cada aviso se
-     * envía una sola vez por usuario y fecha límite.
+     * envía una sola vez por usuario y fecha límite, y cada plazo tiene pocos
+     * avisos (uno antes de vencer y, si sirve, uno al vencer), para no saturar el buzón.
      *
      * @param trabajo trabajo a revisar
      * @param hoy     fecha de la revisión
@@ -131,18 +153,25 @@ public class NotificadorTrabajoGrado {
                     ? avisar(trabajo, trabajo.getPropuesta().getFechaLimiteConcepto(), hoy, DIAS_AVISO_EVALUACION,
                             EventoTrabajoGrado.PLAZO_PROPUESTA_POR_VENCER, EventoTrabajoGrado.PLAZO_PROPUESTA_VENCIDO)
                     : 0;
+            // Las correcciones que pidieron los evaluadores devuelven el trabajo a anteproyecto
+            case ANTEPROYECTO -> trabajo.getAnteproyecto() != null
+                    && trabajo.getAnteproyecto().getEstado() == Estado.CON_CORRECCIONES
+                            ? avisar(trabajo, trabajo.getAnteproyecto().getFechaLimiteCorrecciones(), hoy,
+                                    DIAS_AVISO_EVALUACION, EventoTrabajoGrado.PLAZO_CORRECCIONES_POR_VENCER,
+                                    EventoTrabajoGrado.PLAZO_CORRECCIONES_VENCIDO)
+                            : 0;
             case EVALUACION -> avisar(trabajo, trabajo.getAnteproyecto().getFechaLimiteEvaluacion(), hoy,
                     DIAS_AVISO_EVALUACION, EventoTrabajoGrado.PLAZO_EVALUACION_POR_VENCER,
                     EventoTrabajoGrado.PLAZO_EVALUACION_VENCIDO);
             case EN_CURSO, PRORROGA -> trabajo.getEjecucion() == null ? 0
-                    : avisar(trabajo, trabajo.getEjecucion().getFechaFin(), hoy, DIAS_AVISO_EJECUCION,
-                            EventoTrabajoGrado.PLAZO_TRABAJO_POR_VENCER, null)
-                            + avisarReuniones(trabajo, hoy);
+                    : avisarEjecucion(trabajo, hoy) + avisarReuniones(trabajo, hoy);
+            case SUSTENTACION, APLAZADO -> avisarSustentacion(trabajo, hoy);
             default -> 0;
         });
         return creados == null ? 0 : creados;
     }
 
+    /** Aviso por vencer (con los días que faltan) y vencido de un plazo que se debe cumplir. */
     private int avisar(TrabajoGrado trabajo, LocalDate limite, LocalDate hoy, int diasAviso,
             EventoTrabajoGrado porVencer, EventoTrabajoGrado vencido) {
         if (limite == null)
@@ -151,34 +180,126 @@ public class NotificadorTrabajoGrado {
         EventoTrabajoGrado evento = dias < 0 ? vencido : dias <= diasAviso ? porVencer : null;
         if (evento == null)
             return 0;
-        String clave = evento.name() + ":" + trabajo.getId() + ":" + limite;
-        return crearAvisos(trabajo, evento, clave, String.valueOf(dias));
+        return crearAvisos(trabajo, evento, clave(evento, trabajo, limite), String.valueOf(dias));
     }
 
     /**
-     * Avisos de las reuniones de seguimiento: el recordatorio de la reunión
-     * agendada (el día anterior y el mismo día) y, si ya pasó la fecha de la
-     * última reunión sin que se radicara su informe mensual, el informe
-     * pendiente. Solo se avisa la última, para no acumular avisos de meses anteriores.
+     * Aviso por vencer y vencido de una fecha que abre o cierra una oportunidad,
+     * con la fecha como detalle. El vencido solo se envía en los primeros días
+     * tras la fecha ({@link #DIAS_VIGENCIA_AVISO}).
+     */
+    private int avisarFecha(TrabajoGrado trabajo, LocalDate limite, LocalDate hoy, int diasAviso,
+            EventoTrabajoGrado porVencer, EventoTrabajoGrado vencido) {
+        if (limite == null)
+            return 0;
+        long dias = ChronoUnit.DAYS.between(hoy, limite);
+        EventoTrabajoGrado evento = dias < 0 ? (-dias <= DIAS_VIGENCIA_AVISO ? vencido : null)
+                : dias <= diasAviso ? porVencer : null;
+        if (evento == null)
+            return 0;
+        return crearAvisos(trabajo, evento, clave(evento, trabajo, limite), limite.format(FORMATO_FECHA));
+    }
+
+    private static String clave(EventoTrabajoGrado evento, TrabajoGrado trabajo, Object referencia) {
+        return evento.name() + ":" + trabajo.getId() + ":" + referencia;
+    }
+
+    /**
+     * Avisos del plazo de ejecución:
+     * <ul>
+     * <li>fin del plazo: a los 30 días y el último a los 7, que advierte que sin
+     * la solicitud de sustentación el trabajo queda no aprobado (el cierre
+     * también se notifica);</li>
+     * <li>desde cuándo se puede solicitar la sustentación;</li>
+     * <li>fin del plazo para cambiar el título u objetivos, mientras no se haya
+     * aprobado un cambio ni haya uno pendiente;</li>
+     * <li>fin del plazo para solicitar la prórroga, mientras no se haya solicitado.</li>
+     * </ul>
+     */
+    private int avisarEjecucion(TrabajoGrado trabajo, LocalDate hoy) {
+        Ejecucion ejecucion = trabajo.getEjecucion();
+        LocalDate fin = ejecucion.getFechaFin();
+        int creados = fin != null && ChronoUnit.DAYS.between(hoy, fin) <= DIAS_ULTIMO_AVISO_EJECUCION
+                ? avisarFecha(trabajo, fin, hoy, DIAS_ULTIMO_AVISO_EJECUCION,
+                        EventoTrabajoGrado.PLAZO_TRABAJO_ULTIMO_AVISO, null)
+                : avisar(trabajo, fin, hoy, DIAS_AVISO_EJECUCION, EventoTrabajoGrado.PLAZO_TRABAJO_POR_VENCER, null);
+        LocalDate minima = ejecucion.getFechaMinimaSustentacion();
+        if (minima != null && !hoy.isBefore(minima)
+                && ChronoUnit.DAYS.between(minima, hoy) <= DIAS_VIGENCIA_AVISO && !ejecucion.vencida(hoy))
+            creados += crearAvisos(trabajo, EventoTrabajoGrado.SUSTENTACION_HABILITADA,
+                    clave(EventoTrabajoGrado.SUSTENTACION_HABILITADA, trabajo, minima), minima.format(FORMATO_FECHA));
+        if (ejecucion.cambioPendiente().isEmpty()
+                && ejecucion.getCambiosObjetivos().stream().noneMatch(CambioObjetivos::fueAprobado))
+            creados += avisarFecha(trabajo, ejecucion.fechaLimiteCambioObjetivos(), hoy, DIAS_AVISO_CAMBIO_OBJETIVOS,
+                    EventoTrabajoGrado.PLAZO_CAMBIO_OBJETIVOS_POR_VENCER,
+                    EventoTrabajoGrado.PLAZO_CAMBIO_OBJETIVOS_VENCIDO);
+        if (ejecucion.getProrroga() == null)
+            creados += avisarFecha(trabajo, ejecucion.fechaLimiteSolicitudProrroga(), hoy, DIAS_AVISO_SOLICITUD,
+                    EventoTrabajoGrado.PLAZO_PRORROGA_POR_VENCER, EventoTrabajoGrado.PLAZO_PRORROGA_VENCIDO);
+        return creados;
+    }
+
+    /**
+     * Avisos de la sustentación: los ajustes por radicar (si vencen, la sesión
+     * queda aplazada) y la segunda sesión por programar (si vence, el trabajo
+     * queda no aprobado). Los vencimientos los notifica el cierre del sistema.
+     */
+    private int avisarSustentacion(TrabajoGrado trabajo, LocalDate hoy) {
+        Sustentacion sustentacion = trabajo.getSustentacion();
+        if (sustentacion == null)
+            return 0;
+        return switch (sustentacion.getEstado()) {
+            case EN_AJUSTES -> avisar(trabajo, sustentacion.getFechaLimiteAjustes(), hoy, DIAS_AVISO_EVALUACION,
+                    EventoTrabajoGrado.PLAZO_AJUSTES_POR_VENCER, null);
+            case APLAZADA -> avisarFecha(trabajo, sustentacion.getFechaLimiteSegundaSesion(), hoy,
+                    DIAS_AVISO_SOLICITUD, EventoTrabajoGrado.PLAZO_SEGUNDA_SESION_POR_VENCER, null);
+            default -> 0;
+        };
+    }
+
+    /**
+     * Avisos de las reuniones de seguimiento:
+     * <ul>
+     * <li>la reunión agendada se recuerda el día anterior y el mismo día;</li>
+     * <li>la que aún no se agenda, 3 días antes de su fecha;</li>
+     * <li>de la última reunión cuya fecha pasó, un solo aviso: vencida si no se
+     * registró como realizada (en sus primeros días) o, si se realizó, el
+     * informe mensual pendiente.</li>
+     * </ul>
+     * Solo se avisa la última que pasó, para no acumular avisos de meses anteriores.
      */
     private int avisarReuniones(TrabajoGrado trabajo, LocalDate hoy) {
         List<ReunionDelPlazo> reuniones = trabajo.getEjecucion().reuniones(hoy);
         int creados = 0;
         for (ReunionDelPlazo reunion : reuniones) {
-            if (reunion.estado() != EstadoReunion.AGENDADA
-                    || ChronoUnit.DAYS.between(hoy, reunion.fecha()) > DIAS_AVISO_REUNION)
-                continue;
-            String detalle = reunion.numero() + ", el " + reunion.agendada().fechaHora().format(FORMATO_REUNION) + " ("
-                    + reunion.agendada().lugar() + ")";
-            creados += crearAvisos(trabajo, EventoTrabajoGrado.REUNION_PROXIMA, EventoTrabajoGrado.REUNION_PROXIMA.name()
-                    + ":" + trabajo.getId() + ":" + reunion.numero() + ":" + reunion.agendada().fechaHora(), detalle);
+            if (reunion.estado() == EstadoReunion.AGENDADA
+                    && ChronoUnit.DAYS.between(hoy, reunion.fecha()) <= DIAS_AVISO_REUNION) {
+                String detalle = reunion.numero() + ", el " + reunion.agendada().fechaHora().format(FORMATO_REUNION)
+                        + " (" + reunion.agendada().lugar() + ")";
+                creados += crearAvisos(trabajo, EventoTrabajoGrado.REUNION_PROXIMA, clave(
+                        EventoTrabajoGrado.REUNION_PROXIMA, trabajo,
+                        reunion.numero() + ":" + reunion.agendada().fechaHora()), detalle);
+            } else if (reunion.estado() == EstadoReunion.PENDIENTE
+                    && ChronoUnit.DAYS.between(hoy, reunion.fecha()) <= DIAS_AVISO_REUNION_SIN_AGENDAR) {
+                creados += crearAvisos(trabajo, EventoTrabajoGrado.REUNION_POR_VENCER,
+                        clave(EventoTrabajoGrado.REUNION_POR_VENCER, trabajo, reunion.numero() + ":" + reunion.fecha()),
+                        reunion.numero() + ", que corresponde al " + reunion.fecha().format(FORMATO_FECHA) + ",");
+            }
         }
         ReunionDelPlazo ultimaPasada = reuniones.stream()
                 .filter(reunion -> reunion.fecha() != null && reunion.fecha().isBefore(hoy))
                 .reduce((anterior, siguiente) -> siguiente).orElse(null);
-        if (ultimaPasada != null && !ultimaPasada.conInforme())
+        if (ultimaPasada == null)
+            return creados;
+        if (ultimaPasada.estado() == EstadoReunion.VENCIDA) {
+            if (ChronoUnit.DAYS.between(ultimaPasada.fecha(), hoy) <= DIAS_VIGENCIA_AVISO)
+                creados += crearAvisos(trabajo, EventoTrabajoGrado.REUNION_VENCIDA,
+                        clave(EventoTrabajoGrado.REUNION_VENCIDA, trabajo, ultimaPasada.numero()),
+                        "la reunión " + ultimaPasada.numero() + " no se registró como realizada"
+                                + (ultimaPasada.conInforme() ? "" : " y aún no se ha radicado su informe mensual"));
+        } else if (!ultimaPasada.conInforme())
             creados += crearAvisos(trabajo, EventoTrabajoGrado.REUNION_SIN_INFORME,
-                    EventoTrabajoGrado.REUNION_SIN_INFORME.name() + ":" + trabajo.getId() + ":" + ultimaPasada.numero(),
+                    clave(EventoTrabajoGrado.REUNION_SIN_INFORME, trabajo, ultimaPasada.numero()),
                     String.valueOf(ultimaPasada.numero()));
         return creados;
     }
