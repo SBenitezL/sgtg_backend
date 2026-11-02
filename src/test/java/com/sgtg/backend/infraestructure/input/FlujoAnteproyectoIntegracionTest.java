@@ -389,7 +389,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.message")
                         .value("La operación no está permitida en la etapa actual del trabajo de grado."));
 
-        // Fase 4: el director solicita el cambio de título y el Consejo lo aprueba
+        // Fase 4: el director solicita el cambio de título, el Comité lo avala y el Consejo lo aprueba
         String cambio = TRABAJOS + trabajoId + "/cambio-objetivos";
         enviar(post(cambio), login("E"), Map.of("titulo", "T", "objetivos", List.of("O"), "justificacion", "J"))
                 .andExpect(status().isForbidden());
@@ -401,6 +401,17 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.ejecucion.fechaLimiteCambioObjetivos").isNotEmpty());
         subir(cambio + "/decisiones-consejo", docente, Map.of("resultado", "APROBADO"), archivo("3.pdf"))
                 .andExpect(status().isForbidden());
+        // El Consejo no decide antes del aval del Comité
+        subir(cambio + "/decisiones-consejo", consejo, Map.of("resultado", "APROBADO"), archivo("3.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El Consejo de Facultad solo decide el cambio de título u "
+                        + "objetivos después de que el Comité del programa lo avala."));
+        subir(cambio + "/decisiones-comite", consejo, Map.of("resultado", "APROBADO"))
+                .andExpect(status().isForbidden());
+        subir(cambio + "/decisiones-comite", login("C"), Map.of("resultado", "APROBADO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ejecucion.cambiosObjetivos[0].avalComite.resultado").value("APROBADO"))
+                .andExpect(jsonPath("$.ejecucion.cambiosObjetivos[0].decision").isEmpty());
         subir(cambio + "/decisiones-consejo", consejo, Map.of("resultado", "APROBADO"), archivo("res-cambio.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.titulo").value("Sistema de gestión y sustentaciones"))

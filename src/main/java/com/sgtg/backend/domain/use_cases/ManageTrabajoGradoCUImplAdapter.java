@@ -438,6 +438,23 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
+    public TrabajoGrado avalarCambioObjetivos(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
+            ArchivoAdjunto acta, String observaciones) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        cargarUsuario(usuarioId);
+        validarComiteDelPrograma(trabajo, usuarioId);
+        List<String> rutas = new ArrayList<>();
+        String ruta = almacenar(trabajo, trabajoId, TipoDocumento.AVAL_CAMBIO_OBJETIVOS, acta, rutas);
+        boolean avala = resultado == ResultadoConcepto.APROBADO;
+        return notificar(conArchivos(rutas, () -> {
+            trabajo.avalarCambioObjetivos(new Decision(Organo.COMITE_PROGRAMA, resultado, null, ruta, observaciones,
+                    hoy(), usuarioId));
+            return this.trabajoGateway.guardar(trabajo);
+        }), avala ? EventoTrabajoGrado.CAMBIO_OBJETIVOS_AVALADO : EventoTrabajoGrado.CAMBIO_OBJETIVOS_NO_AVALADO,
+                usuarioId, avala || observaciones == null ? "" : observaciones.trim());
+    }
+
+    @Override
     public TrabajoGrado resolverCambioObjetivos(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
             ArchivoAdjunto resolucion, String observaciones) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);

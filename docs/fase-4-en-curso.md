@@ -74,6 +74,7 @@ El método privado `cerrar(motivo, responsable, ahora, observacion)` lo reutiliz
 | Método y ruta (`/api/v1/sgtg/trabajos-grado`) | Permiso | Cuerpo |
 |---|---|---|
 | `POST /{id}/cambio-objetivos` | Director (caso de uso) | `{ "titulo": "...", "objetivos": ["..."], "justificacion": "..." }` |
+| `POST /{id}/cambio-objetivos/decisiones-comite` | `COMITE` (del programa) | Aval del Comité, antes del Consejo (desde el 2026-11-01, ver `ajustes-2026-11-01.md` §5) |
 | `POST /{id}/cambio-objetivos/decisiones-consejo` | `CONSEJO` | `{ "resultado": "APROBADO", "rutaResolucion": "...", "observaciones": "opcional" }` |
 | `POST /{id}/informes-mensuales` | Director (caso de uso) | `{ "rutaDocumento": "informes/2026/abril.pdf" }` |
 

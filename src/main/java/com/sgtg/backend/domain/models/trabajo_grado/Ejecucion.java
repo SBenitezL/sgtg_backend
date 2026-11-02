@@ -140,7 +140,22 @@ public class Ejecucion {
     }
 
     /**
-     * Registra la decisión del Consejo sobre la solicitud pendiente. La
+     * Registra el aval del Comité del programa sobre la solicitud pendiente. El
+     * aval se valida al crear la solicitud avalada, antes de modificar la
+     * ejecución.
+     *
+     * @return la solicitud avalada o, si no la avaló, resuelta como no aprobada
+     */
+    CambioObjetivos avalarCambioObjetivos(Decision aval) {
+        CambioObjetivos avalada = cambioPendiente()
+                .orElseThrow(() -> new ReglaNegocioException("error.dominio.cambio_objetivos.sin_aval_pendiente"))
+                .avalar(aval);
+        this.cambiosObjetivos.set(this.cambiosObjetivos.size() - 1, avalada);
+        return avalada;
+    }
+
+    /**
+     * Registra la decisión del Consejo sobre la solicitud avalada. La
      * decisión se valida al crear la solicitud resuelta, antes de modificar la
      * ejecución.
      *

@@ -3367,6 +3367,100 @@
       "docs": "Una sola vez, dentro de los primeros 6 meses desde la notificación. El título no cambia hasta que el Consejo apruebe."
     },
     {
+      "_id": "9deca786-0dbc-5538-bb44-6c43bdae0c1d",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "El Consejo no decide el cambio sin el aval del Comité (400)",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos/decisiones-consejo",
+      "method": "POST",
+      "sortNum": 442000,
+      "created": "2026-11-01T00:00:00.000Z",
+      "modified": "2026-11-01T00:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/resolucion.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{consejoToken}}"
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.message",
+          "action": "equal",
+          "value": "El Consejo de Facultad solo decide el cambio de título u objetivos después de que el Comité del programa lo avala."
+        }
+      ],
+      "docs": "Desde el 2026-11-01 el cambio de título u objetivos lo avala primero el Comité del programa."
+    },
+    {
+      "_id": "7c8a7cf8-ae92-5dd3-9779-31ab6a3ff5cd",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Comité avala el cambio",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos/decisiones-comite",
+      "method": "POST",
+      "sortNum": 445000,
+      "created": "2026-11-01T00:00:00.000Z",
+      "modified": "2026-11-01T00:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\"\n}"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.cambiosObjetivos[0].avalComite.resultado",
+          "action": "equal",
+          "value": "APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.cambiosObjetivos[0].avalComite.organo",
+          "action": "equal",
+          "value": "COMITE_PROGRAMA"
+        }
+      ],
+      "docs": "Sin acta (es opcional). Avalado, pasa al Consejo de Facultad."
+    },
+    {
       "_id": "d7f32f8d-1670-47ed-ac50-f3e4075322b1",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
@@ -3453,6 +3547,59 @@
         "type": "bearer",
         "bearer": "{{docenteToken}}"
       }
+    },
+    {
+      "_id": "7e01d835-fded-5920-91e3-c06faa3fdb28",
+      "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
+      "containerId": "5e664d6c-fd6c-4a6d-9f43-977826ac4a84",
+      "name": "Comité avala el nuevo cambio con el acta",
+      "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/cambio-objetivos/decisiones-comite",
+      "method": "POST",
+      "sortNum": 465000,
+      "created": "2026-11-01T00:00:00.000Z",
+      "modified": "2026-11-01T00:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "formdata",
+        "raw": "",
+        "form": [
+          {
+            "name": "datos=application/json",
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"El cambio es pertinente para el programa\"\n}"
+          }
+        ],
+        "files": [
+          {
+            "name": "archivo",
+            "value": "archivos/acta-comite.pdf"
+          }
+        ]
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{comiteToken}}"
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.cambiosObjetivos[1].avalComite.resultado",
+          "action": "equal",
+          "value": "APROBADO"
+        },
+        {
+          "type": "json-query",
+          "custom": "json.ejecucion.cambiosObjetivos[1].decision",
+          "action": "equal",
+          "value": "null"
+        }
+      ],
+      "docs": "Con el acta o concepto del Comité (opcional)."
     },
     {
       "_id": "61a66aba-85e8-422c-a414-5730624ee41c",

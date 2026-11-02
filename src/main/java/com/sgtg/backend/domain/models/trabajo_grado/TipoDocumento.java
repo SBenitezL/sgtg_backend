@@ -37,7 +37,9 @@ public enum TipoDocumento {
     /** Solicitud del director de una nueva fecha para la sesión de sustentación programada */
     SOLICITUD_NUEVA_FECHA(null, false, "Solicitud de nueva fecha"),
     AJUSTES_SUSTENTACION(null, false, "Ajustes de la sustentación"),
-    SOLICITUD_CANCELACION(null, false, "Solicitud de cancelación");
+    SOLICITUD_CANCELACION(null, false, "Solicitud de cancelación"),
+    /** Acta o concepto (opcional) con el que el Comité de Programa avala o no el cambio de título u objetivos */
+    AVAL_CAMBIO_OBJETIVOS(null, false, "Aval del Comité");
 
     /** Letra del formato en el reglamento, null si no corresponde a un formato */
     private final String letraFormato;

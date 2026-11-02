@@ -250,11 +250,17 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         trabajo.remitirAnteproyectoAlConsejo(RUTA_FORMATO_C, "J60", LUNES.atTime(12, 30));
         trabajo.registrarDecisionConsejo(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null,
                 "resoluciones/res-100.pdf", null, LUNES), "CF01", LUNES.atTime(13, 0), trabajo.getModalidad().getMesesMaximosEjecucion());
-        // Un cambio no aprobado y otro pendiente; dos informes
+        // Un cambio avalado por el Comité y no aprobado por el Consejo, uno no avalado y otro pendiente; dos informes
         trabajo.solicitarCambioObjetivos("Práctica ampliada", List.of("Objetivo 1", "Objetivo 2"), "Ampliación",
                 LUNES.plusDays(10));
+        trabajo.avalarCambioObjetivos(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, null,
+                "actas/comite-150.pdf", null, LUNES.plusDays(15), 50L));
         trabajo.resolverCambioObjetivos(new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.NO_APROBADO, null,
                 "resoluciones/res-150.pdf", null, LUNES.plusDays(20)));
+        trabajo.solicitarCambioObjetivos("Práctica reducida", List.of("Objetivo reducido"), "Reducción",
+                LUNES.plusDays(22));
+        trabajo.avalarCambioObjetivos(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.NO_APROBADO, null,
+                null, "No corresponde al programa", LUNES.plusDays(25), 50L));
         trabajo.solicitarCambioObjetivos("Práctica ajustada", List.of("Objetivo ajustado"), "Ajuste",
                 LUNES.plusDays(30));
         trabajo.registrarInformeMensual("informes/marzo.pdf", LUNES.plusDays(28));
@@ -288,8 +294,18 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         assertEquals(List.of("Objetivo 1", "Objetivo 2"), noAprobado.objetivosPropuestos());
         assertEquals(ResultadoConcepto.NO_APROBADO, noAprobado.decision().resultado());
         assertEquals("resoluciones/res-150.pdf", noAprobado.decision().rutaArchivo());
+        assertEquals(Organo.COMITE_PROGRAMA, noAprobado.avalComite().organo());
+        assertEquals("actas/comite-150.pdf", noAprobado.avalComite().rutaArchivo());
+        assertEquals(50L, noAprobado.avalComite().responsableId());
+        CambioObjetivos noAvalado = leido.getEjecucion().getCambiosObjetivos().get(1);
+        assertEquals(ResultadoConcepto.NO_APROBADO, noAvalado.avalComite().resultado());
+        assertEquals("No corresponde al programa", noAvalado.avalComite().observaciones());
+        assertNull(noAvalado.decision());
         assertTrue(leido.getEjecucion().cambioPendiente().isPresent());
-        assertNull(leido.getEjecucion().getCambiosObjetivos().get(1).decision());
+        CambioObjetivos pendiente = leido.getEjecucion().getCambiosObjetivos().get(2);
+        assertNull(pendiente.avalComite());
+        assertNull(pendiente.decision());
+        assertTrue(pendiente.pendienteDelComite());
         assertEquals(List.of("informes/marzo.pdf", "informes/abril.pdf"), leido.getEjecucion()
                 .getInformesMensuales().stream().map(InformeMensual::rutaArchivo).toList());
         assertEquals(2, leido.getEjecucion().getInformesMensuales().get(1).numero());

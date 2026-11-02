@@ -184,14 +184,26 @@ public interface ManageTrabajoGradoCUIntPort {
 
     /**
      * Solicita el cambio de título u objetivos del trabajo en curso. Solo el
-     * director; lo decide el Consejo de Facultad.
+     * director; lo avala el Comité del programa y lo decide el Consejo de Facultad.
      */
     public TrabajoGrado solicitarCambioObjetivos(Long trabajoId, Long usuarioId, String titulo,
             List<String> objetivos, String justificacion);
 
     /**
+     * Registra el aval del Comité del programa sobre el cambio de título u
+     * objetivos solicitado, con la fecha actual. Solo el Comité de un programa
+     * de su departamento.
+     *
+     * @param resultado     APROBADO (lo avala) o NO_APROBADO (no lo avala)
+     * @param acta          archivo del acta o concepto del Comité, opcional
+     * @param observaciones obligatorias si no lo avala
+     */
+    public TrabajoGrado avalarCambioObjetivos(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
+            ArchivoAdjunto acta, String observaciones);
+
+    /**
      * Registra la decisión del Consejo de Facultad sobre el cambio de título u
-     * objetivos solicitado, con la fecha actual.
+     * objetivos avalado por el Comité, con la fecha actual.
      *
      * @param resultado     APROBADO o NO_APROBADO
      * @param resolucion    archivo de la resolución

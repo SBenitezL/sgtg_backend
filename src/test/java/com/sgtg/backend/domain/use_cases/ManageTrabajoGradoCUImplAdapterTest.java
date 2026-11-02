@@ -2,6 +2,8 @@ package com.sgtg.backend.domain.use_cases;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,6 +49,7 @@ import com.sgtg.backend.domain.models.comun.NombrePersona;
 import com.sgtg.backend.domain.models.participantes.Director;
 import com.sgtg.backend.domain.models.participantes.Estudiante;
 import com.sgtg.backend.domain.models.trabajo_grado.Calificacion;
+import com.sgtg.backend.domain.models.trabajo_grado.CambioObjetivos;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosEjecucion;
 import com.sgtg.backend.domain.models.trabajo_grado.EstadoSustentacion;
 import com.sgtg.backend.domain.models.trabajo_grado.DatosTrabajoGrado;
@@ -625,18 +628,53 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
-    void elDirectorSolicitaElCambioDeObjetivosYElConsejoLoDecide() {
+    void elDirectorSolicitaElCambioDeObjetivosElComiteLoAvalaYElConsejoLoDecide() {
         trabajoEnCurso();
         assertThrows(NoAccessException.class, () -> casoDeUso.solicitarCambioObjetivos(7L, 10L, "Nuevo título",
                 List.of("Nuevo objetivo"), "Justificación"));
 
         casoDeUso.solicitarCambioObjetivos(7L, 1L, "Nuevo título", List.of("Nuevo objetivo"), "Justificación");
+        verify(notificador).notificar(any(), eq(EventoTrabajoGrado.CAMBIO_OBJETIVOS_SOLICITADO), eq(1L), eq(null));
+        // El Consejo no decide antes del aval del Comité
+        ReglaNegocioException sinAval = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.resolverCambioObjetivos(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-200.pdf"), null));
+        assertEquals("error.dominio.cambio_objetivos.aval_comite_pendiente", sinAval.getMessage());
+        // Solo el Comité de un programa del departamento del trabajo
+        assertThrows(NoAccessException.class, () -> casoDeUso.avalarCambioObjetivos(7L, 51L,
+                ResultadoConcepto.APROBADO, null, null));
+
+        casoDeUso.avalarCambioObjetivos(7L, 50L, ResultadoConcepto.APROBADO, pdf("acta-comite.pdf"), null);
+        verify(notificador).notificar(any(), eq(EventoTrabajoGrado.CAMBIO_OBJETIVOS_AVALADO), eq(50L), eq(""));
         TrabajoGrado trabajo = casoDeUso.resolverCambioObjetivos(7L, 70L, ResultadoConcepto.APROBADO,
                 pdf("res-200.pdf"), null);
 
         assertEquals("Nuevo título", trabajo.getTitulo());
-        assertEquals(LocalDate.of(2026, 3, 2),
-                trabajo.getEjecucion().getCambiosObjetivos().get(0).decision().fecha());
+        CambioObjetivos resuelto = trabajo.getEjecucion().getCambiosObjetivos().get(0);
+        assertEquals(LocalDate.of(2026, 3, 2), resuelto.decision().fecha());
+        assertEquals(50L, resuelto.avalComite().responsableId());
+        assertNotNull(resuelto.avalComite().rutaArchivo());
+    }
+
+    @Test
+    void siElComiteNoAvalaElCambioQuedaNoAprobadoSinPasarAlConsejo() {
+        trabajoEnCurso();
+        casoDeUso.solicitarCambioObjetivos(7L, 1L, "Nuevo título", List.of("Nuevo objetivo"), "Justificación");
+        // Si no lo avala, las observaciones son obligatorias; el acta es opcional
+        ReglaNegocioException sinObservaciones = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.avalarCambioObjetivos(7L, 50L, ResultadoConcepto.NO_APROBADO, null, " "));
+        assertEquals("error.dominio.decision.observaciones_obligatorias", sinObservaciones.getMessage());
+
+        TrabajoGrado trabajo = casoDeUso.avalarCambioObjetivos(7L, 50L, ResultadoConcepto.NO_APROBADO, null,
+                " El cambio no corresponde al programa ");
+
+        verify(notificador).notificar(any(), eq(EventoTrabajoGrado.CAMBIO_OBJETIVOS_NO_AVALADO), eq(50L),
+                eq("El cambio no corresponde al programa"));
+        assertTrue(trabajo.getEjecucion().cambioPendiente().isEmpty());
+        assertNull(trabajo.getEjecucion().getCambiosObjetivos().get(0).decision());
+        assertNotEquals("Nuevo título", trabajo.getTitulo());
+        ReglaNegocioException resuelta = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.resolverCambioObjetivos(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-200.pdf"), null));
+        assertEquals("error.dominio.cambio_objetivos.sin_solicitud_pendiente", resuelta.getMessage());
     }
 
     @Test

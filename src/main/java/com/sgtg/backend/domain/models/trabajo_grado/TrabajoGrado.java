@@ -458,7 +458,8 @@ public abstract class TrabajoGrado {
      * Registra la solicitud del director para cambiar el título u objetivos
      * (Arts. 17-18). Solo en curso, una sola vez (un cambio aprobado agota la
      * oportunidad) y dentro de los primeros 6 meses desde la notificación. La
-     * decide el Consejo de Facultad con {@link #resolverCambioObjetivos}.
+     * avala el Comité del programa con {@link #avalarCambioObjetivos} y, si la
+     * avala, la decide el Consejo de Facultad con {@link #resolverCambioObjetivos}.
      *
      * @param titulo        título propuesto
      * @param objetivos     objetivos propuestos
@@ -473,8 +474,20 @@ public abstract class TrabajoGrado {
     }
 
     /**
+     * Registra el aval del Comité del programa sobre el cambio de título u
+     * objetivos solicitado. Si no lo avala, la solicitud queda no aprobada (y
+     * no consume la oportunidad); si lo avala, pasa al Consejo de Facultad.
+     *
+     * @param aval aval del Comité: APROBADO o NO_APROBADO (con observaciones), con el acta opcional
+     */
+    public void avalarCambioObjetivos(Decision aval) {
+        validarEtapa(Proceso.EN_CURSO);
+        this.ejecucion.avalarCambioObjetivos(aval);
+    }
+
+    /**
      * Registra la decisión del Consejo de Facultad sobre el cambio de título u
-     * objetivos solicitado. Si lo aprueba, el trabajo adopta la nueva
+     * objetivos avalado por el Comité. Si lo aprueba, el trabajo adopta la nueva
      * descripción; la etapa no cambia.
      *
      * @param decision decisión del Consejo: APROBADO o NO_APROBADO, con la resolución

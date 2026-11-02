@@ -29,6 +29,7 @@ class EtapaEnCursoTest {
     /** Notificación de la aprobación del Consejo: viernes 20 de marzo de 2026 */
     private static final LocalDate NOTIFICACION = LocalDate.of(2026, 3, 20);
     private static final String RUTA_RESOLUCION = "resoluciones/2026/res-200.pdf";
+    private static final String RUTA_ACTA_COMITE = "actas/2026/comite-30.pdf";
     private static final List<String> NUEVOS_OBJETIVOS = List.of("Implementar el módulo de sustentaciones");
 
     private TrabajoGrado trabajo;
@@ -52,6 +53,16 @@ class EtapaEnCursoTest {
         return new Decision(Organo.CONSEJO_FACULTAD, resultado, null, RUTA_RESOLUCION, null, fecha);
     }
 
+    private static Decision comite(ResultadoConcepto resultado, String observaciones, LocalDate fecha) {
+        return new Decision(Organo.COMITE_PROGRAMA, resultado, null, RUTA_ACTA_COMITE, observaciones, fecha);
+    }
+
+    /** Solicita el cambio y el Comité lo avala, para que lo decida el Consejo. */
+    private void solicitarYAvalar(LocalDate fecha) {
+        solicitarCambio(fecha);
+        trabajo.avalarCambioObjetivos(comite(ResultadoConcepto.APROBADO, null, fecha.plusDays(2)));
+    }
+
     @BeforeEach
     void crearTrabajo() {
         trabajo = enCurso(Modalidad.TRABAJO_DE_INVESTIGACION);
@@ -65,10 +76,14 @@ class EtapaEnCursoTest {
     // ----- Cambio de título u objetivos -----
 
     @Test
-    void elConsejoApruebaElCambioYElTrabajoAdoptaLaNuevaDescripcion() {
+    void elConsejoApruebaElCambioAvaladoYElTrabajoAdoptaLaNuevaDescripcion() {
         solicitarCambio(LocalDate.of(2026, 5, 4));
         CambioObjetivos pendiente = trabajo.getEjecucion().cambioPendiente().get();
         assertEquals("Sistema de gestión", pendiente.tituloAnterior());
+        assertTrue(pendiente.pendienteDelComite());
+
+        trabajo.avalarCambioObjetivos(comite(ResultadoConcepto.APROBADO, null, LocalDate.of(2026, 5, 8)));
+        assertTrue(trabajo.getEjecucion().cambioPendiente().get().pendienteDelConsejo());
 
         trabajo.resolverCambioObjetivos(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 5, 15)));
 
@@ -79,12 +94,13 @@ class EtapaEnCursoTest {
         assertTrue(resuelto.fueAprobado());
         assertEquals(OBJETIVOS, resuelto.objetivosAnteriores());
         assertEquals(RUTA_RESOLUCION, resuelto.decision().rutaArchivo());
+        assertEquals(RUTA_ACTA_COMITE, resuelto.avalComite().rutaArchivo());
         assertTrue(trabajo.getEjecucion().cambioPendiente().isEmpty());
     }
 
     @Test
     void unCambioNoAprobadoNoConsumeLaOportunidad() {
-        solicitarCambio(LocalDate.of(2026, 5, 4));
+        solicitarYAvalar(LocalDate.of(2026, 5, 4));
         // El comentario del Consejo es opcional: la resolución lo soporta
         trabajo.resolverCambioObjetivos(consejo(ResultadoConcepto.NO_APROBADO, LocalDate.of(2026, 5, 15)));
 
@@ -97,7 +113,7 @@ class EtapaEnCursoTest {
 
     @Test
     void elCambioSoloSeRealizaUnaVez() {
-        solicitarCambio(LocalDate.of(2026, 5, 4));
+        solicitarYAvalar(LocalDate.of(2026, 5, 4));
         trabajo.resolverCambioObjetivos(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 5, 15)));
 
         assertRegla("error.dominio.cambio_objetivos.ya_realizado", () -> trabajo.solicitarCambioObjetivos(
@@ -143,7 +159,7 @@ class EtapaEnCursoTest {
         assertRegla("error.dominio.cambio_objetivos.sin_solicitud_pendiente",
                 () -> trabajo.resolverCambioObjetivos(consejo(ResultadoConcepto.APROBADO, fecha)));
 
-        solicitarCambio(LocalDate.of(2026, 5, 4));
+        solicitarYAvalar(LocalDate.of(2026, 5, 4));
         assertRegla("error.dominio.cambio_objetivos.resolucion_obligatoria", () -> trabajo.resolverCambioObjetivos(
                 new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null, null, null, fecha)));
         assertRegla("error.dominio.cambio_objetivos.organo_invalido", () -> trabajo.resolverCambioObjetivos(
@@ -155,6 +171,67 @@ class EtapaEnCursoTest {
         // Ninguna decisión inválida modificó la solicitud
         assertTrue(trabajo.getEjecucion().cambioPendiente().isPresent());
         assertEquals("Sistema de gestión", trabajo.getTitulo());
+    }
+
+    @Test
+    void noSeSolicitaOtroCambioMientrasEsteAvaladoYPendienteDelConsejo() {
+        solicitarYAvalar(LocalDate.of(2026, 5, 4));
+
+        assertRegla("error.dominio.cambio_objetivos.solicitud_pendiente", () -> trabajo.solicitarCambioObjetivos(
+                "Otro título", OBJETIVOS, "Otra justificación", LocalDate.of(2026, 5, 10)));
+    }
+
+    @Test
+    void siElComiteNoAvalaElCambioQuedaNoAprobadoYNoConsumeLaOportunidad() {
+        solicitarCambio(LocalDate.of(2026, 5, 4));
+        // Si no lo avala, las observaciones son obligatorias
+        assertRegla("error.dominio.decision.observaciones_obligatorias", () -> trabajo.avalarCambioObjetivos(
+                comite(ResultadoConcepto.NO_APROBADO, " ", LocalDate.of(2026, 5, 8))));
+
+        trabajo.avalarCambioObjetivos(comite(ResultadoConcepto.NO_APROBADO, "No corresponde al programa",
+                LocalDate.of(2026, 5, 8)));
+
+        CambioObjetivos noAvalado = trabajo.getEjecucion().getCambiosObjetivos().get(0);
+        assertFalse(noAvalado.estaPendiente());
+        assertFalse(noAvalado.fueAprobado());
+        assertNull(noAvalado.decision());
+        assertEquals("Sistema de gestión", trabajo.getTitulo());
+        // El Consejo ya no decide sobre ella
+        assertRegla("error.dominio.cambio_objetivos.sin_solicitud_pendiente",
+                () -> trabajo.resolverCambioObjetivos(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 5, 15))));
+        // El director puede solicitar otro cambio
+        solicitarCambio(LocalDate.of(2026, 6, 1));
+        assertEquals(2, trabajo.getEjecucion().getCambiosObjetivos().size());
+    }
+
+    @Test
+    void elConsejoSoloDecideDespuesDelAvalDelComite() {
+        solicitarCambio(LocalDate.of(2026, 5, 4));
+
+        assertRegla("error.dominio.cambio_objetivos.aval_comite_pendiente",
+                () -> trabajo.resolverCambioObjetivos(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 5, 15))));
+        assertTrue(trabajo.getEjecucion().cambioPendiente().get().pendienteDelComite());
+    }
+
+    @Test
+    void elAvalLoDaElComiteUnaSolaVezConResultadoYFechaValidos() {
+        LocalDate fecha = LocalDate.of(2026, 5, 8);
+        assertRegla("error.dominio.cambio_objetivos.sin_aval_pendiente",
+                () -> trabajo.avalarCambioObjetivos(comite(ResultadoConcepto.APROBADO, null, fecha)));
+
+        solicitarCambio(LocalDate.of(2026, 5, 4));
+        assertRegla("error.dominio.cambio_objetivos.organo_aval_invalido", () -> trabajo.avalarCambioObjetivos(
+                new Decision(Organo.CONSEJO_FACULTAD, ResultadoConcepto.APROBADO, null, RUTA_RESOLUCION, null, fecha)));
+        assertRegla("error.dominio.cambio_objetivos.resultado_invalido", () -> trabajo.avalarCambioObjetivos(
+                comite(ResultadoConcepto.CON_CORRECCIONES, "Ajustar", fecha)));
+        assertRegla("error.dominio.cambio_objetivos.fecha_invalida", () -> trabajo.avalarCambioObjetivos(
+                comite(ResultadoConcepto.APROBADO, null, LocalDate.of(2026, 5, 3))));
+        // El acta es opcional
+        trabajo.avalarCambioObjetivos(new Decision(Organo.COMITE_PROGRAMA, ResultadoConcepto.APROBADO, null, null,
+                null, fecha));
+
+        assertRegla("error.dominio.cambio_objetivos.sin_aval_pendiente",
+                () -> trabajo.avalarCambioObjetivos(comite(ResultadoConcepto.APROBADO, null, fecha)));
     }
 
     @Test
@@ -244,6 +321,7 @@ class EtapaEnCursoTest {
     void laEjecucionReconstruidaConservaCambiosEInformes() {
         TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
         practica.solicitarCambioObjetivos("Nueva práctica", OBJETIVOS, "Cambio de área", LocalDate.of(2026, 4, 1));
+        practica.avalarCambioObjetivos(comite(ResultadoConcepto.APROBADO, null, LocalDate.of(2026, 4, 3)));
         practica.registrarInformeMensual("informes/abril.pdf", LocalDate.of(2026, 4, 20));
 
         DatosEjecucion datos = practica.getEjecucion().datos();

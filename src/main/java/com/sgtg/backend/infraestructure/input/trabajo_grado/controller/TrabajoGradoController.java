@@ -34,6 +34,7 @@ import com.sgtg.backend.infraestructure.input.auditoria.DetalleAuditoria;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.ActualizarPropuestaDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AgendarReunionDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AnulacionDTORequest;
+import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AvalComiteDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.DecisionAnteproyectoDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.RevisionPazYSalvoDTORequest;
 import com.sgtg.backend.infraestructure.input.trabajo_grado.dto.input.AsignarEvaluadoresDTORequest;
@@ -298,7 +299,22 @@ public class TrabajoGradoController {
                 usuario.getCusuari(), request.titulo(), request.objetivos(), request.justificacion())));
     }
 
-    /** Registra la decisión del Consejo de Facultad sobre el cambio de título u objetivos. */
+    /**
+     * Registra el aval del Comité del programa sobre el cambio de título u
+     * objetivos, con el acta opcional (parte {@code archivo}).
+     */
+    @PostMapping(value = "/{trabajoId}/cambio-objetivos/decisiones-comite",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('COMITE')")
+    public ResponseEntity<TrabajoGradoDTOResponse> avalarCambioObjetivos(
+            @AuthenticationPrincipal UserEntity usuario, @PathVariable Long trabajoId,
+            @Valid @RequestPart("datos") AvalComiteDTORequest request,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        return ResponseEntity.ok(vista(manageTrabajoGrado.avalarCambioObjetivos(trabajoId,
+                usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones())));
+    }
+
+    /** Registra la decisión del Consejo de Facultad sobre el cambio de título u objetivos avalado. */
     @PostMapping(value = "/{trabajoId}/cambio-objetivos/decisiones-consejo",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('CONSEJO')")

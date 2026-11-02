@@ -170,6 +170,7 @@ public abstract class MapperTrabajoGrado {
     private static CambioObjetivosEmbeddable toEmbeddable(CambioObjetivos c) {
         return new CambioObjetivosEmbeddable(c.tituloAnterior(), c.objetivosAnteriores(), c.tituloPropuesto(),
                 c.objetivosPropuestos(), c.justificacion(), c.fechaSolicitud(),
+                c.avalComite() == null ? null : toEmbeddable(c.avalComite()),
                 c.decision() == null ? null : toEmbeddable(c.decision()));
     }
 
@@ -332,9 +333,11 @@ public abstract class MapperTrabajoGrado {
     }
 
     private static CambioObjetivos toDomain(CambioObjetivosEmbeddable c) {
+        DecisionEmbeddable aval = c.getAvalComite();
         DecisionEmbeddable decision = c.getDecision();
         return new CambioObjetivos(c.getTituloAnterior(), c.getObjetivosAnteriores(), c.getTituloPropuesto(),
                 c.getObjetivosPropuestos(), c.getJustificacion(), c.getFechaSolicitud(),
+                aval == null || aval.getOrgano() == null ? null : toDomain(aval),
                 decision == null || decision.getOrgano() == null ? null : toDomain(decision));
     }
 

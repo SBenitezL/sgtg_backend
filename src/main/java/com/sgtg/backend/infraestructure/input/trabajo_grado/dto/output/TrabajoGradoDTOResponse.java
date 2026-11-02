@@ -151,9 +151,13 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     public record OpcionPlazoDTO(int meses, LocalDate fechaFin) {
     }
 
-    /** @param decision decisión del Consejo, null mientras esté pendiente */
+    /**
+     * @param avalComite aval del Comité del programa, null mientras esté pendiente
+     * @param decision   decisión del Consejo, null mientras esté pendiente (o si el Comité no la avaló)
+     */
     public record CambioObjetivosDTO(String tituloAnterior, List<String> objetivosAnteriores, String tituloPropuesto,
-            List<String> objetivosPropuestos, String justificacion, LocalDate fechaSolicitud, DecisionDTO decision) {
+            List<String> objetivosPropuestos, String justificacion, LocalDate fechaSolicitud, DecisionDTO avalComite,
+            DecisionDTO decision) {
     }
 
     /**
@@ -481,6 +485,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     private static CambioObjetivosDTO cambioObjetivos(CambioObjetivos c) {
         return new CambioObjetivosDTO(c.tituloAnterior(), c.objetivosAnteriores(), c.tituloPropuesto(),
                 c.objetivosPropuestos(), c.justificacion(), c.fechaSolicitud(),
+                c.avalComite() == null ? null : decision(c.avalComite()),
                 c.decision() == null ? null : decision(c.decision()));
     }
 

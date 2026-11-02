@@ -15,8 +15,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Solicitud de cambio de título u objetivos con la decisión del Consejo (null
- * mientras esté pendiente). Los objetivos se guardan como JSON en columnas
+ * Solicitud de cambio de título u objetivos con el aval del Comité y la
+ * decisión del Consejo (null mientras estén pendientes). Los objetivos se guardan como JSON en columnas
  * de texto largo (@Lob), que no cuentan para el límite de tamaño de fila de
  * MySQL.
  */
@@ -38,6 +38,17 @@ public class CambioObjetivosEmbeddable {
     @Column(length = 2000)
     private String justificacion;
     private LocalDate fechaSolicitud;
+    /** Aval del Comité del programa (null mientras esté pendiente) */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "organo", column = @Column(name = "aval_organo")),
+            @AttributeOverride(name = "resultado", column = @Column(name = "aval_resultado")),
+            @AttributeOverride(name = "acta", column = @Column(name = "aval_acta")),
+            @AttributeOverride(name = "rutaArchivo", column = @Column(name = "aval_ruta_archivo", length = 1000)),
+            @AttributeOverride(name = "observaciones", column = @Column(name = "aval_observaciones", length = 2000)),
+            @AttributeOverride(name = "fecha", column = @Column(name = "aval_fecha")),
+            @AttributeOverride(name = "responsableId", column = @Column(name = "aval_responsable_id")) })
+    private DecisionEmbeddable avalComite;
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "organo", column = @Column(name = "decision_organo")),
