@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -201,7 +202,11 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
 
     @Override
     public List<FichaUsuario> listar() {
-        return this.userGateway.listar().stream().map(this::ficha).toList();
+        // Los perfiles en una consulta cada uno, no uno por usuario
+        Map<Long, PerfilDocente> docentes = this.perfilGateway.listarPerfilesDocentes();
+        Map<Long, PerfilEstudiante> estudiantes = this.perfilGateway.listarPerfilesEstudiantes();
+        return this.userGateway.listar().stream().map(usuario -> new FichaUsuario(usuario,
+                docentes.get(usuario.getCusuari()), estudiantes.get(usuario.getCusuari()))).toList();
     }
 
     @Override
@@ -456,12 +461,13 @@ public class ManageUsuarioCUImplAdapter implements ManageUsuarioCUIntPort {
 
     /** Usuarios activos con el rol Comité del departamento, salvo {@code excepto} */
     private List<Usuario> comitesDelDepartamento(Departamento departamento, Long excepto) {
+        Map<Long, PerfilDocente> docentes = this.perfilGateway.listarPerfilesDocentes();
         return this.userGateway.listar().stream()
                 .filter(Usuario::isActivo)
                 .filter(usuario -> !usuario.getCusuari().equals(excepto))
                 .filter(usuario -> nombresDeRoles(usuario).contains(COMITE))
                 .filter(usuario -> {
-                    PerfilDocente perfil = this.perfilGateway.buscarPerfilDocente(usuario.getCusuari());
+                    PerfilDocente perfil = docentes.get(usuario.getCusuari());
                     return perfil != null && departamento.esMismo(perfil.getDepartamento());
                 })
                 .toList();

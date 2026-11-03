@@ -95,6 +95,21 @@ class ManageUsuarioCUImplAdapterTest {
         when(catalogoGateway.buscarPrograma(1L)).thenReturn(ING_SISTEMAS);
         when(perfilGateway.guardarPerfilDocente(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
         when(perfilGateway.guardarPerfilEstudiante(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
+        // Los listados piden todos los perfiles de una vez: se arman con los perfiles de cada usuario de la prueba
+        when(perfilGateway.listarPerfilesDocentes()).thenAnswer(invocacion -> perfiles(perfilGateway::buscarPerfilDocente));
+        when(perfilGateway.listarPerfilesEstudiantes())
+                .thenAnswer(invocacion -> perfiles(perfilGateway::buscarPerfilEstudiante));
+    }
+
+    /** Perfiles de los usuarios de {@code userGateway.listar()} que tienen uno, por identificador. */
+    private <T> java.util.Map<Long, T> perfiles(java.util.function.Function<Long, T> buscar) {
+        java.util.Map<Long, T> perfiles = new java.util.HashMap<>();
+        userGateway.listar().forEach(usuario -> {
+            T perfil = buscar.apply(usuario.getCusuari());
+            if (perfil != null)
+                perfiles.put(usuario.getCusuari(), perfil);
+        });
+        return perfiles;
     }
 
     private static NuevoUsuario nuevo(List<String> roles, DatosPerfil perfil) {
@@ -228,6 +243,24 @@ class ManageUsuarioCUImplAdapterTest {
 
         assertEquals(1, fichas.size());
         assertEquals(perfil, fichas.get(0).perfilDocente());
+    }
+
+    @Test
+    void elListadoTraeLosPerfilesEnUnaConsultaYNoUnaPorUsuario() {
+        PerfilDocente perfil = new PerfilDocente(5L, TipoVinculacion.PLANTA, SISTEMAS);
+        Usuario estudiante = usuario(12L, RoleAdmited.ESTUDIANTE);
+        PerfilEstudiante programa = new PerfilEstudiante(12L, ING_SISTEMAS);
+        when(userGateway.listar()).thenReturn(List.of(docente, estudiante));
+        org.mockito.Mockito.doReturn(java.util.Map.of(5L, perfil)).when(perfilGateway).listarPerfilesDocentes();
+        org.mockito.Mockito.doReturn(java.util.Map.of(12L, programa)).when(perfilGateway).listarPerfilesEstudiantes();
+
+        List<FichaUsuario> fichas = casoDeUso.listar();
+
+        assertEquals(perfil, fichas.get(0).perfilDocente());
+        assertNull(fichas.get(0).perfilEstudiante());
+        assertEquals(programa, fichas.get(1).perfilEstudiante());
+        verify(perfilGateway, never()).buscarPerfilDocente(anyLong());
+        verify(perfilGateway, never()).buscarPerfilEstudiante(anyLong());
     }
 
     // ----- Contraseña y estado -----

@@ -1,6 +1,11 @@
 package com.sgtg.backend.infraestructure.output.percistence.gateway;
 
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sgtg.backend.application.output.ManagePerfilGatewayIntPort;
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
@@ -40,5 +45,19 @@ public class ManagePerfilGatewayImplAdapter implements ManagePerfilGatewayIntPor
         if (usuarioId == null)
             return null;
         return MapperPerfil.toDomain(perfilEstudianteRepository.findById(usuarioId).orElse(null));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, PerfilDocente> listarPerfilesDocentes() {
+        return perfilDocenteRepository.findAll().stream().map(MapperPerfil::toDomain)
+                .collect(Collectors.toMap(PerfilDocente::getUsuarioId, Function.identity()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, PerfilEstudiante> listarPerfilesEstudiantes() {
+        return perfilEstudianteRepository.findAll().stream().map(MapperPerfil::toDomain)
+                .collect(Collectors.toMap(PerfilEstudiante::getUsuarioId, Function.identity()));
     }
 }

@@ -1,5 +1,7 @@
 package com.sgtg.backend.application.output;
 
+import java.util.Map;
+
 import com.sgtg.backend.domain.models.participantes.PerfilDocente;
 import com.sgtg.backend.domain.models.participantes.PerfilEstudiante;
 
@@ -17,4 +19,10 @@ public interface ManagePerfilGatewayIntPort {
 
     /** @return el perfil de estudiante del usuario, o null si no tiene */
     public PerfilEstudiante buscarPerfilEstudiante(Long usuarioId);
+
+    /** @return los perfiles docentes de todos los usuarios, por identificador del usuario (una sola consulta) */
+    public Map<Long, PerfilDocente> listarPerfilesDocentes();
+
+    /** @return los perfiles de estudiante de todos los usuarios, por identificador del usuario (una sola consulta) */
+    public Map<Long, PerfilEstudiante> listarPerfilesEstudiantes();
 }
