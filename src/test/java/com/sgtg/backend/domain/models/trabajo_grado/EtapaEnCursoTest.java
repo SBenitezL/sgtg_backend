@@ -243,13 +243,20 @@ class EtapaEnCursoTest {
 
     // ----- Informes mensuales -----
 
-    @Test
-    void laPracticaProfesionalRegistraInformesConsecutivos() {
-        TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
+    /** Agenda la reunión del mes indicado a las 10:00 del día 20 (el informe se radica antes). */
+    private static void agendar(TrabajoGrado trabajo, int numero, LocalDate dia) {
+        trabajo.agendarReunion(numero, dia.atTime(10, 0), "Sala", "D1", NOTIFICACION);
+    }
 
-        practica.registrarInformeMensual("informes/2026/abril.pdf", LocalDate.of(2026, 4, 20));
+    @Test
+    void laPracticaProfesionalRegistraUnInformePorReunion() {
+        TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
+        agendar(practica, 1, LocalDate.of(2026, 4, 20));
+        agendar(practica, 2, LocalDate.of(2026, 5, 20));
+
+        practica.registrarInformeMensual("informes/2026/abril.pdf", LocalDate.of(2026, 4, 18).atTime(9, 0));
         InformeMensual segundo = practica.registrarInformeMensual(" informes/2026/mayo.pdf ",
-                LocalDate.of(2026, 5, 20));
+                LocalDate.of(2026, 5, 18).atTime(9, 0));
 
         assertEquals(2, segundo.numero());
         assertEquals("informes/2026/mayo.pdf", segundo.rutaArchivo());
@@ -258,8 +265,9 @@ class EtapaEnCursoTest {
 
     @Test
     void losInformesTambienAplicanALaInvestigacionYSeRevisanSinCambiarLaEtapa() {
-        InformeMensual informe = trabajo.registrarInformeMensual("informes/abril.pdf", LocalDate.of(2026, 4, 20),
-                "E001", "Avance de abril");
+        agendar(trabajo, 1, LocalDate.of(2026, 4, 20));
+        InformeMensual informe = trabajo.registrarInformeMensual("informes/abril.pdf",
+                LocalDate.of(2026, 4, 20).atTime(8, 0), "E001", "Avance de abril");
         assertEquals(1, informe.numero());
         assertEquals("E001", informe.radicadoPor());
 
@@ -281,11 +289,12 @@ class EtapaEnCursoTest {
     @Test
     void elInformeExigeElDocumentoYUnaFechaValida() {
         TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
+        agendar(practica, 1, LocalDate.of(2026, 4, 20));
 
         assertRegla("error.dominio.informe_mensual.documento_obligatorio",
-                () -> practica.registrarInformeMensual("  ", LocalDate.of(2026, 4, 20)));
+                () -> practica.registrarInformeMensual("  ", LocalDate.of(2026, 4, 18).atTime(9, 0)));
         assertRegla("error.dominio.informe_mensual.fecha_invalida",
-                () -> practica.registrarInformeMensual("informes/marzo.pdf", NOTIFICACION.minusDays(1)));
+                () -> practica.registrarInformeMensual("informes/marzo.pdf", NOTIFICACION.minusDays(1).atTime(9, 0)));
         assertTrue(practica.getEjecucion().getInformesMensuales().isEmpty());
     }
 
@@ -322,7 +331,8 @@ class EtapaEnCursoTest {
         TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
         practica.solicitarCambioObjetivos("Nueva práctica", OBJETIVOS, "Cambio de área", LocalDate.of(2026, 4, 1));
         practica.avalarCambioObjetivos(comite(ResultadoConcepto.APROBADO, null, LocalDate.of(2026, 4, 3)));
-        practica.registrarInformeMensual("informes/abril.pdf", LocalDate.of(2026, 4, 20));
+        agendar(practica, 1, LocalDate.of(2026, 4, 20));
+        practica.registrarInformeMensual("informes/abril.pdf", LocalDate.of(2026, 4, 18).atTime(9, 0));
 
         DatosEjecucion datos = practica.getEjecucion().datos();
         Ejecucion reconstruida = new Ejecucion(datos);

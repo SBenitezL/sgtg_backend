@@ -263,8 +263,11 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
                 null, "No corresponde al programa", LUNES.plusDays(25), 50L));
         trabajo.solicitarCambioObjetivos("Práctica ajustada", List.of("Objetivo ajustado"), "Ajuste",
                 LUNES.plusDays(30));
-        trabajo.registrarInformeMensual("informes/marzo.pdf", LUNES.plusDays(28));
-        trabajo.registrarInformeMensual("informes/abril.pdf", LUNES.plusDays(58), "E010", "Avance de abril");
+        trabajo.agendarReunion(1, LUNES.plusDays(29).atTime(10, 0), "Sala 1", "D1", LUNES.plusDays(27));
+        trabajo.agendarReunion(2, LUNES.plusDays(59).atTime(10, 0), "Sala 1", "D1", LUNES.plusDays(27));
+        trabajo.registrarInformeMensual("informes/marzo.pdf", LUNES.plusDays(28).atTime(9, 0));
+        trabajo.registrarInformeMensual("informes/abril.pdf", LUNES.plusDays(58).atTime(9, 0), "E010",
+                "Avance de abril");
         trabajo.revisarInformeMensual(2, new RevisionInforme(1L, "Director Uno", "Ajustar el cronograma",
                 "informes/notas-abril.pdf", LUNES.plusDays(60)));
         // Prórroga negada: la práctica sigue en curso con el plazo original

@@ -102,15 +102,58 @@ class EtapaReunionesTest {
     }
 
     @Test
-    void cadaReunionSeAsociaAlInformeMensualDeSuMes() {
-        trabajo.registrarInformeMensual("informes/1.pdf", LocalDate.of(2026, 4, 25));
+    void elInformeSeRadicaParaLaReunionAgendadaAntesDeSuHora() {
+        trabajo.agendarReunion(1, PRIMERA, "Sala", "D1", LocalDate.of(2026, 4, 10));
 
+        InformeMensual informe = trabajo.registrarInformeMensual("informes/1.pdf", PRIMERA.minusHours(2));
+
+        assertEquals(1, informe.numero());
         List<ReunionDelPlazo> calendario = reuniones(LocalDate.of(2026, 5, 1));
         assertTrue(calendario.get(0).conInforme());
         assertFalse(calendario.get(1).conInforme());
         // Pasó la fecha sin registrarse como realizada
         assertEquals(EstadoReunion.VENCIDA, calendario.get(0).estado());
         assertEquals(EstadoReunion.PENDIENTE, calendario.get(1).estado());
+    }
+
+    @Test
+    void sinReunionAgendadaYPorVenirNoSeRadicaElInforme() {
+        // Sin reunión agendada
+        assertRegla("error.dominio.informe_mensual.sin_reunion",
+                () -> trabajo.registrarInformeMensual("informes/1.pdf", PRIMERA.minusDays(5)));
+
+        trabajo.agendarReunion(1, PRIMERA, "Sala", "D1", LocalDate.of(2026, 4, 10));
+        // Llegada la hora de la reunión ya no lo recibe
+        assertRegla("error.dominio.informe_mensual.sin_reunion",
+                () -> trabajo.registrarInformeMensual("informes/1.pdf", PRIMERA));
+        // Una reunión recibe un solo informe
+        trabajo.registrarInformeMensual("informes/1.pdf", PRIMERA.minusDays(1));
+        assertRegla("error.dominio.informe_mensual.sin_reunion",
+                () -> trabajo.registrarInformeMensual("informes/1b.pdf", PRIMERA.minusHours(1)));
+        assertEquals(1, trabajo.getEjecucion().getInformesMensuales().size());
+    }
+
+    @Test
+    void laReunionQuePasaSinInformeLoDejaParaLaSiguiente() {
+        LocalDateTime segunda = LocalDate.of(2026, 5, 20).atTime(10, 0);
+        trabajo.agendarReunion(1, PRIMERA, "Sala", "D1", LocalDate.of(2026, 4, 10));
+        trabajo.registrarReunionRealizada(1, "Sin informe", PRIMERA.plusHours(1));
+        trabajo.agendarReunion(2, segunda, "Sala", "D1", LocalDate.of(2026, 4, 25));
+
+        // Radicado después de la primera reunión: es el informe de la segunda
+        InformeMensual informe = trabajo.registrarInformeMensual("informes/2.pdf", LocalDate.of(2026, 4, 26)
+                .atTime(8, 0));
+
+        assertEquals(2, informe.numero());
+        List<ReunionDelPlazo> calendario = reuniones(LocalDate.of(2026, 4, 26));
+        assertFalse(calendario.get(0).conInforme());
+        assertTrue(calendario.get(1).conInforme());
+        assertEquals(java.util.Optional.empty(),
+                trabajo.getEjecucion().reunionQueRecibeInforme(LocalDate.of(2026, 4, 26).atTime(9, 0)));
+        // La revisión se hace sobre el informe de esa reunión
+        trabajo.revisarInformeMensual(2, new RevisionInforme(1L, "Director", "Bien", null, LocalDate.of(2026, 4, 27)));
+        assertRegla("error.dominio.informe_mensual.no_encontrado", () -> trabajo.revisarInformeMensual(1,
+                new RevisionInforme(1L, "Director", "Bien", null, LocalDate.of(2026, 4, 27))));
     }
 
     // ----- Agenda -----

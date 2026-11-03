@@ -502,30 +502,30 @@ public abstract class TrabajoGrado {
     }
 
     /**
-     * Radica un informe mensual de la práctica profesional (Art. 45). Lo radica
-     * el director con el documento adjunto, mientras el trabajo está en curso o
-     * en prórroga.
+     * Radica un informe mensual sin observaciones (Art. 45).
      *
      * @param rutaArchivo ruta del documento del informe
-     * @param hoy         fecha de radicación
+     * @param ahora       fecha y hora de radicación
      * @return el informe registrado
      */
-    public InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy) {
-        return registrarInformeMensual(rutaArchivo, hoy, null, null);
+    public InformeMensual registrarInformeMensual(String rutaArchivo, LocalDateTime ahora) {
+        return registrarInformeMensual(rutaArchivo, ahora, null, null);
     }
 
     /**
      * Registra un informe mensual en cualquiera de las dos modalidades, mientras
-     * el trabajo está en curso o en prórroga (no durante una suspensión).
+     * el trabajo está en curso o en prórroga (no durante una suspensión). El
+     * informe es de la reunión de seguimiento agendada que aún no llega
+     * ({@link Ejecucion#reunionQueRecibeInforme}).
      *
      * @param radicadoPor   código de quien radica (estudiante o director)
      * @param observaciones observaciones opcionales de quien radica
      */
-    public InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy, String radicadoPor,
+    public InformeMensual registrarInformeMensual(String rutaArchivo, LocalDateTime ahora, String radicadoPor,
             String observaciones) {
         if (this.etapa != Proceso.EN_CURSO && this.etapa != Proceso.PRORROGA)
             throw new ReglaNegocioException("error.dominio.trabajo_grado.etapa_invalida");
-        return this.ejecucion.registrarInformeMensual(rutaArchivo, hoy, radicadoPor, observaciones);
+        return this.ejecucion.registrarInformeMensual(rutaArchivo, ahora, radicadoPor, observaciones);
     }
 
     /**

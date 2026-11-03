@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.http.ContentDisposition;
@@ -92,7 +92,7 @@ public class TrabajoGradoController {
 
     private TrabajoGradoDTOResponse vista(TrabajoGrado trabajo) {
         return TrabajoGradoDTOResponse.desde(trabajo,
-                new TrabajoGradoDTOResponse.Plazos(LocalDate.now(clock), calendario));
+                new TrabajoGradoDTOResponse.Plazos(LocalDateTime.now(clock), calendario));
     }
 
     /** Crea un trabajo de investigación; el docente autenticado queda como director. */

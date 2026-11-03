@@ -189,52 +189,72 @@ public class Ejecucion {
     // ----- Informes mensuales -----
 
     /**
-     * Registra un informe mensual con el siguiente consecutivo.
+     * Registra el informe mensual de la reunión que lo recibe (ver
+     * {@link #reunionQueRecibeInforme}); el informe lleva el número de esa
+     * reunión. Sin una reunión agendada y por venir no se radica.
      *
-     * @param rutaArchivo ruta del documento del informe
-     * @param hoy         fecha de radicación
+     * @param rutaArchivo   ruta del documento del informe
+     * @param ahora         fecha y hora de radicación
+     * @param radicadoPor   código de quien radica
+     * @param observaciones observaciones opcionales de quien radica
      * @return el informe registrado
      */
-    InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy) {
-        return registrarInformeMensual(rutaArchivo, hoy, null, null);
+    InformeMensual registrarInformeMensual(String rutaArchivo, LocalDateTime ahora, String radicadoPor,
+            String observaciones) {
+        if (ahora == null)
+            throw new ReglaNegocioException("error.dominio.informe_mensual.datos_incompletos");
+        if (ahora.toLocalDate().isBefore(getFechaNotificacion()))
+            throw new ReglaNegocioException("error.dominio.informe_mensual.fecha_invalida");
+        int numero = reunionQueRecibeInforme(ahora)
+                .orElseThrow(() -> new ReglaNegocioException("error.dominio.informe_mensual.sin_reunion"));
+        InformeMensual informe = new InformeMensual(numero, rutaArchivo, ahora.toLocalDate(), radicadoPor,
+                observaciones, List.of());
+        this.informesMensuales.add(informe);
+        this.informesMensuales.sort(Comparator.comparingInt(InformeMensual::numero));
+        return informe;
     }
 
     /**
-     * @param radicadoPor   código de quien radica
-     * @param observaciones observaciones opcionales de quien radica
+     * Reunión a la que se asocia el informe que se radique ahora: la primera
+     * agendada, aún no realizada, cuya fecha y hora no han llegado y que todavía
+     * no tiene informe. Si una reunión pasa sin informe, ese mes queda sin él y
+     * el siguiente informe es de la reunión siguiente.
+     *
+     * @param ahora fecha y hora de la consulta
+     * @return número de la reunión, vacío si ninguna recibe informe
      */
-    InformeMensual registrarInformeMensual(String rutaArchivo, LocalDate hoy, String radicadoPor,
-            String observaciones) {
-        if (hoy == null)
-            throw new ReglaNegocioException("error.dominio.informe_mensual.datos_incompletos");
-        if (hoy.isBefore(getFechaNotificacion()))
-            throw new ReglaNegocioException("error.dominio.informe_mensual.fecha_invalida");
-        InformeMensual informe = new InformeMensual(this.informesMensuales.size() + 1, rutaArchivo, hoy, radicadoPor,
-                observaciones, List.of());
-        this.informesMensuales.add(informe);
-        return informe;
+    public Optional<Integer> reunionQueRecibeInforme(LocalDateTime ahora) {
+        if (ahora == null)
+            return Optional.empty();
+        return this.reuniones.stream()
+                .filter(r -> !r.realizada() && ahora.isBefore(r.fechaHora()) && informe(r.numero()).isEmpty())
+                .map(ReunionSeguimiento::numero)
+                .min(Integer::compare);
+    }
+
+    private Optional<InformeMensual> informe(int numero) {
+        return this.informesMensuales.stream().filter(i -> i.numero() == numero).findFirst();
     }
 
     /**
      * Registra la revisión de un informe mensual: una por revisor y no anterior
      * a la radicación del informe. No cambia el estado del trabajo.
      *
-     * @param numero   consecutivo del informe revisado
+     * @param numero   número del informe revisado (el de su reunión)
      * @param revision revisión del director, codirector o asesor
      * @return el informe con la revisión
      */
     InformeMensual revisarInformeMensual(int numero, RevisionInforme revision) {
         if (revision == null)
             throw new ReglaNegocioException("error.dominio.informe_mensual.revision_incompleta");
-        if (numero < 1 || numero > this.informesMensuales.size())
-            throw new ReglaNegocioException("error.dominio.informe_mensual.no_encontrado");
-        InformeMensual informe = this.informesMensuales.get(numero - 1);
+        InformeMensual informe = informe(numero)
+                .orElseThrow(() -> new ReglaNegocioException("error.dominio.informe_mensual.no_encontrado"));
         if (informe.revisadoPor(revision.revisorUsuarioId()))
             throw new ReglaNegocioException("error.dominio.informe_mensual.revision_repetida");
         if (revision.fecha().isBefore(informe.fecha()))
             throw new ReglaNegocioException("error.dominio.informe_mensual.fecha_revision_invalida");
         InformeMensual revisado = informe.conRevision(revision);
-        this.informesMensuales.set(numero - 1, revisado);
+        this.informesMensuales.set(this.informesMensuales.indexOf(informe), revisado);
         return revisado;
     }
 
@@ -425,7 +445,8 @@ public class Ejecucion {
      * meses). La del mes k se sugiere k meses después de la notificación; las que
      * caen después del inicio de una suspensión se corren los días que duró, como
      * el fin del plazo, y mientras dure la suspensión su fecha aún no se conoce.
-     * Cada reunión se asocia al informe mensual del mismo número.
+     * Cada reunión se asocia al informe mensual que se radicó para ella (el del
+     * mismo número).
      *
      * @param hoy fecha de la consulta, para el estado de cada reunión
      * @return las reuniones del plazo, de la primera a la última
@@ -437,7 +458,7 @@ public class Ejecucion {
             LocalDate base = getFechaNotificacion().plusMonths(numero);
             LocalDate sugerida = enSuspensionActiva(base) ? null : base.plusDays(diasSuspendidos(base));
             ReunionSeguimiento agendada = reunion(numero).orElse(null);
-            boolean conInforme = this.informesMensuales.size() >= numero;
+            boolean conInforme = informe(numero).isPresent();
             calendario.add(new ReunionDelPlazo(numero, sugerida, agendada, conInforme,
                     estadoReunion(sugerida, agendada, hoy)));
         }

@@ -470,17 +470,19 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     public TrabajoGrado registrarInformeMensual(Long trabajoId, Long usuarioId, String observaciones,
             ArchivoAdjunto documento) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
-        boolean directorDePractica = trabajo.esDirector(usuarioId)
-                && trabajo.getModalidad() == Modalidad.PRACTICA_PROFESIONAL;
-        if (!trabajo.esEstudiante(usuarioId) && !directorDePractica)
+        // Lo radican los estudiantes o el director, en ambas modalidades
+        if (!trabajo.esEstudiante(usuarioId) && !trabajo.esDirector(usuarioId))
             this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_radicador_informe");
         Usuario usuario = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.INFORME_MENSUAL, documento, rutas);
-        return notificar(conArchivos(rutas, () -> {
-            trabajo.registrarInformeMensual(ruta, hoy(), usuario.getCodigo(), observaciones);
+        int[] numero = new int[1];
+        TrabajoGrado guardado = conArchivos(rutas, () -> {
+            numero[0] = trabajo.registrarInformeMensual(ruta, LocalDateTime.now(this.clock), usuario.getCodigo(),
+                    observaciones).numero();
             return this.trabajoGateway.guardar(trabajo);
-        }), EventoTrabajoGrado.INFORME_RADICADO, usuarioId, String.valueOf(trabajo.getEjecucion().getInformesMensuales().size()));
+        });
+        return notificar(guardado, EventoTrabajoGrado.INFORME_RADICADO, usuarioId, String.valueOf(numero[0]));
     }
 
     @Override

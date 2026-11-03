@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -677,12 +678,21 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals("error.dominio.cambio_objetivos.sin_solicitud_pendiente", resuelta.getMessage());
     }
 
-    @Test
-    void enInvestigacionElEstudianteRadicaLosInformesMensuales() {
+    /** Trabajo en curso con la primera reunión de seguimiento agendada (recibe el informe). */
+    private void trabajoConReunionAgendada() {
         trabajoEnCurso();
-        // En investigación el director no radica; un usuario ajeno tampoco
-        assertThrows(NoAccessException.class,
-                () -> casoDeUso.registrarInformeMensual(7L, 1L, null, pdf("abril.pdf")));
+        casoDeUso.agendarReunion(7L, 1L, 1, LocalDate.of(2026, 4, 2).atTime(10, 0), "Sala 2");
+    }
+
+    @Test
+    void elEstudianteRadicaElInformeDeLaReunionAgendada() {
+        trabajoEnCurso();
+        // Sin reunión agendada no hay a qué asociar el informe
+        ReglaNegocioException sinReunion = assertThrows(ReglaNegocioException.class,
+                () -> casoDeUso.registrarInformeMensual(7L, 10L, null, pdf("abril.pdf")));
+        assertEquals("error.dominio.informe_mensual.sin_reunion", sinReunion.getMessage());
+        casoDeUso.agendarReunion(7L, 1L, 1, LocalDate.of(2026, 4, 2).atTime(10, 0), "Sala 2");
+        // Un usuario ajeno no radica
         assertThrows(NoAccessException.class,
                 () -> casoDeUso.registrarInformeMensual(7L, 99L, null, pdf("abril.pdf")));
 
@@ -692,12 +702,23 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals(1, informe.numero());
         assertEquals("U10", informe.radicadoPor());
         assertEquals("Avance de marzo", informe.observaciones());
-        verify(archivoGateway).guardar(eq(7L), eq("INFORME_MENSUAL"), eq("Informe mensual"), any());
+        // También el intento sin reunión guardó el archivo (se descarta al fallar)
+        verify(archivoGateway, times(2)).guardar(eq(7L), eq("INFORME_MENSUAL"), eq("Informe mensual"), any());
+        verify(notificador).notificar(any(), eq(EventoTrabajoGrado.INFORME_RADICADO), eq(10L), eq("1"));
+    }
+
+    @Test
+    void elDirectorTambienRadicaElInformeEnInvestigacion() {
+        trabajoConReunionAgendada();
+
+        TrabajoGrado trabajo = casoDeUso.registrarInformeMensual(7L, 1L, null, pdf("abril.pdf"));
+
+        assertEquals(1, trabajo.getEjecucion().getInformesMensuales().get(0).numero());
     }
 
     @Test
     void elDirectorRevisaElInformeConSusNotasSinCambiarElEstado() {
-        trabajoEnCurso();
+        trabajoConReunionAgendada();
         casoDeUso.registrarInformeMensual(7L, 10L, null, pdf("abril.pdf"));
         // El estudiante no revisa informes
         assertThrows(NoAccessException.class,

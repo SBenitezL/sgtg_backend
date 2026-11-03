@@ -204,8 +204,10 @@ class EtapaProrrogaTest {
 
         assertEquals(Proceso.PRORROGA, practica.getEtapa());
         assertEquals(LocalDate.of(2027, 6, 20), practica.getEjecucion().getFechaFin());
-        assertEquals(1, practica.registrarInformeMensual("informes/2027/abril.pdf", LocalDate.of(2027, 4, 20))
-                .numero());
+        // En prórroga el informe sigue siendo de la reunión agendada (la 13: mes 13 del plazo extendido)
+        practica.agendarReunion(13, LocalDate.of(2027, 4, 20).atTime(10, 0), "Sala", "D1", LocalDate.of(2027, 4, 1));
+        assertEquals(13, practica.registrarInformeMensual("informes/2027/abril.pdf",
+                LocalDate.of(2027, 4, 19).atTime(9, 0)).numero());
     }
 
     @Test

@@ -59,10 +59,15 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
     /**
      * Datos para calcular los plazos de la vista.
      *
-     * @param hoy        fecha de la consulta (reloj del servidor)
+     * @param ahora      fecha y hora de la consulta (reloj del servidor)
      * @param calendario calendario de días hábiles
      */
-    public record Plazos(LocalDate hoy, CalendarioHabil calendario) {
+    public record Plazos(LocalDateTime ahora, CalendarioHabil calendario) {
+
+        /** @return fecha de la consulta */
+        public LocalDate hoy() {
+            return ahora.toLocalDate();
+        }
     }
 
     public record EstudianteDTO(Long usuarioId, String codigo, String nombreCompleto, String email,
@@ -210,11 +215,13 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
      * @param fechaSugerida fecha que le corresponde; null mientras el trabajo está suspendido
      * @param fechaHora     fecha y hora agendadas, null si no se ha agendado
      * @param lugar         salón o enlace, null si no se ha agendado
-     * @param conInforme    true si ya se radicó el informe mensual del mismo número
+     * @param conInforme    true si ya se radicó el informe mensual de esta reunión
+     * @param recibeInforme true si el informe que se radique ahora es de esta reunión
      * @param estado        PENDIENTE, AGENDADA, REALIZADA, VENCIDA o EN_SUSPENSION
      */
     public record ReunionDTO(int numero, LocalDate fechaSugerida, LocalDateTime fechaHora, String lugar,
-            boolean realizada, String observaciones, boolean conInforme, EstadoReunion estado) {
+            boolean realizada, String observaciones, boolean conInforme, boolean recibeInforme,
+            EstadoReunion estado) {
     }
 
     /**
@@ -313,7 +320,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                                 .mapToObj(i -> decision(decisiones.get(i),
                                         propuesta.fechaLimiteDecision(i, plazos.calendario()).orElse(null)))
                                 .toList()),
-                anteproyecto(trabajo, plazos), ejecucion(trabajo.getEjecucion(), plazos.hoy()),
+                anteproyecto(trabajo, plazos), ejecucion(trabajo.getEjecucion(), plazos.ahora()),
                 sustentacion(trabajo.getSustentacion(), plazos),
                 trabajo.getCancelaciones().stream().map(TrabajoGradoDTOResponse::cancelacion).toList(),
                 trabajo.getHistorial().stream().map(TrabajoGradoDTOResponse::cambio).toList());
@@ -395,9 +402,10 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 opcionesPlazo);
     }
 
-    private static EjecucionDTO ejecucion(Ejecucion e, LocalDate hoy) {
+    private static EjecucionDTO ejecucion(Ejecucion e, LocalDateTime ahora) {
         if (e == null)
             return null;
+        Integer recibeInforme = e.reunionQueRecibeInforme(ahora).orElse(null);
         return new EjecucionDTO(e.getFechaNotificacion(), e.getFechaFin(), e.getFechaMinimaSustentacion(),
                 e.fechaLimiteCambioObjetivos(), e.fechaLimiteSolicitudProrroga(),
                 e.getCambiosObjetivos().stream().map(TrabajoGradoDTOResponse::cambioObjetivos).toList(),
@@ -410,14 +418,15 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                         .toList(),
                 prorroga(e.getProrroga()),
                 e.getSuspensiones().stream().map(TrabajoGradoDTOResponse::suspension).toList(),
-                e.reuniones(hoy).stream().map(TrabajoGradoDTOResponse::reunion).toList());
+                e.reuniones(ahora.toLocalDate()).stream()
+                        .map(r -> reunion(r, recibeInforme != null && recibeInforme == r.numero())).toList());
     }
 
-    private static ReunionDTO reunion(ReunionDelPlazo r) {
+    private static ReunionDTO reunion(ReunionDelPlazo r, boolean recibeInforme) {
         ReunionSeguimiento agendada = r.agendada();
         return new ReunionDTO(r.numero(), r.fechaSugerida(), agendada == null ? null : agendada.fechaHora(),
                 agendada == null ? null : agendada.lugar(), agendada != null && agendada.realizada(),
-                agendada == null ? null : agendada.observaciones(), r.conInforme(), r.estado());
+                agendada == null ? null : agendada.observaciones(), r.conInforme(), recibeInforme, r.estado());
     }
 
     private static CancelacionDTO cancelacion(Cancelacion c) {
