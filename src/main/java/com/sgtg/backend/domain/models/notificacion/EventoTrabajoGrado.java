@@ -54,13 +54,13 @@ public enum EventoTrabajoGrado {
 
     // ----- En curso -----
     CAMBIO_OBJETIVOS_SOLICITADO(INFO, "Solicitud de cambio de título u objetivos",
-            "El director solicitó cambiar el título u objetivos de \"%1$s\"; el Comité del programa debe avalarlo.",
+            "El director solicitó cambiar el título u objetivos de \"%1$s\"; el Comité del programa debe emitir su concepto de pertinencia.",
             COMITE, ESTUDIANTES),
-    CAMBIO_OBJETIVOS_AVALADO(INFO, "Cambio de título u objetivos avalado",
-            "El Comité del programa avaló el cambio de título u objetivos de \"%1$s\"; lo decide el Consejo de "
+    CAMBIO_OBJETIVOS_AVALADO(INFO, "Cambio de título u objetivos pertinente",
+            "El Comité del programa consideró pertinente el cambio de título u objetivos de \"%1$s\"; lo decide el Consejo de "
                     + "Facultad.", CONSEJO, ESTUDIANTES, DIRECCION),
-    CAMBIO_OBJETIVOS_NO_AVALADO(ALERTA, "Cambio de título u objetivos no avalado",
-            "El Comité del programa no avaló el cambio de título u objetivos de \"%1$s\": %2$s", ESTUDIANTES,
+    CAMBIO_OBJETIVOS_NO_AVALADO(ALERTA, "Cambio de título u objetivos no pertinente",
+            "El Comité del programa consideró no pertinente el cambio de título u objetivos de \"%1$s\" y la solicitud quedó cerrada: %2$s", ESTUDIANTES,
             DIRECCION),
     CAMBIO_OBJETIVOS_RESUELTO(CONFIRMACION, "Cambio de título u objetivos resuelto",
             "El Consejo de Facultad decidió sobre el cambio de título u objetivos de \"%1$s\": %2$s.", ESTUDIANTES,

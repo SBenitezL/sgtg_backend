@@ -405,7 +405,7 @@ class FlujoAnteproyectoIntegracionTest {
         subir(cambio + "/decisiones-consejo", consejo, Map.of("resultado", "APROBADO"), archivo("3.pdf"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("El Consejo de Facultad solo decide el cambio de título u "
-                        + "objetivos después de que el Comité del programa lo avala."));
+                        + "objetivos después de que el Comité del programa lo considera pertinente."));
         subir(cambio + "/decisiones-comite", consejo, Map.of("resultado", "APROBADO"))
                 .andExpect(status().isForbidden());
         subir(cambio + "/decisiones-comite", login("C"), Map.of("resultado", "APROBADO"))
