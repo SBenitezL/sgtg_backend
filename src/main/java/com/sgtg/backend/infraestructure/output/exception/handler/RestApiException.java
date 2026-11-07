@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
@@ -36,7 +38,8 @@ import com.sgtg.backend.infraestructure.output.exception.structure.ErrorUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 
@@ -44,6 +47,11 @@ import org.springframework.dao.OptimisticLockingFailureException;
 @RequiredArgsConstructor
 @Slf4j
 public class RestApiException {
+
+    /** Tamaño máximo de cada archivo ({@code spring.servlet.multipart.max-file-size}), para decirlo en el error */
+    @Value("${spring.servlet.multipart.max-file-size:20MB}")
+    private DataSize tamanoMaximoArchivo;
+
 
     /** Resuelve las claves de mensaje definidas en messages.properties */
     private final MessageSource messageSource;
@@ -367,8 +375,10 @@ public class RestApiException {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<Error> handleMaxUploadSizeExceededException(final HttpServletRequest req,
             final MaxUploadSizeExceededException ex, final Locale locale) {
+        final String texto = messageSource.getMessage("error.archivo.tamano_excedido",
+                new Object[] { tamanoMaximoArchivo.toMegabytes() }, "error.archivo.tamano_excedido", locale);
         final Error error = ErrorUtils
-                .createError(ErrorCode.BAD_FORMAT.getCode(), mensaje("error.archivo.tamano_excedido", locale),
+                .createError(ErrorCode.BAD_FORMAT.getCode(), texto,
                         HttpStatus.BAD_REQUEST.value())
                 .setUrl(req.getRequestURL().toString()).setMethod(req.getMethod());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
