@@ -1,6 +1,7 @@
 package com.sgtg.backend.domain.use_cases;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -945,6 +946,62 @@ class ManageTrabajoGradoCUImplAdapterTest {
         assertEquals(MotivoCierre.CANCELACION_DIRECTOR, trabajo.getMotivoCierre());
         assertEquals("U70", trabajo.getHistorial().get(0).responsable());
         assertEquals(LocalDate.of(2026, 3, 2), trabajo.getCancelaciones().get(0).decision().fecha());
+    }
+
+    // ----- Recordatorio de entrega -----
+
+    /** Trabajo 8 en curso (director 1 de Sistemas, estudiante de Ingeniería de Sistemas) que termina el 1-dic-2026. */
+    private TrabajoGrado enCursoHastaDiciembre(Proceso etapa) {
+        Director director = new Director(1L, "D1", new NombrePersona("Docente", null, "Prueba", null),
+                "d1@unicauca.edu.co", TipoVinculacion.PLANTA, SISTEMAS);
+        Estudiante estudiante = new Estudiante(10L, "E10", new NombrePersona("Estudiante", null, "Prueba", null),
+                "e10@unicauca.edu.co", ING_SISTEMAS);
+        TrabajoGrado trabajo = TrabajoGrado.reconstruir(new DatosTrabajoGrado(8L,
+                Modalidad.TRABAJO_DE_INVESTIGACION, "Vigente", List.of("Objetivo"), List.of(estudiante), director,
+                null, null, null, etapa, null, null,
+                new DatosEjecucion(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 1), LocalDate.of(2026, 6, 1)),
+                List.of(), null));
+        when(trabajoGateway.buscarPorId(8L)).thenReturn(trabajo);
+        return trabajo;
+    }
+
+    @Test
+    void estaProximoAVencerEnCursoOEnProrrogaDesdeTreintaDiasAntesHastaElFinDelPlazo() {
+        TrabajoGrado enCurso = enCursoHastaDiciembre(Proceso.EN_CURSO);
+        assertFalse(enCurso.proximoAVencer(LocalDate.of(2026, 10, 31)));
+        assertTrue(enCurso.proximoAVencer(LocalDate.of(2026, 11, 1)));
+        assertTrue(enCurso.proximoAVencer(LocalDate.of(2026, 12, 1)));
+        assertFalse(enCurso.proximoAVencer(LocalDate.of(2026, 12, 2)));
+        assertTrue(enCursoHastaDiciembre(Proceso.PRORROGA).proximoAVencer(LocalDate.of(2026, 11, 20)));
+    }
+
+    @Test
+    void elRecordatorioDeEntregaLoEnvianLosRolesDeGestionDentroDeSuAlcance() {
+        TrabajoGrado trabajo = enCursoHastaDiciembre(Proceso.EN_CURSO);
+        when(notificador.recordarEntrega(any(), any())).thenReturn(2);
+        ManageTrabajoGradoCUImplAdapter elDia26 = casoDeUsoEn(LocalDate.of(2026, 11, 26));
+
+        // Consejo (toda la facultad), Comité y jefe de Sistemas (el departamento del trabajo)
+        for (long gestor : new long[] { 70L, 50L, 60L })
+            assertSame(trabajo, elDia26.recordarEntrega(8L, gestor));
+        verify(notificador, times(3)).recordarEntrega(trabajo, LocalDate.of(2026, 11, 26));
+
+        // Comité y jefe de Telemática, el director (participar no basta) y un docente sin relación
+        for (long otro : new long[] { 51L, 61L, 1L, 99L })
+            assertThrows(NoAccessException.class, () -> elDia26.recordarEntrega(8L, otro));
+        verify(notificador, times(3)).recordarEntrega(any(), any());
+    }
+
+    @Test
+    void elRecordatorioDeEntregaSoloAplicaAUnTrabajoProximoAVencerYUnaVezAlDia() {
+        enCursoHastaDiciembre(Proceso.EN_CURSO);
+        // A 61 días del fin del plazo todavía no está próximo a vencer
+        assertThrows(BusinessRuleException.class, () -> casoDeUsoEn(LocalDate.of(2026, 10, 1)).recordarEntrega(8L, 70L));
+        verify(notificador, never()).recordarEntrega(any(), any());
+
+        // Ya se recordó hoy: el notificador no crea avisos
+        when(notificador.recordarEntrega(any(), any())).thenReturn(0);
+        assertThrows(BusinessRuleException.class, () -> casoDeUsoEn(LocalDate.of(2026, 11, 26)).recordarEntrega(8L, 70L));
     }
 
     @Test

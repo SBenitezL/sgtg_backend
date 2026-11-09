@@ -40,6 +40,11 @@ public class Ejecucion {
     public static final int MESES_CAMBIO_OBJETIVOS = 6;
     /** Días calendario mínimos antes del fin del plazo para solicitar la prórroga (Art. 16) */
     public static final int DIAS_ANTICIPACION_PRORROGA = 15;
+    /**
+     * Días calendario antes del fin del plazo desde los que el trabajo está
+     * próximo a vencer: los mismos del primer aviso automático
+     */
+    public static final int DIAS_PROXIMO_A_VENCER = 30;
 
     /** Desde la fecha de notificación hasta el fin del plazo (extendido por la prórroga o la reanudación) */
     private Periodo periodo;

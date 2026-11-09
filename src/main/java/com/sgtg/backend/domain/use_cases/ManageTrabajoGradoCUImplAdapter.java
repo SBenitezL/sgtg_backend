@@ -725,6 +725,20 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
     }
 
     @Override
+    public TrabajoGrado recordarEntrega(Long trabajoId, Long usuarioId) {
+        TrabajoGrado trabajo = cargarTrabajo(trabajoId);
+        // Solo quien gestiona el trabajo (no basta con participar en él)
+        if (!alcanceDeGestion(usuarioId).test(trabajo))
+            this.exceptionFormatter.returnNoAccess("error.trabajo_grado.solo_gestion_recordatorio");
+        LocalDate hoy = hoy();
+        if (!trabajo.proximoAVencer(hoy))
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.recordatorio_no_aplica");
+        if (this.notificador.recordarEntrega(trabajo, hoy) == 0)
+            this.exceptionFormatter.returnResponseBusinessRuleViolated("error.trabajo_grado.recordatorio_repetido");
+        return trabajo;
+    }
+
+    @Override
     public TrabajoGrado solicitarCancelacion(Long trabajoId, Long usuarioId, ArchivoAdjunto solicitud) {
         TrabajoGrado trabajo = cargarTrabajoDelDirector(trabajoId, usuarioId);
         List<String> rutas = new ArrayList<>();
@@ -931,12 +945,24 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
      * solo consultan aquellos en los que participan.
      */
     private Predicate<TrabajoGrado> alcanceDeConsulta(Long usuarioId) {
+        Predicate<TrabajoGrado> participa = trabajo -> trabajo.participa(usuarioId);
+        return participa.or(alcanceDeGestion(usuarioId));
+    }
+
+    /**
+     * Trabajos que el usuario gestiona por su rol, sin contar en los que
+     * participa: todos con un rol de consulta general; los del programa
+     * adscrito a su departamento si es del Comité, y los de su departamento (el
+     * del director) si es jefe. Sin perfil docente, el Comité y el jefe no
+     * gestionan ninguno.
+     */
+    private Predicate<TrabajoGrado> alcanceDeGestion(Long usuarioId) {
         Usuario usuario = this.userGateway.findById(usuarioId);
         Set<String> roles = usuario == null || usuario.getRole() == null ? Set.of()
                 : usuario.getRole().stream().map(Role::getTrole).collect(Collectors.toSet());
         if (roles.stream().anyMatch(ROLES_CONSULTA_GENERAL::contains))
             return trabajo -> true;
-        Predicate<TrabajoGrado> alcance = trabajo -> trabajo.participa(usuarioId);
+        Predicate<TrabajoGrado> alcance = trabajo -> false;
         boolean comite = roles.contains(RoleAdmited.COMITE.name());
         boolean jefe = roles.contains(RoleAdmited.JEFE_DEP.name());
         PerfilDocente perfil = comite || jefe ? this.perfilGateway.buscarPerfilDocente(usuarioId) : null;

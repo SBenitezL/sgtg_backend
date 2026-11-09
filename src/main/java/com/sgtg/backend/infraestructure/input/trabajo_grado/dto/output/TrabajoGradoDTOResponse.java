@@ -202,11 +202,15 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
      * @param fechaLimiteSolicitudProrroga último día para solicitar la prórroga
      * @param prorroga                   prórroga solicitada, null si no se ha solicitado
      * @param suspensiones               solicitudes de suspensión, en orden
+     * @param diasParaEntrega            días calendario hasta el fin del plazo en la fecha de la consulta
+     *                                   (negativo si ya pasó)
+     * @param proximoAVencer             en curso o en prórroga y a 30 días o menos del fin del plazo
      */
     public record EjecucionDTO(LocalDate fechaNotificacion, LocalDate fechaFin, LocalDate fechaMinimaSustentacion,
             LocalDate fechaLimiteCambioObjetivos, LocalDate fechaLimiteSolicitudProrroga,
             List<CambioObjetivosDTO> cambiosObjetivos, List<InformeMensualDTO> informesMensuales,
-            ProrrogaDTO prorroga, List<SuspensionDTO> suspensiones, List<ReunionDTO> reuniones) {
+            ProrrogaDTO prorroga, List<SuspensionDTO> suspensiones, List<ReunionDTO> reuniones,
+            long diasParaEntrega, boolean proximoAVencer) {
     }
 
     /**
@@ -320,7 +324,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                                 .mapToObj(i -> decision(decisiones.get(i),
                                         propuesta.fechaLimiteDecision(i, plazos.calendario()).orElse(null)))
                                 .toList()),
-                anteproyecto(trabajo, plazos), ejecucion(trabajo.getEjecucion(), plazos.ahora()),
+                anteproyecto(trabajo, plazos), ejecucion(trabajo, plazos.ahora()),
                 sustentacion(trabajo.getSustentacion(), plazos),
                 trabajo.getCancelaciones().stream().map(TrabajoGradoDTOResponse::cancelacion).toList(),
                 trabajo.getHistorial().stream().map(TrabajoGradoDTOResponse::cambio).toList());
@@ -402,7 +406,8 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 opcionesPlazo);
     }
 
-    private static EjecucionDTO ejecucion(Ejecucion e, LocalDateTime ahora) {
+    private static EjecucionDTO ejecucion(TrabajoGrado trabajo, LocalDateTime ahora) {
+        Ejecucion e = trabajo.getEjecucion();
         if (e == null)
             return null;
         Integer recibeInforme = e.reunionQueRecibeInforme(ahora).orElse(null);
@@ -419,7 +424,9 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                 prorroga(e.getProrroga()),
                 e.getSuspensiones().stream().map(TrabajoGradoDTOResponse::suspension).toList(),
                 e.reuniones(ahora.toLocalDate()).stream()
-                        .map(r -> reunion(r, recibeInforme != null && recibeInforme == r.numero())).toList());
+                        .map(r -> reunion(r, recibeInforme != null && recibeInforme == r.numero())).toList(),
+                java.time.temporal.ChronoUnit.DAYS.between(ahora.toLocalDate(), e.getFechaFin()),
+                trabajo.proximoAVencer(ahora.toLocalDate()));
     }
 
     private static ReunionDTO reunion(ReunionDelPlazo r, boolean recibeInforme) {

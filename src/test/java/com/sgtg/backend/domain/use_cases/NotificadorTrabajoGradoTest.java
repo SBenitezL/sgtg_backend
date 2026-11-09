@@ -461,6 +461,25 @@ class NotificadorTrabajoGradoTest {
     }
 
     @Test
+    void elRecordatorioManualDeLaEntregaLlegaALaDireccionYALosEstudiantesUnaVezAlDia() {
+        TrabajoGrado enCurso = alDia();
+
+        assertEquals(2, notificador.recordarEntrega(enCurso, LocalDate.of(2026, 11, 26)));
+        List<Notificacion> avisos = guardadas();
+        assertEquals(Set.of(10L, 1L), usuarios(avisos));
+        assertEquals(Set.of(EventoTrabajoGrado.RECORDATORIO_ENTREGA), eventos(avisos));
+        assertEquals("RECORDATORIO_ENTREGA:8:2026-11-26", avisos.get(0).clave());
+        assertEquals("Se recuerda que el plazo de ejecución del trabajo \"Vigente\" termina el 01/12/2026 (faltan 5 días). "
+                + "Avance en el desarrollo y solicite la sustentación a tiempo: si para entonces no se ha solicitado, el "
+                + "trabajo quedará no aprobado.", avisos.get(0).mensaje());
+
+        // El mismo día ya no se repite; al día siguiente sí (la clave lleva la fecha)
+        when(notificacionGateway.existeClave(any(), eq("RECORDATORIO_ENTREGA:8:2026-11-26"))).thenReturn(true);
+        assertEquals(0, notificador.recordarEntrega(enCurso, LocalDate.of(2026, 11, 26)));
+        assertEquals(2, notificador.recordarEntrega(enCurso, LocalDate.of(2026, 11, 27)));
+    }
+
+    @Test
     void elFinDelPlazoDeEjecucionSeAvisaATreintaDiasYUltimoASiete() {
         TrabajoGrado enCurso = alDia();
 

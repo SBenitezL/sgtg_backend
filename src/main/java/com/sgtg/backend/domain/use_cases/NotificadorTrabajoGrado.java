@@ -46,7 +46,7 @@ public class NotificadorTrabajoGrado {
      */
     public static final int DIAS_AVISO_EVALUACION = 3;
     /** Días de anticipación del primer aviso de fin del plazo de ejecución */
-    public static final int DIAS_AVISO_EJECUCION = 30;
+    public static final int DIAS_AVISO_EJECUCION = Ejecucion.DIAS_PROXIMO_A_VENCER;
     /** Días de anticipación del último aviso de fin del plazo de ejecución (si no se entrega, no aprobado) */
     public static final int DIAS_ULTIMO_AVISO_EJECUCION = 7;
     /** Días de anticipación del aviso del fin del plazo para cambiar el título u objetivos */
@@ -302,6 +302,22 @@ public class NotificadorTrabajoGrado {
                     clave(EventoTrabajoGrado.REUNION_SIN_INFORME, trabajo, ultimaPasada.numero()),
                     String.valueOf(ultimaPasada.numero()));
         return creados;
+    }
+
+    /**
+     * Recordatorio manual del fin del plazo de ejecución a los estudiantes y a
+     * la dirección del trabajo. Se envía una vez por trabajo al día: la clave
+     * lleva la fecha, así que un segundo recordatorio el mismo día no crea avisos.
+     *
+     * @param hoy fecha del recordatorio
+     * @return avisos creados (0 si ya se recordó hoy)
+     */
+    public int recordarEntrega(TrabajoGrado trabajo, LocalDate hoy) {
+        LocalDate fin = trabajo.getEjecucion().getFechaFin();
+        long dias = ChronoUnit.DAYS.between(hoy, fin);
+        String cuando = dias == 0 ? "hoy" : dias == 1 ? "falta 1 día" : "faltan " + dias + " días";
+        EventoTrabajoGrado evento = EventoTrabajoGrado.RECORDATORIO_ENTREGA;
+        return crearAvisos(trabajo, evento, clave(evento, trabajo, hoy), fin.format(FORMATO_FECHA) + " (" + cuando + ")");
     }
 
     /** Crea el aviso para cada destinatario que aún no lo tiene (la clave evita repetirlo cada día). */

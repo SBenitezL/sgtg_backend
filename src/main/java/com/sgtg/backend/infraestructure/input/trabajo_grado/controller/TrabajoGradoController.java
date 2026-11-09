@@ -555,6 +555,18 @@ public class TrabajoGradoController {
                 manageTrabajoGrado.anular(trabajoId, usuario.getCusuari(), request.justificacion())));
     }
 
+    /**
+     * Recordatorio de entrega: notifica a los estudiantes y a la dirección que se
+     * acerca el fin del plazo de ejecución (trabajo próximo a vencer, una vez al
+     * día). El alcance del Comité y del jefe lo valida el caso de uso.
+     */
+    @PostMapping("/{trabajoId}/recordatorio-entrega")
+    @PreAuthorize("hasAnyAuthority('ADMINISTRADOR','CONSEJO','DECANATURA','COMITE','JEFE_DEP')")
+    public ResponseEntity<TrabajoGradoDTOResponse> recordarEntrega(@AuthenticationPrincipal UserEntity usuario,
+            @PathVariable Long trabajoId) {
+        return ResponseEntity.ok(vista(manageTrabajoGrado.recordarEntrega(trabajoId, usuario.getCusuari())));
+    }
+
     /** Solicita la cancelación del trabajo con el formato adjunto. Solo el director. */
     @PostMapping(value = "/{trabajoId}/cancelacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TrabajoGradoDTOResponse> solicitarCancelacion(@AuthenticationPrincipal UserEntity usuario,

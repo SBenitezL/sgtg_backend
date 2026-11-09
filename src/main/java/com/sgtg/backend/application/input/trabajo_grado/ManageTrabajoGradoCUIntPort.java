@@ -387,6 +387,15 @@ public interface ManageTrabajoGradoCUIntPort {
     public TrabajoGrado anular(Long trabajoId, Long usuarioId, String justificacion);
 
     /**
+     * Recordatorio manual de la entrega: notifica a los estudiantes y a la
+     * dirección que se acerca el fin del plazo de ejecución. Lo envían
+     * Decanatura, el Consejo y el administrador, y el Comité y el jefe para los
+     * trabajos de su departamento; solo si el trabajo está próximo a vencer y una
+     * vez al día por trabajo.
+     */
+    public TrabajoGrado recordarEntrega(Long trabajoId, Long usuarioId);
+
+    /**
      * Solicita la cancelación del trabajo con la fecha actual. Solo el director.
      *
      * @param solicitud archivo del formato de solicitud de cancelación

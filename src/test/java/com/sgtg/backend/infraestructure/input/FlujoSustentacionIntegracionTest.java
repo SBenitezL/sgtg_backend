@@ -261,6 +261,36 @@ class FlujoSustentacionIntegracionTest {
     }
 
     @Test
+    void elRecordatorioDeEntregaSeEnviaATrabajosProximosAVencerUnaVezAlDia() throws Exception {
+        long trabajoId = trabajoEnCurso();
+        String consejo = login("F");
+        String fechaFin = json.readTree(enviar(get(TRABAJOS + trabajoId), consejo, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ejecucion.proximoAVencer").value(false))
+                .andReturn().getResponse().getContentAsString()).at("/ejecucion/fechaFin").asText();
+        String recordatorio = TRABAJOS + trabajoId + "/recordatorio-entrega";
+
+        // Lejos del fin del plazo no aplica; el estudiante nunca lo envía
+        enviar(post(recordatorio), consejo, null).andExpect(status().isBadRequest());
+        enviar(post(recordatorio), login("E"), null).andExpect(status().isForbidden());
+
+        // A 10 días del fin: próximo a vencer, el Consejo lo recuerda una vez ese día
+        reloj.fijar(LocalDate.parse(fechaFin).minusDays(10));
+        enviar(get(TRABAJOS + trabajoId), consejo, null)
+                .andExpect(jsonPath("$.ejecucion.proximoAVencer").value(true))
+                .andExpect(jsonPath("$.ejecucion.diasParaEntrega").value(10));
+        enviar(post(recordatorio), consejo, null).andExpect(status().isOk());
+        enviar(post(recordatorio), login("K"), null)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Ya se envió hoy el recordatorio de entrega de este trabajo de grado."));
+
+        // Al estudiante le llega el recordatorio en su bandeja
+        enviar(get(API + "/notificaciones"), login("E"), null)
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("RECORDATORIO_ENTREGA")));
+    }
+
+    @Test
     void flujoCompletoDeLaSustentacion() throws Exception {
         long trabajoId = trabajoEnCurso();
         long coordinadorId = crearUsuario("X", "JURADO");

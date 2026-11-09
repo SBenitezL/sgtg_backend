@@ -175,6 +175,10 @@ public enum EventoTrabajoGrado {
     PLAZO_TRABAJO_ULTIMO_AVISO(ERROR, "Último aviso de entrega final",
             "El plazo de ejecución del trabajo \"%1$s\" termina el %2$s. Si para entonces no se ha solicitado la sustentación, el trabajo quedará no aprobado.",
             ESTUDIANTES, DIRECCION),
+    /** Recordatorio manual desde las estadísticas (Decanatura, Consejo, Comité, jefe o administrador) */
+    RECORDATORIO_ENTREGA(ALERTA, "Recordatorio: se acerca la fecha de entrega",
+            "Se recuerda que el plazo de ejecución del trabajo \"%1$s\" termina el %2$s. Avance en el desarrollo y solicite la sustentación a tiempo: si para entonces no se ha solicitado, el trabajo quedará no aprobado.",
+            ESTUDIANTES, DIRECCION),
     PLAZO_AJUSTES_POR_VENCER(ALERTA, "Recordatorio de ajustes de la sustentación",
             "Faltan %2$s días para que venza el plazo de los ajustes de la sustentación del trabajo \"%1$s\". Si no se radican a tiempo, la sustentación queda aplazada (o el trabajo no aprobado, si es la segunda sesión).",
             ESTUDIANTES, DIRECCION),

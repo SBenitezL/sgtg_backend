@@ -1159,6 +1159,21 @@ public abstract class TrabajoGrado {
         return this.etapa.esFinal();
     }
 
+    /**
+     * Próximo a vencer: en curso o en prórroga (aún no se solicitó la
+     * sustentación) y a {@value Ejecucion#DIAS_PROXIMO_A_VENCER} días o menos del
+     * fin del plazo de ejecución, sin haberlo superado. Se muestra en las
+     * estadísticas y habilita el recordatorio manual de la entrega.
+     *
+     * @param hoy fecha de la consulta
+     */
+    public boolean proximoAVencer(LocalDate hoy) {
+        if ((this.etapa != Proceso.EN_CURSO && this.etapa != Proceso.PRORROGA) || this.ejecucion == null || hoy == null)
+            return false;
+        long dias = java.time.temporal.ChronoUnit.DAYS.between(hoy, this.ejecucion.getFechaFin());
+        return dias >= 0 && dias <= Ejecucion.DIAS_PROXIMO_A_VENCER;
+    }
+
     public Long getId() {
         return id;
     }
