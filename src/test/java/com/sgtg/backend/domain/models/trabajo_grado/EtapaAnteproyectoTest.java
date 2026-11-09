@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -351,11 +352,71 @@ class EtapaAnteproyectoTest {
         assertEquals(1, trabajo.getAnteproyecto().getConceptos().size());
     }
 
-    /** El anteproyecto no se rechaza (Art. 13): solo se aprueba o se devuelve con correcciones. */
+    /**
+     * Con los dos conceptos: ambos aprueban → APROBADO (sigue en evaluación hasta la
+     * remisión); alguno no aprueba → NO_APROBADO; en otro caso → CON_CORRECCIONES
+     * (evaluado con observaciones). Los dos últimos devuelven el trabajo a anteproyecto.
+     */
     @ParameterizedTest
-    @EnumSource(value = ResultadoConcepto.class, names = { "APROBADO", "CON_CORRECCIONES" },
+    @CsvSource({
+            "APROBADO, APROBADO, APROBADO, EVALUACION",
+            "APROBADO, CON_CORRECCIONES, CON_CORRECCIONES, ANTEPROYECTO",
+            "CON_CORRECCIONES, APROBADO, CON_CORRECCIONES, ANTEPROYECTO",
+            "CON_CORRECCIONES, CON_CORRECCIONES, CON_CORRECCIONES, ANTEPROYECTO",
+            "APROBADO, NO_APROBADO, NO_APROBADO, ANTEPROYECTO",
+            "NO_APROBADO, CON_CORRECCIONES, NO_APROBADO, ANTEPROYECTO",
+            "NO_APROBADO, NO_APROBADO, NO_APROBADO, ANTEPROYECTO" })
+    void elResultadoDelAnteproyectoCombinaLosDosConceptos(ResultadoConcepto primero, ResultadoConcepto segundo,
+            Estado esperado, Proceso etapa) {
+        radicarYAsignar();
+        LocalDate fecha = asignacion.toLocalDate();
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, primero, fecha), RUTA_FORMATO_B, dia(fecha),
+                calendario);
+        // Con un solo concepto sigue en revisión, aunque sea un no aprobado
+        assertEquals(Estado.EN_REVISION, trabajo.getAnteproyecto().getEstado());
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, segundo, fecha), RUTA_FORMATO_B, dia(fecha),
+                calendario);
+
+        assertEquals(esperado, trabajo.getAnteproyecto().getEstado());
+        assertEquals(etapa, trabajo.getEtapa());
+    }
+
+    @Test
+    void noAprobadoPorLosEvaluadoresVuelveAAnteproyectoSinPlazoYLaNuevaVersionLaRevisanLosMismos() {
+        radicarYAsignar();
+        LocalDate fecha = LocalDate.of(2026, 3, 12);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, fecha), RUTA_FORMATO_B,
+                dia(fecha), calendario);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.NO_APROBADO, fecha), RUTA_FORMATO_B,
+                dia(fecha), calendario);
+
+        Anteproyecto anteproyecto = trabajo.getAnteproyecto();
+        assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
+        assertEquals(Estado.NO_APROBADO, anteproyecto.getEstado());
+        // Como el no aprobado del Consejo, no abre el plazo de correcciones
+        assertNull(anteproyecto.getFechaLimiteCorrecciones());
+        assertFalse(anteproyecto.correccionesVencidas(fecha.plusMonths(2)));
+        assertEquals("Anteproyecto no aprobado por los evaluadores: el director radica una nueva versión",
+                trabajo.getHistorial().get(trabajo.getHistorial().size() - 1).observacion());
+
+        LocalDate reenvio = LocalDate.of(2026, 3, 23);
+        trabajo.radicarAnteproyecto(RUTA_ANTEPROYECTO, "D1", dia(reenvio), calendario);
+        assertEquals(Proceso.EVALUACION, trabajo.getEtapa());
+        assertEquals(Estado.EN_REVISION, anteproyecto.getEstado());
+        assertEquals(List.of(evaluador1, evaluador2), anteproyecto.getEvaluadores());
+        trabajo.registrarConceptoEvaluador(concepto(evaluador1, ResultadoConcepto.APROBADO, reenvio), RUTA_FORMATO_B,
+                dia(reenvio), calendario);
+        trabajo.registrarConceptoEvaluador(concepto(evaluador2, ResultadoConcepto.APROBADO, reenvio), RUTA_FORMATO_B,
+                dia(reenvio), calendario);
+        assertEquals(List.of(Estado.NO_APROBADO, Estado.APROBADO),
+                anteproyecto.getVersiones().stream().map(VersionDocumento::estado).toList());
+    }
+
+    /** El evaluador aprueba, pide correcciones o no aprueba (formato B); no hay otro resultado. */
+    @ParameterizedTest
+    @EnumSource(value = ResultadoConcepto.class, names = { "APROBADO", "CON_CORRECCIONES", "NO_APROBADO" },
             mode = EnumSource.Mode.EXCLUDE)
-    void elEvaluadorSoloApruebaOPideCorrecciones(ResultadoConcepto resultado) {
+    void elEvaluadorSoloApruebaPideCorreccionesONoAprueba(ResultadoConcepto resultado) {
         radicarYAsignar();
         LocalDate fecha = asignacion.toLocalDate();
 

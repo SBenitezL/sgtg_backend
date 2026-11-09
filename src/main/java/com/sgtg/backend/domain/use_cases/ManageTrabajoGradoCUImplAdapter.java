@@ -893,10 +893,17 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
                 : "no pertinente; el director debe corregirla y radicar una nueva versión";
     }
 
-    /** Concepto de un evaluador: si pide correcciones, el anteproyecto no se aprueba y el director radica otra versión */
+    /**
+     * Concepto de un evaluador para la notificación. El resultado del
+     * anteproyecto (evaluado con observaciones o no aprobado) se conoce cuando
+     * conceptúan los dos.
+     */
     private static String textoConcepto(ResultadoConcepto resultado) {
-        return resultado == ResultadoConcepto.CON_CORRECCIONES
-                ? "no aprobado; el director debe corregirlo y radicar una nueva versión" : texto(resultado);
+        return switch (resultado) {
+            case CON_CORRECCIONES -> "con correcciones";
+            case NO_APROBADO -> "no aprobado";
+            default -> texto(resultado);
+        };
     }
 
     /** Resultado de una decisión o calificación para el texto de la notificación. */

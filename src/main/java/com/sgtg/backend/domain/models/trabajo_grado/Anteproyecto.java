@@ -3,8 +3,10 @@ package com.sgtg.backend.domain.models.trabajo_grado;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
 import com.sgtg.backend.domain.models.comun.Concepto;
@@ -18,9 +20,13 @@ import com.sgtg.backend.domain.utils.CheckString;
 /**
  * Etapa de anteproyecto y evaluación del trabajo de grado (Arts. 12-13,
  * 37-38). El director radica el anteproyecto ante el Departamento, que asigna
- * dos evaluadores con 10 días hábiles para emitir concepto. El anteproyecto no
- * se rechaza: cada evaluador lo aprueba o lo devuelve con correcciones. Si
- * alguno pide correcciones, el director tiene 10 días hábiles para radicar una
+ * dos evaluadores con 10 días hábiles para emitir concepto. Cada evaluador lo
+ * aprueba, lo devuelve con correcciones o no lo aprueba (formato B). Con los
+ * dos conceptos: si ambos aprueban, queda APROBADO; si alguno no lo aprueba,
+ * NO_APROBADO; en otro caso (alguno pide correcciones y ninguno lo rechaza),
+ * CON_CORRECCIONES, que el front muestra como "evaluado con observaciones": el
+ * anteproyecto va bien, pero el director tiene 10 días hábiles para radicar una
+ * versión corregida. Tras NO_APROBADO o CON_CORRECCIONES el director radica una
  * nueva versión, que revisan los mismos evaluadores.
  *
  * Aprobado por ambos evaluadores, el Jefe de departamento lo remite al
@@ -31,8 +37,9 @@ import com.sgtg.backend.domain.utils.CheckString;
  *
  * El estado pertenece a cada versión enviada a revisión ({@link VersionDocumento})
  * y se asigna solo: queda EN_REVISION al radicarla (aunque los evaluadores aún
- * no estén asignados), CON_CORRECCIONES o APROBADO según los conceptos de los
- * evaluadores, y APROBADO o NO_APROBADO según la decisión del Consejo. Cada
+ * no estén asignados), APROBADO, CON_CORRECCIONES o NO_APROBADO según los
+ * conceptos de los evaluadores, y APROBADO o NO_APROBADO según la decisión del
+ * Consejo. Cada
  * versión conserva el resultado de su revisión. Antes de radicar no hay estado.
  *
  * Sus operaciones que modifican el estado solo son accesibles desde el
@@ -45,6 +52,9 @@ public class Anteproyecto {
     public static final int DIAS_HABILES_CORRECCIONES = 10;
     /** Cantidad de evaluadores que asigna el Departamento (Art. 13) */
     public static final int CANTIDAD_EVALUADORES = 2;
+    /** Conceptos que puede emitir un evaluador en el formato B */
+    public static final Set<ResultadoConcepto> RESULTADOS_EVALUADOR = EnumSet.of(ResultadoConcepto.APROBADO,
+            ResultadoConcepto.CON_CORRECCIONES, ResultadoConcepto.NO_APROBADO);
 
     /** Versiones radicadas del anteproyecto, cada una con el estado de su revisión */
     private final List<VersionDocumento> versiones;
@@ -140,8 +150,9 @@ public class Anteproyecto {
      * validando el concepto sin modificar el anteproyecto.
      *
      * @param concepto concepto de uno de los evaluadores asignados
-     * @return EN_REVISION si falta el concepto del otro evaluador, APROBADO si
-     *         ambos aprueban o CON_CORRECCIONES si alguno pide correcciones
+     * @return EN_REVISION si falta el concepto del otro evaluador; con los dos,
+     *         APROBADO si ambos aprueban, NO_APROBADO si alguno no lo aprueba
+     *         y CON_CORRECCIONES en otro caso (evaluado con observaciones)
      */
     Estado estadoTrasConcepto(Concepto concepto) {
         if (concepto == null)
@@ -150,8 +161,7 @@ public class Anteproyecto {
             throw new ReglaNegocioException("error.dominio.anteproyecto.concepto_no_permitido");
         if (this.evaluadores.stream().noneMatch(evaluador -> evaluador.esMismaPersona(concepto.emisor())))
             throw new ReglaNegocioException("error.dominio.anteproyecto.evaluador_no_asignado");
-        if (concepto.resultado() != ResultadoConcepto.APROBADO
-                && concepto.resultado() != ResultadoConcepto.CON_CORRECCIONES)
+        if (!RESULTADOS_EVALUADOR.contains(concepto.resultado()))
             throw new ReglaNegocioException("error.dominio.anteproyecto.resultado_invalido");
         List<ConceptoEvaluacion> ronda = conceptosVersionActual();
         if (ronda.stream().anyMatch(previo -> previo.concepto().emisor().esMismaPersona(concepto.emisor())))
@@ -161,15 +171,18 @@ public class Anteproyecto {
 
         if (ronda.size() + 1 < CANTIDAD_EVALUADORES)
             return Estado.EN_REVISION;
-        boolean ambosAprueban = concepto.esAprobado()
-                && ronda.stream().allMatch(previo -> previo.concepto().esAprobado());
-        return ambosAprueban ? Estado.APROBADO : Estado.CON_CORRECCIONES;
+        List<Concepto> todos = new ArrayList<>(ronda.stream().map(ConceptoEvaluacion::concepto).toList());
+        todos.add(concepto);
+        if (todos.stream().anyMatch(c -> c.resultado() == ResultadoConcepto.NO_APROBADO))
+            return Estado.NO_APROBADO;
+        return todos.stream().allMatch(Concepto::esAprobado) ? Estado.APROBADO : Estado.CON_CORRECCIONES;
     }
 
     /**
      * Registra el concepto de un evaluador sobre la versión actual. Cuando ambos
-     * evaluadores han emitido concepto, la versión queda aprobada o con
-     * correcciones; en este último caso se calcula el plazo del director.
+     * evaluadores han emitido concepto, la versión queda aprobada, con
+     * correcciones o no aprobada; con correcciones se calcula el plazo del
+     * director (el no aprobado no tiene plazo, como el del Consejo).
      *
      * @param concepto   concepto del evaluador
      * @param rutaFormato ruta del formato B, null si no se cargó
@@ -277,7 +290,7 @@ public class Anteproyecto {
 
     /**
      * @return true si se puede radicar una versión: la primera, tras correcciones de los evaluadores o tras un NO
-     *         APROBADO del Consejo
+     *         APROBADO de los evaluadores o del Consejo
      */
     boolean puedeRadicar() {
         Estado estado = getEstado();

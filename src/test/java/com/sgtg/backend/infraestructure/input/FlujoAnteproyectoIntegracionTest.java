@@ -564,14 +564,14 @@ class FlujoAnteproyectoIntegracionTest {
         enviar(post(TRABAJOS + trabajoId + "/anteproyecto/evaluadores"), jefe, evaluadores)
                 .andExpect(status().isOk());
 
-        // Solo los evaluadores asignados emiten concepto, y solo APROBADO o CON_CORRECCIONES
+        // Solo los evaluadores asignados emiten concepto, y solo APROBADO, CON_CORRECCIONES o NO_APROBADO
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("X"), Map.of("resultado", "APROBADO"))
                 .andExpect(status().isForbidden());
         subir(TRABAJOS + trabajoId + "/anteproyecto/conceptos", login("V"),
                 Map.of("resultado", "RECHAZADO", "observaciones", "No cumple"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(
-                        "El concepto de un evaluador sobre el anteproyecto solo puede ser APROBADO o CON_CORRECCIONES."));
+                .andExpect(jsonPath("$.message").value("El concepto de un evaluador sobre el anteproyecto solo puede "
+                        + "ser APROBADO, CON_CORRECCIONES o NO_APROBADO."));
 
         // La consulta por etapa es solo para roles de consulta general y exige una etapa válida
         enviar(get(API + "/trabajos-grado").param("etapa", "ANTEPROYECTO"), login("E"), null)

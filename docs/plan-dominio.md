@@ -137,8 +137,8 @@ Detalle de clases, reglas, API y plan de pruebas: [fase-2-anteproyecto.md](fase-
 
 **Reglas**
 - El director radica el anteproyecto. El jefe del departamento del director (rol `JEFE_DEP`, según su perfil docente) asigna 2 evaluadores distintos, que no pueden ser director, codirector, asesor ni estudiantes del trabajo. Tienen 10 días hábiles.
-- El anteproyecto no se rechaza: cada evaluador emite `APROBADO` o `CON_CORRECCIONES`, opcionalmente con el formato B (URL).
-- Si alguno pide correcciones, vuelve a `ANTEPROYECTO`: el director tiene 10 días hábiles para reenviarlo, y la nueva versión pasa directo a `EVALUACION` con los mismos evaluadores.
+- Cada evaluador emite `APROBADO`, `CON_CORRECCIONES` o `NO_APROBADO` con el formato B (el `NO_APROBADO` se agregó el 2026-11-09; ver `ajustes-2026-11-09.md`).
+- Con los dos conceptos: ambos aprueban → `APROBADO`; alguno no aprueba → `NO_APROBADO`; en otro caso → `CON_CORRECCIONES` (evaluado con observaciones). En los dos últimos vuelve a `ANTEPROYECTO` y la nueva versión pasa directo a `EVALUACION` con los mismos evaluadores; con correcciones el director tiene 10 días hábiles para reenviarlo.
 - Si ambos evaluadores aprueban, pasa automáticamente a `APROBACION_CONSEJO`.
 - Los plazos son informativos (`evaluacionVencida`, `correccionesVencidas`).
 

@@ -9,8 +9,8 @@ import jakarta.validation.constraints.NotNull;
  * {@code datos} de la petición; el formato B, opcional, va en la parte
  * {@code archivo}. La fecha es la del registro.
  *
- * @param resultado     APROBADO o CON_CORRECCIONES
- * @param observaciones obligatorias si pide correcciones
+ * @param resultado     APROBADO, CON_CORRECCIONES o NO_APROBADO
+ * @param observaciones obligatorias si no aprueba (con correcciones o no aprobado)
  */
 public record ConceptoEvaluadorDTORequest(
         @NotNull(message = "El resultado es obligatorio") ResultadoConcepto resultado,

@@ -348,11 +348,11 @@ public abstract class TrabajoGrado {
     /**
      * Registra el concepto de un evaluador sobre la versión actual del
      * anteproyecto. Cuando ambos han emitido concepto: si los dos aprueban, el
-     * trabajo pasa a aprobación del Consejo de Facultad; si alguno pide
-     * correcciones, vuelve a anteproyecto para que el director radique una
-     * nueva versión.
+     * trabajo espera la remisión al Consejo de Facultad; si queda con
+     * correcciones (evaluado con observaciones) o no aprobado, vuelve a
+     * anteproyecto para que el director radique una nueva versión.
      *
-     * @param concepto   concepto del evaluador: APROBADO o CON_CORRECCIONES
+     * @param concepto   concepto del evaluador: APROBADO, CON_CORRECCIONES o NO_APROBADO
      * @param rutaFormato ruta del formato B, null si no se cargó
      * @param ahora      fecha y hora del registro
      * @param calendario calendario para calcular el plazo de las correcciones
@@ -364,8 +364,8 @@ public abstract class TrabajoGrado {
 
     /**
      * Registra el concepto de un evaluador con el formato B (obligatorio) y,
-     * opcionalmente, el documento con sus anotaciones. Con correcciones el
-     * trabajo vuelve a anteproyecto; si ambos aprueban sigue en evaluación
+     * opcionalmente, el documento con sus anotaciones. Con correcciones o no
+     * aprobado el trabajo vuelve a anteproyecto; si ambos aprueban sigue en evaluación
      * hasta que el Jefe de departamento lo remita al Consejo con el formato C.
      *
      * @param rutaFormato     ruta del formato B
@@ -380,10 +380,13 @@ public abstract class TrabajoGrado {
         Estado resultado = this.anteproyecto.estadoTrasConcepto(concepto);
         this.anteproyecto.validarFormatoB(rutaFormato);
         String responsable = concepto.emisor().getCodigo();
-        CambioEtapa cambio = resultado == Estado.CON_CORRECCIONES
-                ? new CambioEtapa(this.etapa, Proceso.ANTEPROYECTO, ahora, responsable,
-                        "Anteproyecto con correcciones de los evaluadores")
-                : null;
+        CambioEtapa cambio = switch (resultado) {
+            case CON_CORRECCIONES -> new CambioEtapa(this.etapa, Proceso.ANTEPROYECTO, ahora, responsable,
+                    "Anteproyecto evaluado con observaciones: el director radica la versión corregida");
+            case NO_APROBADO -> new CambioEtapa(this.etapa, Proceso.ANTEPROYECTO, ahora, responsable,
+                    "Anteproyecto no aprobado por los evaluadores: el director radica una nueva versión");
+            default -> null;
+        };
         this.anteproyecto.registrarConcepto(concepto, rutaFormato, rutaAnotaciones, calendario);
         if (cambio != null)
             aplicarCambio(cambio);

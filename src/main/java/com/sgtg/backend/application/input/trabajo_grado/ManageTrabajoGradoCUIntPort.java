@@ -151,8 +151,8 @@ public interface ManageTrabajoGradoCUIntPort {
      * anteproyecto, con la fecha actual.
      *
      * @param usuarioId     evaluador que emite el concepto
-     * @param resultado     APROBADO o CON_CORRECCIONES
-     * @param observaciones obligatorias si pide correcciones
+     * @param resultado     APROBADO, CON_CORRECCIONES o NO_APROBADO
+     * @param observaciones obligatorias si no aprueba (con correcciones o no aprobado)
      * @param formato       archivo del formato B, obligatorio
      * @param anotaciones   documento con las anotaciones del evaluador, opcional
      */

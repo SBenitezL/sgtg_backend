@@ -9,7 +9,7 @@ import com.sgtg.backend.domain.models.comun.Concepto;
  * documento con sus anotaciones.
  *
  * @param version     versión del anteproyecto evaluada
- * @param concepto    concepto del evaluador: APROBADO o CON_CORRECCIONES
+ * @param concepto    concepto del evaluador: APROBADO, CON_CORRECCIONES o NO_APROBADO
  * @param formato     formato B (obligatorio al registrar un concepto nuevo; null en datos anteriores)
  * @param anotaciones documento con las anotaciones del evaluador, null si no lo adjuntó
  */

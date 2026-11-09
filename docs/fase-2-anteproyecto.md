@@ -31,7 +31,7 @@ El reglamento no define estos puntos. Se propusieron antes de iniciar la fase y 
 |---|---|
 | 1 | El rol `JEFE_DEP` asigna los evaluadores, y solo en trabajos cuyo director pertenece a **su** departamento. Ese departamento sale de su perfil docente; por eso `JEFE_DEP` ahora puede tener perfil docente. |
 | 2 | Los evaluadores son usuarios con rol `DOCENTE`, `EVALUADOR` o `JURADO`, de cualquier departamento. No pueden ser director, codirector, **asesor** ni estudiantes del trabajo. |
-| 3 | Cada evaluador emite `APROBADO` o `CON_CORRECCIONES`. El anteproyecto no se rechaza (Art. 13). |
+| 3 | Cada evaluador emite `APROBADO` o `CON_CORRECCIONES`. El anteproyecto no se rechaza (Art. 13). **Reemplazada el 2026-11-09:** también puede emitir `NO_APROBADO` (ver `ajustes-2026-11-09.md`). |
 | 4 | El formato B es opcional: cada evaluador puede adjuntar la URL del suyo con su concepto. |
 | 5 | Un resultado mixto (uno aprueba y otro pide correcciones) cuenta como correcciones. |
 | 6 | Las versiones corregidas las revisan **los mismos** evaluadores, sin reasignación. Ambos emiten un concepto nuevo. |
@@ -102,13 +102,15 @@ Las tres reciben `responsable` (o lo toman del emisor del concepto) y `ahora`, p
 - El **formato B es obligatorio** (`formato_b_obligatorio`); el documento con las anotaciones del evaluador
   es opcional (tipo `ANOTACIONES_EVALUACION`, parte multipart `anotaciones`). (2026-10-12)
 - El emisor debe ser uno de los evaluadores asignados (`evaluador_no_asignado`).
-- Solo se admite `APROBADO` o `CON_CORRECCIONES` (`resultado_invalido`).
+- Solo se admite `APROBADO`, `CON_CORRECCIONES` o `NO_APROBADO` (`resultado_invalido`; `NO_APROBADO` desde el 2026-11-09).
 - Cada evaluador emite un concepto por versión (`concepto_repetido`).
 - La fecha del concepto no puede ser anterior a la radicación de la versión (`fecha_invalida`).
 - Al registrarse el segundo concepto de la versión:
   - Ambos `APROBADO` → estado `APROBADO`; el trabajo **sigue en `EVALUACION`** hasta que el Jefe de
     departamento lo remite al Consejo con el formato C (ver abajo).
-  - Alguno `CON_CORRECCIONES` → estado `CON_CORRECCIONES`, plazo de 10 días hábiles para el director, y el trabajo vuelve a `ANTEPROYECTO`.
+  - Alguno `NO_APROBADO` → estado `NO_APROBADO`, sin plazo, y el trabajo vuelve a `ANTEPROYECTO` (2026-11-09).
+  - En otro caso (alguno `CON_CORRECCIONES` y ninguno `NO_APROBADO`) → estado `CON_CORRECCIONES` ("evaluado con
+    observaciones" en el front), plazo de 10 días hábiles para el director, y el trabajo vuelve a `ANTEPROYECTO`.
 - El responsable del `CambioEtapa` (correcciones) es el código del evaluador que cerró la ronda.
 
 ### `remitirAnteproyectoAlConsejo(rutaFormatoC, responsable, ahora)` (2026-10-12)
