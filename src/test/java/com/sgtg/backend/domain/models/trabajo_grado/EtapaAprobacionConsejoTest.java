@@ -111,18 +111,22 @@ class EtapaAprobacionConsejoTest {
     }
 
     @Test
-    void laPracticaProfesionalAdmiteSeisNueveODoceMeses() {
-        for (int meses : new int[] { 6, 9, 12 }) {
+    void laPracticaProfesionalTambienVaDeTresANueveMeses() {
+        for (int meses : new int[] { 3, 6, 9 }) {
             TrabajoGrado practica = enAprobacionConsejo(new PracticaProfesional(null, "Práctica", OBJETIVOS,
                     estudiante(10L), directorPlanta(1L), null, asesorOrganizacion(), cartaAceptacion()));
 
             practica.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
                     "CF01", dia(CONSEJO), meses);
 
-            // El plazo corre desde el día de la decisión; la sustentación se solicita desde el tercer mes
+            // La sustentación se solicita desde el tercer mes
             assertEquals(CONSEJO.plusMonths(meses), practica.getEjecucion().getFechaFin());
             assertEquals(CONSEJO.plusMonths(3), practica.getEjecucion().getFechaMinimaSustentacion());
         }
+        TrabajoGrado practica = enAprobacionConsejo(new PracticaProfesional(null, "Práctica", OBJETIVOS,
+                estudiante(10L), directorPlanta(1L), null, asesorOrganizacion(), cartaAceptacion()));
+        assertRegla("error.dominio.ejecucion.plazo_invalido", () -> practica.registrarDecisionConsejo(
+                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO), 12));
     }
 
     @Test
@@ -134,14 +138,62 @@ class EtapaAprobacionConsejoTest {
     }
 
     @Test
-    void alAprobarElPlazoDebeSerUnaOpcionDeLaModalidad() {
-        for (Integer meses : new Integer[] { null, 3, 12 })
+    void elPlazoCorreDesdeLaReunionDelConsejoAunqueLaResolucionSeCargueDespues() {
+        // Reunión el jueves 19-mar; la resolución se carga el martes 24-mar
+        LocalDate reunion = LocalDate.of(2026, 3, 19);
+        LocalDate carga = LocalDate.of(2026, 3, 24);
+        trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, carga),
+                "CF01", dia(carga), reunion, LocalDate.of(2026, 10, 30));
+
+        Ejecucion ejecucion = trabajo.getEjecucion();
+        assertEquals(reunion, ejecucion.getFechaNotificacion());
+        assertEquals(LocalDate.of(2026, 10, 30), ejecucion.getFechaFin());
+        assertEquals(reunion.plusMonths(3), ejecucion.getFechaMinimaSustentacion());
+        // La decisión conserva el día en que se cargó la resolución
+        assertEquals(carga, trabajo.getAnteproyecto().getDecisionesConsejo().get(0).fecha());
+    }
+
+    @Test
+    void laFechaMaximaDeEntregaQuedaEntreTresYNueveMesesDelInicio() {
+        LocalDate inicio = LocalDate.of(2026, 3, 19);
+        for (LocalDate fin : new LocalDate[] { inicio.plusMonths(3).minusDays(1), inicio.plusMonths(9).plusDays(1),
+                inicio })
             assertRegla("error.dominio.ejecucion.plazo_invalido", () -> trabajo.registrarDecisionConsejo(
-                    decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO), meses));
+                    decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO),
+                    inicio, fin));
+        trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
+                "CF01", dia(CONSEJO), inicio, inicio.plusMonths(9));
+        assertEquals(inicio.plusMonths(9), trabajo.getEjecucion().getFechaFin());
+    }
+
+    @Test
+    void laFechaDeInicioNoEsFuturaNiAnteriorALaRemision() {
+        // Hoy es el 20-mar; la remisión con el formato C fue el 12-mar
+        assertRegla("error.dominio.ejecucion.inicio_futuro", () -> trabajo.registrarDecisionConsejo(
+                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO),
+                CONSEJO.plusDays(1), CONSEJO.plusMonths(6)));
+        assertRegla("error.dominio.ejecucion.inicio_antes_de_remision", () -> trabajo.registrarDecisionConsejo(
+                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO),
+                CONCEPTOS.minusDays(1), CONCEPTOS.plusMonths(6)));
+        assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
+
+        trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO),
+                "CF01", dia(CONSEJO), CONCEPTOS, CONCEPTOS.plusMonths(6));
+        assertEquals(CONCEPTOS, trabajo.getEjecucion().getFechaNotificacion());
+    }
+
+    @Test
+    void alAprobarSeExigenLasDosFechas() {
+        assertRegla("error.dominio.ejecucion.fechas_obligatorias", () -> trabajo.registrarDecisionConsejo(
+                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO),
+                (Integer) null));
+        assertRegla("error.dominio.ejecucion.fechas_obligatorias", () -> trabajo.registrarDecisionConsejo(
+                decisionConsejo(ResultadoConcepto.APROBADO, RUTA_RESOLUCION, CONSEJO), "CF01", dia(CONSEJO),
+                CONSEJO, null));
         assertEquals(Proceso.APROBACION_CONSEJO, trabajo.getEtapa());
         // Si no aprueba, el plazo no se pide
         trabajo.registrarDecisionConsejo(decisionConsejo(ResultadoConcepto.NO_APROBADO, RUTA_RESOLUCION, CONSEJO),
-                "CF01", dia(CONSEJO), null);
+                "CF01", dia(CONSEJO), (Integer) null);
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
     }
 
@@ -252,14 +304,5 @@ class EtapaAprobacionConsejoTest {
 
         assertEquals(datos, reconstruido.getEjecucion().datos());
         assertThrows(ReglaNegocioException.class, () -> new DatosEjecucion(CONSEJO, null, CONSEJO));
-    }
-
-    @Test
-    void lasOpcionesDePlazoMuestranLaFechaDeEntregaDeCadaUna() {
-        java.util.Map<Integer, LocalDate> practica = Ejecucion.opcionesDePlazo(Modalidad.PRACTICA_PROFESIONAL, LUNES);
-        assertEquals(List.of(6, 9, 12), List.copyOf(practica.keySet()));
-        assertEquals(LUNES.plusMonths(12), practica.get(12));
-        assertEquals(List.of(6, 9),
-                List.copyOf(Ejecucion.opcionesDePlazo(Modalidad.TRABAJO_DE_INVESTIGACION, LUNES).keySet()));
     }
 }

@@ -140,20 +140,27 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
      *                                         anteproyecto es el de la última
      * @param remisiones                       formatos C con los que el Jefe de departamento remitió al Consejo
      *                                         cada versión aprobada
-     * @param opcionesPlazo                    plazos que puede fijar el Consejo al aprobar, con la fecha máxima de
-     *                                         entrega que resultaría hoy; vacía fuera de la aprobación del Consejo
+     * @param plazoConsejo                     fechas que puede fijar el Consejo al aprobar; null fuera de la
+     *                                         aprobación del Consejo
      */
     public record AnteproyectoDTO(LocalDate fechaLimiteEvaluacion, Integer diasHabilesRestantesEvaluacion,
             LocalDate fechaLimiteCorrecciones, Integer diasHabilesRestantesCorrecciones,
             List<VersionDocumentoDTO> versiones, List<EvaluadorDTO> evaluadores, List<ConceptoEvaluacionDTO> conceptos,
-            List<DecisionDTO> decisionesConsejo, List<DocumentoDTO> remisiones, List<OpcionPlazoDTO> opcionesPlazo) {
+            List<DecisionDTO> decisionesConsejo, List<DocumentoDTO> remisiones, PlazoConsejoDTO plazoConsejo) {
     }
 
     /**
-     * @param meses    plazo de ejecución
-     * @param fechaFin fecha máxima de entrega si el Consejo aprueba hoy con ese plazo
+     * Fechas entre las que el Consejo fija el plazo al aprobar el anteproyecto.
+     *
+     * @param fechaInicioMinima remisión con el formato C: la reunión del Consejo no puede ser anterior
+     * @param fechaInicioMaxima hoy: la reunión no puede ser futura
+     * @param mesesMinimos      la fecha máxima de entrega queda al menos estos meses después del inicio
+     * @param mesesMaximos      y como mucho estos
+     * @param fechaFinMinima    fecha máxima de entrega más cercana si la reunión fue hoy (inicio + meses mínimos)
+     * @param fechaFinMaxima    fecha máxima de entrega más lejana si la reunión fue hoy (inicio + meses máximos)
      */
-    public record OpcionPlazoDTO(int meses, LocalDate fechaFin) {
+    public record PlazoConsejoDTO(LocalDate fechaInicioMinima, LocalDate fechaInicioMaxima, int mesesMinimos,
+            int mesesMaximos, LocalDate fechaFinMinima, LocalDate fechaFinMaxima) {
     }
 
     /**
@@ -387,11 +394,12 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
         Modalidad modalidad = trabajo.getModalidad();
         boolean evaluacionPendiente = trabajo.getEtapa() == Proceso.EVALUACION && a.getEstado() == Estado.EN_REVISION;
         boolean correccionesPendientes = a.getEstado() == Estado.CON_CORRECCIONES;
-        List<OpcionPlazoDTO> opcionesPlazo = trabajo.getEtapa() == Proceso.APROBACION_CONSEJO
-                ? Ejecucion.opcionesDePlazo(modalidad, plazos.hoy()).entrySet().stream()
-                        .map(opcion -> new OpcionPlazoDTO(opcion.getKey(), opcion.getValue()))
-                        .toList()
-                : List.of();
+        PlazoConsejoDTO plazoConsejo = trabajo.getEtapa() == Proceso.APROBACION_CONSEJO
+                ? new PlazoConsejoDTO(a.fechaRemisionVersionActual().orElse(null), plazos.hoy(),
+                        Modalidad.MESES_MINIMOS_PLAZO, Modalidad.MESES_MAXIMOS_PLAZO,
+                        plazos.hoy().plusMonths(Modalidad.MESES_MINIMOS_PLAZO),
+                        plazos.hoy().plusMonths(Modalidad.MESES_MAXIMOS_PLAZO))
+                : null;
         return new AnteproyectoDTO(a.getFechaLimiteEvaluacion(),
                 restantes(a.getFechaLimiteEvaluacion(), evaluacionPendiente, plazos),
                 a.getFechaLimiteCorrecciones(),
@@ -403,7 +411,7 @@ public record TrabajoGradoDTOResponse(Long id, Modalidad modalidad, String titul
                         .toList(),
                 a.getDecisionesConsejo().stream().map(TrabajoGradoDTOResponse::decision).toList(),
                 a.getRemisiones().stream().map(r -> documento(r, modalidad)).toList(),
-                opcionesPlazo);
+                plazoConsejo);
     }
 
     private static EjecucionDTO ejecucion(TrabajoGrado trabajo, LocalDateTime ahora) {

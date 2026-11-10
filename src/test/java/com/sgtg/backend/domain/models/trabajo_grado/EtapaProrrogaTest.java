@@ -197,17 +197,18 @@ class EtapaProrrogaTest {
 
     @Test
     void laPracticaProfesionalTambienTieneProrrogaYSigueRadicandoInformes() {
+        // Plazo de 9 meses (hasta el 20-dic-2026), extendido 3 meses con la prórroga
         TrabajoGrado practica = enCurso(Modalidad.PRACTICA_PROFESIONAL);
-        practica.solicitarProrroga(3, RUTA_SOLICITUD, LocalDate.of(2027, 2, 1));
-        practica.resolverProrroga(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2027, 2, 10)), "CF01",
-                dia(LocalDate.of(2027, 2, 10)));
+        practica.solicitarProrroga(3, RUTA_SOLICITUD, LocalDate.of(2026, 11, 20));
+        practica.resolverProrroga(consejo(ResultadoConcepto.APROBADO, LocalDate.of(2026, 11, 25)), "CF01",
+                dia(LocalDate.of(2026, 11, 25)));
 
         assertEquals(Proceso.PRORROGA, practica.getEtapa());
-        assertEquals(LocalDate.of(2027, 6, 20), practica.getEjecucion().getFechaFin());
-        // En prórroga el informe sigue siendo de la reunión agendada (la 13: mes 13 del plazo extendido)
-        practica.agendarReunion(13, LocalDate.of(2027, 4, 20).atTime(10, 0), "Sala", "D1", LocalDate.of(2027, 4, 1));
-        assertEquals(13, practica.registrarInformeMensual("informes/2027/abril.pdf",
-                LocalDate.of(2027, 4, 19).atTime(9, 0)).numero());
+        assertEquals(LocalDate.of(2027, 3, 20), practica.getEjecucion().getFechaFin());
+        // En prórroga el informe sigue siendo de la reunión agendada (la 11: mes 11 del plazo extendido)
+        practica.agendarReunion(11, LocalDate.of(2027, 2, 20).atTime(10, 0), "Sala", "D1", LocalDate.of(2027, 2, 1));
+        assertEquals(11, practica.registrarInformeMensual("informes/2027/febrero.pdf",
+                LocalDate.of(2027, 2, 19).atTime(9, 0)).numero());
     }
 
     @Test

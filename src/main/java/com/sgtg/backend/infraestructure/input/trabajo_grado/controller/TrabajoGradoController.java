@@ -287,7 +287,7 @@ public class TrabajoGradoController {
             @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
         return ResponseEntity.ok(vista(manageTrabajoGrado.registrarDecisionConsejo(trabajoId,
                 usuario.getCusuari(), request.resultado(), adjunto(archivo), request.observaciones(),
-                request.mesesEjecucion())));
+                request.fechaInicio(), request.fechaFin())));
     }
 
     /** Solicita el cambio de título u objetivos del trabajo en curso. Solo el director. */

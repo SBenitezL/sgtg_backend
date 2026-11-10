@@ -221,7 +221,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.anteproyecto.evaluadores[1].usuarioId").value(evaluador2Id))
                 .andExpect(jsonPath("$.anteproyecto.fechaLimiteEvaluacion").isNotEmpty())
                 .andExpect(jsonPath("$.anteproyecto.diasHabilesRestantesEvaluacion").value(10))
-                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo.length()").value(0))
+                .andExpect(jsonPath("$.anteproyecto.plazoConsejo").isEmpty())
                 .andExpect(jsonPath("$.historial[1].responsable").value("J" + sufijo));
 
         // Pedir correcciones exige observaciones
@@ -295,11 +295,14 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.anteproyecto.remisiones[0].formato").value("TI-C"))
                 .andExpect(jsonPath("$.anteproyecto.remisiones[0].version").value(2))
                 .andExpect(jsonPath("$.anteproyecto.remisiones[0].ruta").value(trabajoId + "/TI-C/v1/Formato C - v1.pdf"))
-                // En la aprobación del Consejo, la respuesta trae los plazos que puede fijar y su fecha de fin
-                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo.length()").value(2))
-                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo[0].meses").value(6))
-                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo[1].meses").value(9))
-                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo[1].fechaFin")
+                // En la aprobación del Consejo, la respuesta trae entre qué fechas puede fijar el plazo
+                .andExpect(jsonPath("$.anteproyecto.plazoConsejo.fechaInicioMinima")
+                        .value(java.time.LocalDate.now().toString()))
+                .andExpect(jsonPath("$.anteproyecto.plazoConsejo.fechaInicioMaxima")
+                        .value(java.time.LocalDate.now().toString()))
+                .andExpect(jsonPath("$.anteproyecto.plazoConsejo.mesesMinimos").value(3))
+                .andExpect(jsonPath("$.anteproyecto.plazoConsejo.mesesMaximos").value(9))
+                .andExpect(jsonPath("$.anteproyecto.plazoConsejo.fechaFinMaxima")
                         .value(java.time.LocalDate.now().plusMonths(9).toString()))
                 .andExpect(jsonPath("$.anteproyecto.diasHabilesRestantesEvaluacion").doesNotExist());
 
@@ -368,11 +371,24 @@ class FlujoAnteproyectoIntegracionTest {
         subir(decisiones, consejo, Map.of("resultado", "APROBADO", "observaciones", "Aprobado en sesión ordinaria"),
                 archivo("res-aprobacion.pdf"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("El Consejo debe fijar el plazo de ejecución: 6 o 9 meses en "
-                        + "trabajo de investigación; 6, 9 o 12 meses en práctica profesional."));
+                .andExpect(jsonPath("$.message").value("Para aprobar el anteproyecto, el Consejo debe indicar la fecha "
+                        + "de inicio (la de la reunión en que lo aprobó) y la fecha máxima de entrega."));
+        String hoy = java.time.LocalDate.now().toString();
+        // Más de 9 meses o una reunión futura no se admiten
+        subir(decisiones, consejo, Map.of("resultado", "APROBADO", "fechaInicio", hoy,
+                "fechaFin", java.time.LocalDate.now().plusMonths(10).toString()), archivo("res-aprobacion.pdf"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("La fecha máxima de entrega debe quedar entre 3 y 9 meses "
+                        + "después de la fecha de inicio (la de la reunión del Consejo)."));
+        subir(decisiones, consejo, Map.of("resultado", "APROBADO",
+                "fechaInicio", java.time.LocalDate.now().plusDays(1).toString(),
+                "fechaFin", java.time.LocalDate.now().plusMonths(6).toString()), archivo("res-aprobacion.pdf"))
+                .andExpect(status().isBadRequest());
         subir(decisiones, consejo, Map.of("resultado", "APROBADO", "observaciones", "Aprobado en sesión ordinaria",
-                "mesesEjecucion", 6), archivo("res-aprobacion.pdf"))
+                "fechaInicio", hoy, "fechaFin", java.time.LocalDate.now().plusMonths(6).toString()),
+                archivo("res-aprobacion.pdf"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ejecucion.fechaNotificacion").value(hoy))
                 .andExpect(jsonPath("$.etapa").value("EN_CURSO"))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo.length()").value(2))
                 .andExpect(jsonPath("$.anteproyecto.decisionesConsejo[1].rutaArchivo")
@@ -380,7 +396,7 @@ class FlujoAnteproyectoIntegracionTest {
                 .andExpect(jsonPath("$.ejecucion.fechaNotificacion").isNotEmpty())
                 .andExpect(jsonPath("$.ejecucion.fechaFin").value(java.time.LocalDate.now().plusMonths(6).toString()))
                 .andExpect(jsonPath("$.ejecucion.fechaMinimaSustentacion").isNotEmpty())
-                .andExpect(jsonPath("$.anteproyecto.opcionesPlazo.length()").value(0))
+                .andExpect(jsonPath("$.anteproyecto.plazoConsejo").isEmpty())
                 .andExpect(jsonPath("$.historial[-1:].destino", hasItem("EN_CURSO")));
 
         // Ya no admite otra decisión (el archivo que se alcanzó a guardar se elimina)

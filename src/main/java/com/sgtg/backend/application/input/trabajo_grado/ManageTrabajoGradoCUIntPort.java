@@ -171,16 +171,19 @@ public interface ManageTrabajoGradoCUIntPort {
 
     /**
      * Registra el concepto del Consejo de Facultad sobre el anteproyecto
-     * aprobado por los evaluadores. La fecha de la decisión es la actual y, si
-     * aprueba, es la fecha de notificación desde la que corre el plazo.
+     * aprobado por los evaluadores, con la resolución (se registra el día en
+     * que se carga). Si aprueba, el plazo corre desde la fecha de la reunión del
+     * Consejo hasta la fecha máxima de entrega que fijó (entre 3 y 9 meses).
      *
      * @param usuarioId     usuario del Consejo que registra la decisión
      * @param resultado     APROBADO o NO_APROBADO
      * @param resolucion    archivo de la resolución
      * @param observaciones comentario opcional
+     * @param fechaInicio   fecha de la reunión del Consejo en que aprobó (solo si aprueba)
+     * @param fechaFin      fecha máxima de entrega (solo si aprueba)
      */
     public TrabajoGrado registrarDecisionConsejo(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
-            ArchivoAdjunto resolucion, String observaciones, Integer mesesEjecucion);
+            ArchivoAdjunto resolucion, String observaciones, LocalDate fechaInicio, LocalDate fechaFin);
 
     /**
      * Solicita el cambio de título u objetivos del trabajo en curso. Solo el

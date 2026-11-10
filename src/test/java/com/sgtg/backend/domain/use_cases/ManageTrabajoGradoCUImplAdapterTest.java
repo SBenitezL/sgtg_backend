@@ -574,15 +574,15 @@ class ManageTrabajoGradoCUImplAdapterTest {
     }
 
     @Test
-    void elConsejoApruebaConLaFechaActualComoNotificacion() {
+    void elConsejoApruebaConLaFechaDeSuReunionYLaFechaMaximaDeEntregaQueFija() {
         trabajoEnAprobacionConsejo();
 
+        // Reloj fijo: lunes 2-mar-2026 (se carga la resolución); la reunión fue ese mismo día y fija 9 meses
         TrabajoGrado trabajo = casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO,
-                pdf("res-100.pdf"), null, 9);
+                pdf("res-100.pdf"), null, LocalDate.of(2026, 3, 2), LocalDate.of(2026, 12, 2));
 
         assertEquals(Proceso.EN_CURSO, trabajo.getEtapa());
         assertEquals(70L, trabajo.getAnteproyecto().getDecisionesConsejo().get(0).responsableId());
-        // Reloj fijo: lunes 2-mar-2026; investigación dura 9 meses
         assertEquals(LocalDate.of(2026, 3, 2), trabajo.getEjecucion().getFechaNotificacion());
         assertEquals(LocalDate.of(2026, 12, 2), trabajo.getEjecucion().getFechaFin());
         assertEquals("7/RESOLUCION/v1/res-100.pdf",
@@ -595,7 +595,7 @@ class ManageTrabajoGradoCUImplAdapterTest {
         trabajoEnAprobacionConsejo();
 
         TrabajoGrado trabajo = casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.NO_APROBADO,
-                pdf("res-101.pdf"), null, 9);
+                pdf("res-101.pdf"), null, null, null);
 
         assertEquals(Proceso.ANTEPROYECTO, trabajo.getEtapa());
         assertEquals(Estado.NO_APROBADO, trabajo.getAnteproyecto().getEstado());
@@ -606,7 +606,8 @@ class ManageTrabajoGradoCUImplAdapterTest {
     /** Trabajo aprobado por el Consejo (en curso desde el 2-mar-2026). */
     private void trabajoEnCurso() {
         trabajoEnAprobacionConsejo();
-        casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-100.pdf"), null, 9);
+        casoDeUso.registrarDecisionConsejo(7L, 70L, ResultadoConcepto.APROBADO, pdf("res-100.pdf"), null,
+                LocalDate.of(2026, 3, 2), LocalDate.of(2026, 12, 2));
     }
 
     @Test

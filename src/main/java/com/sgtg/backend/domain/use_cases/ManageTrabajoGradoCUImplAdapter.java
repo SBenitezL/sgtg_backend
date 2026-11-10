@@ -417,14 +417,14 @@ public class ManageTrabajoGradoCUImplAdapter implements ManageTrabajoGradoCUIntP
 
     @Override
     public TrabajoGrado registrarDecisionConsejo(Long trabajoId, Long usuarioId, ResultadoConcepto resultado,
-            ArchivoAdjunto resolucion, String observaciones, Integer mesesEjecucion) {
+            ArchivoAdjunto resolucion, String observaciones, LocalDate fechaInicio, LocalDate fechaFin) {
         TrabajoGrado trabajo = cargarTrabajo(trabajoId);
         Usuario responsable = cargarUsuario(usuarioId);
         List<String> rutas = new ArrayList<>();
         String ruta = almacenar(trabajo, trabajoId, TipoDocumento.RESOLUCION, resolucion, rutas);
         return notificar(conArchivos(rutas, () -> {
             trabajo.registrarDecisionConsejo(decisionConsejo(resultado, ruta, observaciones, usuarioId),
-                    responsable.getCodigo(), LocalDateTime.now(this.clock), mesesEjecucion);
+                    responsable.getCodigo(), LocalDateTime.now(this.clock), fechaInicio, fechaFin);
             return this.trabajoGateway.guardar(trabajo);
         }), EventoTrabajoGrado.DECISION_CONSEJO_ANTEPROYECTO, usuarioId, texto(resultado));
     }

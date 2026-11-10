@@ -6,9 +6,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import com.sgtg.backend.domain.exceptions.ReglaNegocioException;
@@ -81,39 +79,30 @@ public class Ejecucion {
     }
 
     /**
-     * Inicia la ejecución con el plazo que fijó el Consejo: la fecha máxima de
-     * entrega se cuenta desde la notificación de la aprobación (el día en que
-     * se registra la decisión) y la sustentación se puede solicitar desde los
-     * meses mínimos de la modalidad.
+     * Inicia la ejecución con las fechas que fijó el Consejo: el inicio es la
+     * fecha de la reunión en que aprobó el anteproyecto (la notificación) y la
+     * fecha máxima de entrega queda entre 3 y 9 meses después. La sustentación
+     * se puede solicitar desde los meses mínimos de la modalidad.
      *
-     * @param fechaNotificacion fecha de notificación de la aprobación del Consejo
+     * @param fechaNotificacion fecha de inicio: la de la reunión del Consejo que aprobó
      * @param modalidad         modalidad del trabajo de grado
-     * @param meses             plazo de ejecución elegido (una de las opciones de la modalidad)
+     * @param fechaFin          fecha máxima de entrega
      */
-    static Ejecucion iniciar(LocalDate fechaNotificacion, Modalidad modalidad, Integer meses) {
-        if (fechaNotificacion == null || modalidad == null)
+    static Ejecucion iniciar(LocalDate fechaNotificacion, Modalidad modalidad, LocalDate fechaFin) {
+        if (fechaNotificacion == null || modalidad == null || fechaFin == null)
             throw new ReglaNegocioException("error.dominio.ejecucion.datos_incompletos");
-        if (!modalidad.admitePlazo(meses))
+        if (!modalidad.admitePlazo(fechaNotificacion, fechaFin))
             throw new ReglaNegocioException("error.dominio.ejecucion.plazo_invalido");
-        return new Ejecucion(Periodo.desde(fechaNotificacion, meses),
+        return new Ejecucion(new Periodo(fechaNotificacion, fechaFin),
                 fechaNotificacion.plusMonths(modalidad.getMesesMinimosEjecucion()), List.of(), List.of(), null,
                 List.of(), List.of());
     }
 
-    /**
-     * Fecha máxima de entrega que tendría el trabajo con cada plazo que puede
-     * fijar el Consejo, si la ejecución iniciara en la fecha indicada (la
-     * misma regla de {@link #iniciar(LocalDate, Modalidad, Integer)}).
-     *
-     * @param modalidad         modalidad del trabajo
-     * @param fechaNotificacion fecha en que se registraría la decisión
-     * @return meses del plazo → fecha máxima de entrega, en el orden de las opciones
-     */
-    public static Map<Integer, LocalDate> opcionesDePlazo(Modalidad modalidad, LocalDate fechaNotificacion) {
-        Map<Integer, LocalDate> opciones = new LinkedHashMap<>();
-        modalidad.getOpcionesMesesEjecucion()
-                .forEach(meses -> opciones.put(meses, Periodo.desde(fechaNotificacion, meses).fin()));
-        return opciones;
+    /** Inicia la ejecución con un plazo en meses desde la notificación (el fin cae el mismo día del mes). */
+    static Ejecucion iniciar(LocalDate fechaNotificacion, Modalidad modalidad, Integer meses) {
+        if (fechaNotificacion == null || meses == null)
+            throw new ReglaNegocioException("error.dominio.ejecucion.datos_incompletos");
+        return iniciar(fechaNotificacion, modalidad, fechaNotificacion.plusMonths(meses));
     }
 
     /** Inicia la ejecución con el plazo más largo de la modalidad. */

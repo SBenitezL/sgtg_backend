@@ -290,8 +290,8 @@ class ManageTrabajoGradoGatewayImplAdapterTest {
         TrabajoGrado leido = gateway.buscarPorId(trabajo.getId());
 
         assertEquals(Proceso.EN_CURSO, leido.getEtapa());
-        // Plazo de 12 meses (2-mar-2027) más los 60 días que estuvo suspendida (31-may a 30-jul-2026)
-        assertEquals(LocalDate.of(2027, 5, 1), leido.getEjecucion().getFechaFin());
+        // Plazo de 9 meses (2-dic-2026) más los 60 días que estuvo suspendida (31-may a 30-jul-2026)
+        assertEquals(LocalDate.of(2027, 1, 31), leido.getEjecucion().getFechaFin());
         CambioObjetivos noAprobado = leido.getEjecucion().getCambiosObjetivos().get(0);
         assertEquals(List.of("Objetivo"), noAprobado.objetivosAnteriores());
         assertEquals(List.of("Objetivo 1", "Objetivo 2"), noAprobado.objetivosPropuestos());

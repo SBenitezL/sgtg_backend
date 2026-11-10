@@ -2814,21 +2814,33 @@
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.opcionesPlazo",
-          "action": "count",
-          "value": "2"
+          "custom": "json.anteproyecto.plazoConsejo.mesesMinimos",
+          "action": "equal",
+          "value": "3"
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.opcionesPlazo[1].meses",
+          "custom": "json.anteproyecto.plazoConsejo.mesesMaximos",
           "action": "equal",
           "value": "9"
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.opcionesPlazo[1].fechaFin",
+          "custom": "json.anteproyecto.plazoConsejo.fechaFinMaxima",
           "action": "regex",
           "value": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaInicioMaxima",
+          "action": "setto",
+          "value": "{{consejoFechaHoy}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaFinMaxima",
+          "action": "setto",
+          "value": "{{consejoFinMaximo}}"
         }
       ],
       "docs": "Aprobado por ambos evaluadores, el Jefe de departamento lo remite al Consejo (paso obligatorio)."
@@ -2895,7 +2907,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"fechaInicio\": \"{{consejoFechaHoy}}\",\n  \"fechaFin\": \"{{consejoFinMaximo}}\"\n}"
           }
         ],
         "files": []
@@ -3161,6 +3173,18 @@
           "custom": "json.anteproyecto.remisiones[1].ruta",
           "action": "regex",
           "value": "^{{trabajoId}}/(TI|PP)-C/v(\\d+)/Formato C - v\\d+\\.pdf$"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaInicioMaxima",
+          "action": "setto",
+          "value": "{{consejoFechaHoy}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaFinMaxima",
+          "action": "setto",
+          "value": "{{consejoFinMaximo}}"
         }
       ]
     },
@@ -3168,7 +3192,7 @@
       "_id": "317ed2ea-d79d-4944-9679-aadf6f7c1ccb",
       "colId": "a28c01eb-b638-46d0-9426-d6ff67f5dc67",
       "containerId": "20d491db-72b7-40f8-85b6-30673fcd7d67",
-      "name": "El Consejo fija un plazo de la modalidad (400)",
+      "name": "El Consejo fija la entrega entre 3 y 9 meses (400)",
       "url": "{{baseUrl}}/api/v1/sgtg/trabajos-grado/{{trabajoId}}/anteproyecto/decisiones-consejo",
       "method": "POST",
       "sortNum": 415000,
@@ -3186,7 +3210,7 @@
           "type": "json-query",
           "custom": "json.message",
           "action": "equal",
-          "value": "El Consejo debe fijar el plazo de ejecución: 6 o 9 meses en trabajo de investigación; 6, 9 o 12 meses en práctica profesional."
+          "value": "La fecha máxima de entrega debe quedar entre 3 y 9 meses después de la fecha de inicio (la de la reunión del Consejo)."
         }
       ],
       "body": {
@@ -3195,7 +3219,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 12\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"fechaInicio\": \"{{consejoFechaHoy}}\",\n  \"fechaFin\": \"2099-12-31\"\n}"
           }
         ],
         "files": [
@@ -3209,7 +3233,7 @@
         "type": "bearer",
         "bearer": "{{consejoToken}}"
       },
-      "docs": "12 meses solo se admite en práctica profesional: un trabajo de investigación se aprueba a 6 o 9 meses."
+      "docs": "La fecha máxima de entrega queda entre 3 y 9 meses después de la reunión del Consejo (en las dos modalidades): una fecha más lejana se rechaza."
     },
     {
       "_id": "5eb1a62e-c140-43d8-a899-c4881a78e825",
@@ -3267,9 +3291,9 @@
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.opcionesPlazo",
-          "action": "count",
-          "value": "0"
+          "custom": "json.anteproyecto.plazoConsejo",
+          "action": "istype",
+          "value": "null"
         }
       ],
       "body": {
@@ -3278,7 +3302,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\",\n  \"mesesEjecucion\": 9\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"observaciones\": \"Aprobado en sesión ordinaria\",\n  \"fechaInicio\": \"{{consejoFechaHoy}}\",\n  \"fechaFin\": \"{{consejoFinMaximo}}\"\n}"
           }
         ],
         "files": [
@@ -4020,15 +4044,27 @@
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.opcionesPlazo",
-          "action": "count",
+          "custom": "json.anteproyecto.plazoConsejo.mesesMinimos",
+          "action": "equal",
           "value": "3"
         },
         {
           "type": "json-query",
-          "custom": "json.anteproyecto.opcionesPlazo[2].meses",
+          "custom": "json.anteproyecto.plazoConsejo.mesesMaximos",
           "action": "equal",
-          "value": "12"
+          "value": "9"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaInicioMaxima",
+          "action": "setto",
+          "value": "{{consejoFechaHoy}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaFinMaxima",
+          "action": "setto",
+          "value": "{{consejoFinMaximo}}"
         }
       ]
     },
@@ -4063,7 +4099,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 12\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"fechaInicio\": \"{{consejoFechaHoy}}\",\n  \"fechaFin\": \"{{consejoFinMaximo}}\"\n}"
           }
         ],
         "files": [
@@ -4921,7 +4957,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"fechaInicio\": \"{{consejoFechaHoy}}\",\n  \"fechaFin\": \"{{consejoFinMaximo}}\"\n}"
           }
         ],
         "files": [
@@ -4967,7 +5003,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"fechaInicio\": \"{{consejoFechaHoy}}\",\n  \"fechaFin\": \"{{consejoFinMaximo}}\"\n}"
           }
         ],
         "files": [
@@ -6771,6 +6807,18 @@
           "custom": "json.anteproyecto.remisiones[0].ruta",
           "action": "regex",
           "value": "^{{trabajo2Id}}/(TI|PP)-C/v(\\d+)/Formato C - v\\d+\\.pdf$"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaInicioMaxima",
+          "action": "setto",
+          "value": "{{consejoFechaHoy}}"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.anteproyecto.plazoConsejo.fechaFinMaxima",
+          "action": "setto",
+          "value": "{{consejoFinMaximo}}"
         }
       ]
     },
@@ -6805,7 +6853,7 @@
         "form": [
           {
             "name": "datos=application/json",
-            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"mesesEjecucion\": 9\n}"
+            "value": "{\n  \"resultado\": \"APROBADO\",\n  \"fechaInicio\": \"{{consejoFechaHoy}}\",\n  \"fechaFin\": \"{{consejoFinMaximo}}\"\n}"
           }
         ],
         "files": [

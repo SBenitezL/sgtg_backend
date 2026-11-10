@@ -226,7 +226,7 @@ class FlujoSustentacionIntegracionTest {
         subir(TRABAJOS + trabajoId + "/anteproyecto/remision", login("J"), null, archivo("formato-c.pdf"))
                 .andExpect(status().isOk());
         subir(TRABAJOS + trabajoId + "/anteproyecto/decisiones-consejo", login("F"), Map.of("resultado", "APROBADO",
-                "mesesEjecucion", 9),
+                "fechaInicio", INICIO.toString(), "fechaFin", INICIO.plusMonths(9).toString()),
                 archivo("res-aprobacion.pdf"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("EN_CURSO"))

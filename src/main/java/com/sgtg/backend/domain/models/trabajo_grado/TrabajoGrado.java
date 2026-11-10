@@ -416,21 +416,34 @@ public abstract class TrabajoGrado {
     // ----- Fase 3: aprobación del Consejo de Facultad -----
 
     /**
+     * Registra el concepto del Consejo con un plazo en meses que empieza el día
+     * de la decisión (para datos y pruebas; el API usa las fechas).
+     */
+    public void registrarDecisionConsejo(Decision decision, String responsable, LocalDateTime ahora,
+            Integer mesesEjecucion) {
+        LocalDate inicio = decision == null ? null : decision.fecha();
+        registrarDecisionConsejo(decision, responsable, ahora, inicio,
+                inicio == null || mesesEjecucion == null ? null : inicio.plusMonths(mesesEjecucion));
+    }
+
+    /**
      * Registra el concepto del Consejo de Facultad sobre el anteproyecto
      * aprobado por los evaluadores (Art. 14). La decisión adjunta la ruta de
-     * la resolución. Si lo aprueba, la fecha de la decisión es la de
-     * notificación: el trabajo pasa a en curso y empieza el plazo que fija el
-     * Consejo. Si no lo aprueba, vuelve a anteproyecto para radicar una
-     * nueva versión que revisan los evaluadores.
+     * la resolución, que se carga días después de la reunión. Si lo aprueba,
+     * el trabajo pasa a en curso: el plazo empieza en la fecha de la reunión
+     * del Consejo (no puede ser futura ni anterior a la remisión con el formato
+     * C) y la fecha máxima de entrega queda entre 3 y 9 meses después. Si no lo
+     * aprueba, vuelve a anteproyecto para radicar una nueva versión que revisan
+     * los evaluadores.
      *
      * @param decision    decisión del Consejo: APROBADO o NO_APROBADO
      * @param responsable código del usuario que registra la decisión
      * @param ahora       fecha y hora del registro
-     * @param mesesEjecucion plazo de ejecución que fija el Consejo al aprobar (6 o 9 meses en
-     *                       investigación; 6, 9 o 12 en práctica profesional); se ignora si no aprueba
+     * @param fechaInicio fecha de la reunión del Consejo en que aprobó; se ignora si no aprueba
+     * @param fechaFin    fecha máxima de entrega; se ignora si no aprueba
      */
     public void registrarDecisionConsejo(Decision decision, String responsable, LocalDateTime ahora,
-            Integer mesesEjecucion) {
+            LocalDate fechaInicio, LocalDate fechaFin) {
         validarEtapa(Proceso.APROBACION_CONSEJO);
         if (ahora == null)
             throw new ReglaNegocioException("error.dominio.anteproyecto.datos_incompletos");
@@ -439,7 +452,13 @@ public abstract class TrabajoGrado {
         Ejecucion nueva = null;
         CambioEtapa cambio;
         if (resultado == Estado.APROBADO) {
-            nueva = Ejecucion.iniciar(decision.fecha(), getModalidad(), mesesEjecucion);
+            if (fechaInicio == null || fechaFin == null)
+                throw new ReglaNegocioException("error.dominio.ejecucion.fechas_obligatorias");
+            if (fechaInicio.isAfter(ahora.toLocalDate()))
+                throw new ReglaNegocioException("error.dominio.ejecucion.inicio_futuro");
+            if (this.anteproyecto.fechaRemisionVersionActual().filter(fechaInicio::isBefore).isPresent())
+                throw new ReglaNegocioException("error.dominio.ejecucion.inicio_antes_de_remision");
+            nueva = Ejecucion.iniciar(fechaInicio, getModalidad(), fechaFin);
             cambio = new CambioEtapa(this.etapa, Proceso.EN_CURSO, ahora, responsable,
                     "Anteproyecto aprobado por el Consejo de Facultad");
         } else {

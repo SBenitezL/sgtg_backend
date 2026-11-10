@@ -235,6 +235,18 @@ public class Anteproyecto {
     }
 
     /**
+     * @return fecha en que el Jefe de departamento remitió la versión actual al
+     *         Consejo con el formato C; vacía si aún no se remite
+     */
+    public Optional<LocalDate> fechaRemisionVersionActual() {
+        Optional<Documento> actual = versionActual();
+        return actual.flatMap(version -> this.remisiones.stream()
+                .filter(remision -> remision.version() == version.version())
+                .map(Documento::fechaCarga)
+                .reduce((primera, ultima) -> ultima));
+    }
+
+    /**
      * @return true si la versión actual ya se remitió al Consejo con el formato C
      */
     public boolean remitidoAlConsejo() {
